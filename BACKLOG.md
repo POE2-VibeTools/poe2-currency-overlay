@@ -3,7 +3,7 @@
 Planned features, in priority order. Release targets are aims, not commitments.
 
 **By release**
-- **~2.4** — Currency-tab Calculator (#1), Regex Builder / Tab Filter (#2), Command Hotkeys (#5), Reorder currencies within a bucket (#7), Multi-select add to bucket (#8), Paginate history lists (#9), Richer Search History rows (#10)
+- **~2.4** — Currency-tab Calculator (#1), Regex Builder / Tab Filter (#2), Command Hotkeys (#5), Reorder currencies within a bucket (#7), Multi-select add to bucket (#8), Paginate history lists (#9), Richer Search History rows (#10), Dyslexia-friendly font toggle (#11)
 - **~2.5** — Dedicated Arbitrage Route tab (#3), In-app bug reporting for explicit events (#4)
 - **~2.6** — Full currency exchange table (#6)
 
@@ -88,3 +88,11 @@ Give the Price Check and Desecrate history proper pagination instead of a "load 
 Show each Price Check history row with the item's icon and its suggested floor price, so the list reads at a glance without reopening each search.
 
 **Status:** Not started (concept).
+
+---
+
+## 11. Dyslexia-friendly font toggle — target ~2.4
+
+A setting to switch the app's font to a dyslexia-friendly typeface, pairing with the currency-icon accessibility option shipped in 2.3.1.
+
+**Status:** Not started (concept). Community request.
