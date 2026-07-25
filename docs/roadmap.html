@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POE2 Currency Overlay - Roadmap</title>
+<meta name="description" content="What's planned for the POE2 Currency Overlay - upcoming features by release.">
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #14110d; color: #c8c2b2; font: 16px/1.6 "Segoe UI", system-ui, sans-serif; padding: 40px 24px 80px; }
+  main { max-width: 680px; margin: 0 auto; }
+  .top { text-align: center; margin-bottom: 26px; }
+  .top img { width: 84px; height: 84px; filter: drop-shadow(0 6px 22px rgba(214,126,44,.35)); margin-bottom: 10px; }
+  h1 { color: #e8c88a; font-size: 30px; }
+  .lead { color: #8a8372; font-size: 14px; margin-top: 8px; }
+  .back { display: inline-block; margin-top: 12px; color: #d67e2c; text-decoration: none; font-size: 14px; border-bottom: 1px solid rgba(214,126,44,.4); }
+  .back:hover { color: #e8c88a; }
+  .rel-group { margin-top: 30px; }
+  .rel-group > h2 { color: #e8c88a; font-size: 14px; letter-spacing: .05em; text-transform: uppercase; border-bottom: 1px solid rgba(214,126,44,.16); padding-bottom: 8px; margin-bottom: 4px; }
+  .feat { padding: 16px 0; border-top: 1px solid rgba(214,126,44,.10); }
+  .feat:first-of-type { border-top: none; }
+  .feat-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .feat-title { color: #f0d9a8; font-weight: 600; font-size: 16px; }
+  .tag { font-size: 10px; font-weight: 700; padding: 1px 8px; border-radius: 10px; vertical-align: 1px; white-space: nowrap; }
+  .tag-prog { color: #1a1410; background: linear-gradient(180deg,#e0a050,#c07828); }
+  .tag-plan { color: #b7ad97; background: rgba(214,126,44,.12); border: 1px solid rgba(214,126,44,.28); }
+  .feat p { color: #bdb7a7; margin-top: 6px; font-size: 15px; }
+  .note { margin-top: 34px; font-size: 12.5px; color: #7c7565; text-align: center; }
+  footer { margin-top: 20px; font-size: 12px; color: #6f6a5e; text-align: center; }
+  a.gh { color: #d67e2c; text-decoration: none; border-bottom: 1px solid rgba(214,126,44,.4); }
+  a.gh:hover { color: #e8c88a; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <img src="icon.png" alt="POE2 Currency Overlay logo">
+    <h1>Roadmap</h1>
+    <div class="lead">What's planned next. Release targets are aims, not promises.</div>
+    <a class="back" href="./">&larr; Back to download</a>
+  </div>
+
+  <div class="rel-group">
+    <h2>Targeting ~2.4</h2>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-title">Currency-tab Calculator</span><span class="tag tag-prog">In progress</span></div>
+      <p>Reads your special currency tabs and tells you the exact value of everything in them. Flip through them all and it totals what your stash is worth. Every currency tab type except the Map tab.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-title">Regex Builder / Tab Filter</span><span class="tag tag-plan">Planned</span></div>
+      <p>Build and save regex searches to help find and sort items inside your stash.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-title">Command Hotkeys</span><span class="tag tag-plan">Planned</span></div>
+      <p>Bind a hotkey to a safe, non-disruptive in-game chat command like /hideout. One key, one manually-triggered command - nothing GGG's rules disallow.</p>
+    </div>
+  </div>
+
+  <div class="rel-group">
+    <h2>Targeting ~2.5</h2>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-title">Dedicated Arbitrage Route tab</span><span class="tag tag-plan">Planned</span></div>
+      <p>A tab where you can build and check your own trade routes, instead of only viewing the single best route the app finds for a pair.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-title">In-app bug reporting</span><span class="tag tag-plan">Planned</span></div>
+      <p>Report a specific thing that misbehaved - a currency row, a search, a result, a desecration - straight from the app, with the real underlying data attached.</p>
+    </div>
+  </div>
+
+  <div class="note">Have a request? Open an issue on <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay/issues">GitHub</a>.</div>
+  <footer><a class="gh" href="changelog.html">Changelog</a> &middot; <a class="gh" href="./">Download</a> &middot; <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay">Source on GitHub</a></footer>
+</main>
+</body>
+</html>
