@@ -56,6 +56,10 @@ npm start
 
 Currency rates come from GGG's official Currency Exchange data (real executed trades), topped with the live trade-site order book for the pairs on screen. Item price checks search the official trade site. [poe2scout.com](https://poe2scout.com) supplies item icons, price history, and fallback rates.
 
+## Privacy & data
+
+No analytics, no telemetry, no usage tracking, no background phone-home. The app runs on your PC and only reaches the internet to fetch currency prices (poe2scout), run price checks against the official trade site using your own pathofexile.com login (which stays on your PC and is never sent to us), check for updates (GitHub), and send a Bug or Feedback report when you submit the in-app form. The only data we receive is the reports you choose to send. Full detail: [PRIVACY.md](PRIVACY.md).
+
 ## Credits
 
 The item price-checking is built on the [Exiled Exchange 2](https://github.com/Kvan7/Exiled-Exchange-2) matching engine (a fork of Awakened PoE Trade). Thanks to the EE2 / APT maintainers and everyone who keeps the stat and item resource data up to date.

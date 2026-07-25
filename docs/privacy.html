@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POE2 Currency Overlay - Privacy &amp; data</title>
+<meta name="description" content="What the POE2 Currency Overlay does and does not collect.">
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #14110d; color: #c8c2b2; font: 16px/1.65 "Segoe UI", system-ui, sans-serif; padding: 40px 24px 80px; }
+  main { max-width: 680px; margin: 0 auto; }
+  .top { text-align: center; margin-bottom: 26px; }
+  .top img { width: 84px; height: 84px; filter: drop-shadow(0 6px 22px rgba(214,126,44,.35)); margin-bottom: 10px; }
+  h1 { color: #e8c88a; font-size: 30px; }
+  .lead { color: #8a8372; font-size: 14px; margin-top: 8px; }
+  .back { display: inline-block; margin-top: 12px; color: #d67e2c; text-decoration: none; font-size: 14px; border-bottom: 1px solid rgba(214,126,44,.4); }
+  .back:hover { color: #e8c88a; }
+  h2 { color: #e8c88a; font-size: 16px; margin: 30px 0 8px; }
+  p { color: #bdb7a7; margin: 10px 0; }
+  ul { margin: 10px 0; list-style: none; }
+  li { color: #bdb7a7; padding: 5px 0 5px 18px; position: relative; }
+  li::before { content: ""; position: absolute; left: 2px; top: 14px; width: 5px; height: 5px; border-radius: 50%; background: #d67e2c; }
+  b { color: #f0d9a8; font-weight: 600; }
+  .big { margin-top: 26px; padding: 15px 18px; border: 1px solid rgba(214,126,44,.28); border-radius: 8px; background: rgba(30,24,16,.42); color: #d9d2c2; }
+  footer { margin-top: 40px; font-size: 12px; color: #6f6a5e; text-align: center; }
+  a.gh { color: #d67e2c; text-decoration: none; border-bottom: 1px solid rgba(214,126,44,.4); }
+  a.gh:hover { color: #e8c88a; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <img src="icon.png" alt="POE2 Currency Overlay logo">
+    <h1>Privacy &amp; data</h1>
+    <div class="lead">What the app does and does not collect.</div>
+    <a class="back" href="./">&larr; Back to download</a>
+  </div>
+
+  <p>The overlay runs on your PC. It has <b>no analytics, no telemetry, no usage tracking, no background phone-home, and no machine or device IDs</b>. It reaches the internet only for the things below.</p>
+
+  <h2>Where the app connects</h2>
+  <ul>
+    <li><b>poe2scout.com</b> - live currency rates and item icons and price history. Ordinary web requests (poe2scout sees your IP, as any website does).</li>
+    <li><b>Path of Exile official trade site (pathofexile.com)</b> - price checks and the currency exchange. These use your own pathofexile.com login, which is stored on your PC and used to talk to GGG directly. We never see your login, your searches, or your items.</li>
+    <li><b>GitHub</b> - checking for app updates and fetching the currency feed file.</li>
+    <li><b>Google (script.google.com)</b> - only when you submit the in-app Bug or Feedback form.</li>
+  </ul>
+
+  <h2>What we actually receive</h2>
+  <p>The only data that reaches us is the <b>bug and feedback reports you choose to send</b>. A report contains:</p>
+  <ul>
+    <li>what you type (your description, and an optional contact only if you add one),</li>
+    <li>the app version and a timestamp,</li>
+    <li>for bug reports only, a short <b>activity log</b>: the last 60 or so in-app actions (buttons clicked, settings toggled, currency and item type names, and any error messages), so the problem can be reproduced.</li>
+  </ul>
+  <p>That is all. It does not include your account, your session, your stash, or anything personal beyond what you type. Reports are stored in a private Google Sheet.</p>
+
+  <h2>About the Cloudflare Worker in the repo</h2>
+  <p>The repository includes a Cloudflare Worker that acts as a currency-price edge cache, with Cloudflare's standard request logging enabled. The current app <b>does not connect to it</b> - it fetches poe2scout directly - so it is not logging anyone. If a future build routes through it, it would only ever see currency-price requests (your IP and which league you are viewing), never item, account, or stash data.</p>
+
+  <div class="big">In short: we do not run analytics or telemetry, track usage, phone home in the background, use machine or device IDs, or read your account, session, or stash. The only data we receive is the bug and feedback reports you choose to send.</div>
+
+  <footer><a class="gh" href="./">Download</a> &middot; <a class="gh" href="faq.html">FAQ</a> &middot; <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay/blob/master/PRIVACY.md">PRIVACY.md</a> &middot; <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay">Source</a></footer>
+</main>
+</body>
+</html>
