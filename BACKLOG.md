@@ -3,7 +3,7 @@
 Planned features, in priority order. Release targets are aims, not commitments.
 
 **By release**
-- **~2.4** — Currency-tab Calculator (#1), Regex Builder / Tab Filter (#2), Command Hotkeys (#5)
+- **~2.4** — Currency-tab Calculator (#1), Regex Builder / Tab Filter (#2), Command Hotkeys (#5), Reorder currencies within a bucket (#7)
 - **~2.5** — Dedicated Arbitrage Route tab (#3), In-app bug reporting for explicit events (#4)
 - **~2.6** — Full currency exchange table (#6)
 
@@ -56,3 +56,11 @@ Let users report the actual thing that bugged out — a currency row, a search e
 Inspired by Ange's in-game market screen (the "I HAVE" / "I WANT" view): show every currency you hold with its live exchange rate to Exalted, auto-populated. A one-glance table of what everything is worth. Community-suggested, and cheap to add on the stash-tab pricer's valuation backbone (#1) once that lands.
 
 **Status:** Idea (community request).
+
+---
+
+## 7. Reorder currencies within a bucket — target ~2.4
+
+Drag the currencies inside a bucket to reorder them, so each bucket sits the way you like instead of the app's default order.
+
+**Status:** Not started (concept).
