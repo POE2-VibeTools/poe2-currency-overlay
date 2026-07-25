@@ -118,7 +118,7 @@
   function loadHistory() {
     window.api.getConfig().then((c) => {
       state.history = Array.isArray(c.desecHistory) ? c.desecHistory : [];
-      if (!state.model) render();
+      render(); // always re-render: history loads async, so an item already on screen needs the "back to checks" link added
     }).catch(() => {});
   }
   loadHistory();
