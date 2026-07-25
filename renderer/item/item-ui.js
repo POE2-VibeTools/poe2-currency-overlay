@@ -490,7 +490,11 @@
         if (h.onAssume && state.item && (state.item.q20able || state.item.runeFillable)) {
           const arow = el('div', 'assume-row');
           arow.appendChild(el('span', 'assume-lab', 'Assume'));
-          const asm = state.assume || {};
+          // Exceptional Normal bases use the per-item override (q20 ON, runes OFF),
+          // leaving the global assume pref untouched - so the chips read from it too.
+          const asm = (state.item && state.item.exceptionalBase)
+            ? (state.excAssume || { q20: true, fillRunes: false })
+            : (state.assume || {});
           const mk = (key, label, on, title) => {
             const lab = el('label', 'assume-chip' + (on ? ' on' : ''));
             lab.title = title;

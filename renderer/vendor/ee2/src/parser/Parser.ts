@@ -1516,8 +1516,10 @@ function parseExceptional(item: ParserState) {
   ) {
     if (_$REF.ITEM_EXCEPTIONAL.test(item.name)) {
       item.name = _$REF.ITEM_EXCEPTIONAL.exec(item.name)![1];
+      item.isExceptional = true;
     } else if (_$.ITEM_EXCEPTIONAL.test(item.name)) {
       item.name = _$.ITEM_EXCEPTIONAL.exec(item.name)![1];
+      item.isExceptional = true;
     }
   }
 }

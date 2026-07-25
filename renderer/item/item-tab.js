@@ -34,6 +34,8 @@
     authed: null,        // logged in to pathofexile.com? null = unknown
     loginHint: false,
     assume: { q20: true, fillRunes: true }, // settings-panel search assumptions
+    excAssume: null,     // per-item assume override for Exceptional Normal bases (q20 ON, runes OFF); null otherwise
+    autoCorrupted: false, // true when corrupted=No was auto-seeded for an Exceptional base (not user-chosen)
     showSliders: true, // settings-panel: per-mod sliders (off = compact rows)
   };
 
@@ -295,7 +297,14 @@
 
   // ParsedItem (EE2) -> our ItemModel
   function toModel(parsed) {
-    const assume = state.assume;
+    // Exceptional NORMAL bases are sold as clean crafting bases. The FILLED-RUNE
+    // assumption invents rune bonuses an empty-socket base doesn't have, so it
+    // defaults OFF; quality-20 stays ON, because the game's own base search floors
+    // defences at the q20 value (an 83-ES base reads 100 there). Still per-item
+    // toggleable via state.excAssume, and independent of the user's global assume
+    // pref, which stays untouched for every other item.
+    const excBase = parsed.rarity === 'Normal' && !!parsed.isExceptional;
+    const assume = excBase ? (state.excAssume || { q20: true, fillRunes: false }) : state.assume;
     const rawLines = rawModLines(parsed.rawText);
     const claimed = new Set();
     // Advanced copy (Ctrl+Alt+C, what the price-check hotkey sends) prints each
@@ -754,6 +763,8 @@
       // live toggles only show when they can change the numbers
       runeFillable: emptySockets > 0 && !CASTER_NO_IRON,
       q20able: !!(window.EE2.itemIsModifiable(parsed) && (parsed.quality || 0) < 20),
+      // Exceptional Normal base: drives the OFF-by-default assumptions + corrupted=No
+      exceptionalBase: excBase,
     };
   }
 
@@ -1260,6 +1271,24 @@
     }
   }
 
+  // Exceptional Normal bases (clean crafting bases) start with filled-rune OFF,
+  // quality-20 ON, and the Corrupted filter set to No - matching the game's own
+  // base search. The assume side lives in state.excAssume (per-item, never touches
+  // the global pref); corrupted rides state.opts.misc but is auto-seed-marked so it
+  // is cleared again when a non-exceptional item is next adopted (no leak) and is
+  // left alone the moment the user picks a Corrupted value themselves.
+  function applyExceptionalDefaults() {
+    const misc = { ...(state.opts.misc || {}) };
+    if (state.item && state.item.exceptionalBase) {
+      state.excAssume = { q20: true, fillRunes: false };
+      if (!misc.corrupted || state.autoCorrupted) { misc.corrupted = 'false'; state.autoCorrupted = true; }
+    } else {
+      state.excAssume = null;
+      if (state.autoCorrupted) { delete misc.corrupted; state.autoCorrupted = false; }
+    }
+    state.opts.misc = misc;
+  }
+
   function render() {
     const root = $('item-root');
     if (!root) return;
@@ -1303,6 +1332,8 @@
     },
     onRerender() { render(); }, // fold accordions toggle without re-searching
     onMisc(key, value) {
+      // once the user picks a Corrupted value, it is theirs - stop auto-managing it
+      if (key === 'corrupted') state.autoCorrupted = false;
       state.opts.misc = { ...(state.opts.misc || {}) };
       if (value) state.opts.misc[key] = value;
       else delete state.opts.misc[key];
@@ -1311,6 +1342,14 @@
     // live q20 / filled-rune assumption toggle: recompute THIS item and re-search,
     // and remember the choice as the default for the next paste
     onAssume(key, val) {
+      // Exceptional Normal base: the toggle is a per-item override only - it must
+      // never rewrite the user's global assume pref (that would leak q20/rune
+      // assumptions onto every future rare/unique).
+      if (state.item && state.item.exceptionalBase) {
+        state.excAssume = { ...(state.excAssume || { q20: true, fillRunes: false }), [key]: !!val };
+        reapplyAssume();
+        return;
+      }
       state.assume = { ...state.assume, [key]: !!val };
       if (window.api.setItemSearchOpts) {
         window.api.setItemSearchOpts({ q20: state.assume.q20, fillRunes: state.assume.fillRunes, sliders: state.showSliders }).catch(() => {});
@@ -1454,6 +1493,9 @@
       state.item = rec.model;
       state.itemOriginal = JSON.parse(JSON.stringify(rec.model)); // reset -> as restored
       state.opts = { ...state.opts, ...rec.opts };
+      // keep the Exceptional-base override state consistent with the restored item
+      state.excAssume = rec.model.exceptionalBase ? { q20: true, fillRunes: false } : null;
+      state.autoCorrupted = !!(rec.model.exceptionalBase && (state.opts.misc || {}).corrupted === 'false');
       state.stale = false;
       state.view = 'item';
       if (rec.cachedRaw && rec.cachedRaw.raw) {
@@ -1778,7 +1820,9 @@
       if (window.logAction) window.logAction('item-parse-error', String(res.error).slice(0, 200));
       return false;
     }
+    state.excAssume = null; // fresh paste: drop any prior item's per-item assume override
     state.item = toModel(res.item);
+    applyExceptionalDefaults(); // Exceptional Normal base: assume OFF + corrupted=No
     state.item.rawText = text; // kept so a live q20/rune-assumption toggle can recompute
     state.itemOriginal = JSON.parse(JSON.stringify(state.item)); // for the reset button
     state.openFolds = new Set();

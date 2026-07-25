@@ -79,6 +79,8 @@ export interface ParsedItem {
   stackSize?: { value: number; max: number };
   isUnidentified: boolean;
   isCorrupted: boolean;
+  /** Normal item whose base name carried the "Exceptional" quality-tier prefix. */
+  isExceptional?: boolean;
   isUnmodifiable?: boolean;
   isMirrored?: boolean;
   isSanctified?: boolean;
