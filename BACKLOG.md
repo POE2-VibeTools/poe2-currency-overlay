@@ -3,7 +3,7 @@
 Planned features, in priority order. Release targets are aims, not commitments.
 
 **By release**
-- **~2.4** — Currency-tab Calculator (#1), Regex Builder / Tab Filter (#2), Command Hotkeys (#5), Reorder currencies within a bucket (#7)
+- **~2.4** — Currency-tab Calculator (#1), Regex Builder / Tab Filter (#2), Command Hotkeys (#5), Reorder currencies within a bucket (#7), Multi-select add to bucket (#8)
 - **~2.5** — Dedicated Arbitrage Route tab (#3), In-app bug reporting for explicit events (#4)
 - **~2.6** — Full currency exchange table (#6)
 
@@ -62,5 +62,13 @@ Inspired by Ange's in-game market screen (the "I HAVE" / "I WANT" view): show ev
 ## 7. Reorder currencies within a bucket — target ~2.4
 
 Drag the currencies inside a bucket to reorder them, so each bucket sits the way you like instead of the app's default order.
+
+**Status:** Not started (concept).
+
+---
+
+## 8. Multi-select when adding to a bucket — target ~2.4
+
+Add more than one currency to a bucket at once with multi-select, instead of adding them one at a time.
 
 **Status:** Not started (concept).
