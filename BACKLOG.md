@@ -5,6 +5,7 @@ Planned features, in priority order. Release targets are aims, not commitments.
 **By release**
 - **~2.4** — Currency-tab Calculator (#1), Regex Builder / Tab Filter (#2), Command Hotkeys (#5)
 - **~2.5** — Dedicated Arbitrage Route tab (#3), In-app bug reporting for explicit events (#4)
+- **~2.6** — Full currency exchange table (#6)
 
 _Last shipped: **v2.3.1** — optional currency icons in place of names (Price Check + Desecrate)._
 
@@ -47,3 +48,11 @@ Expand the Arbitrage section into its own tab. Today it only surfaces the single
 Let users report the actual thing that bugged out — a currency row, a search entry, a specific search result, a desecration — instead of relying on them to copy/paste an item and describe it. The report carries the real underlying data.
 
 **Status:** Not started (concept).
+
+---
+
+## 6. Full currency exchange table — target ~2.6
+
+Inspired by Ange's in-game market screen (the "I HAVE" / "I WANT" view): show every currency you hold with its live exchange rate to Exalted, auto-populated. A one-glance table of what everything is worth. Community-suggested, and cheap to add on the stash-tab pricer's valuation backbone (#1) once that lands.
+
+**Status:** Idea (community request).
