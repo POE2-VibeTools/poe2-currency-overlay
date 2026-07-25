@@ -675,6 +675,20 @@ body.tut-active #spark-tip { z-index: 45; } /* the user's reward tooltip must ne
 .row .name .best-chip, .row .name .pay-pct { flex-shrink: 0; margin-left: 0; }
 .row .rate-main { color: var(--tx-gold); font-size: 12.5px; font-weight: 600; text-align: right; white-space: nowrap; overflow: hidden; }
 .row .rate-main .main-ratio { display: block; font-size: 9px; color: var(--tx-faint); font-weight: 400; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* accessibility: currency icon swapped in for a denomination unit/name next to
+   a number on the Price Check and Desecrate tabs (Settings > "Show currency
+   icons instead of names"). Sized in em so it always matches the surrounding
+   text, from small tick/sub labels up to normal row text - never breaks
+   layout. Named -inline (not .cur-icon) to avoid colliding with item.css's
+   .cur-icon, the fixed 40x40 currency-header logo on the Price Check tab. */
+.cur-icon-inline { display: inline-block; height: 1.05em; width: auto; vertical-align: middle; margin: 0 1px; }
+/* Desecrate: a touch larger and bottom-aligned with the field/number text */
+#desecrate-root .cur-icon-inline { height: 1.25em; vertical-align: bottom; }
+/* (the hover peek renders in its own window - its .cur-icon-inline size lives in item/peek.html) */
+/* Currency-icon toggle in the General settings card: separate it from the data row above and drop its subtext onto its own line, indented under the label */
+#sec-general .switch.set-excl { margin-top: 12px; }
+#sec-general .switch.set-excl .set-sub { flex-basis: 100%; margin-left: 28px; margin-top: 2px; }
 .row.best .rate-main { color: var(--green-hi); font-weight: 700; }
 .row .gap-col { font-size: 11px; text-align: right; color: var(--tx-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default; }
 .row .arb-col { font-size: 10px; text-align: right; color: #514b40; white-space: nowrap; cursor: default; }

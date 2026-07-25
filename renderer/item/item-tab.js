@@ -194,10 +194,13 @@
     } else if (r && r.price != null) {
       const div = divRateFull();
       const ex = r.price, big = div && ex >= div;
-      const primary = big ? `${(ex / div).toFixed(2)} div` : `${fmtNum(ex)} ex`;
-      const secondary = big ? `${fmtNum(ex)} ex` : (div ? `${(ex / div).toFixed(3)} div` : '');
-      const val = cel('div', 'cur-value', cesc(primary));
-      if (secondary) val.appendChild(cel('span', 'cur-value-sub', ' · ' + cesc(secondary)));
+      // unit as icon (Settings > "Show currency icons instead of names") or the
+      // plain "div"/"ex" abbreviation, whichever the toggle calls for
+      const unit = (apiId, abbr) => (window.currencyIconTag && window.currencyIconTag(apiId)) || abbr;
+      const primary = big ? `${(ex / div).toFixed(2)} ${unit('divine', 'div')}` : `${fmtNum(ex)} ${unit('exalted', 'ex')}`;
+      const secondary = big ? `${fmtNum(ex)} ${unit('exalted', 'ex')}` : (div ? `${(ex / div).toFixed(3)} ${unit('divine', 'div')}` : '');
+      const val = cel('div', 'cur-value', primary);
+      if (secondary) val.appendChild(cel('span', 'cur-value-sub', ' · ' + secondary));
       card.appendChild(val);
       const spark = currencySpark(r.logs);
       if (spark) card.appendChild(spark);
@@ -1868,6 +1871,10 @@
   }
   window.ItemTab = {
     resolveLeague,
+    // re-render from current state with no changes of its own - used when a
+    // global setting the render reads (e.g. currencyIcons) flips while this
+    // tab is open, since state itself didn't change.
+    refresh() { render(); },
     setItemHotkey(acc) {
       state.itemHotkey = acc;
       render();

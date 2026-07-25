@@ -1452,6 +1452,33 @@ document.addEventListener('focusin', (e) => {
 window.currencyPriceOf = (apiId) => (catalog && catalog[apiId] && catalog[apiId].price > 0 ? catalog[apiId].price : null);
 window.attachTip = attachTip;   // shared hover-intent tooltips (same look, same pinning)
 
+// ---------- currency icon accessibility bridge (Price Check / Desecrate) ----------
+// Settings > "Show currency icons instead of names" (config.currencyIcons) swaps a
+// currency's unit/name for its icon on the Price Check and Desecrate tabs. Those
+// tabs (item-ui.js, item-tab.js, desecrate.js) are plain classic scripts sharing
+// this window, so - like currencyPriceOf above - they read the toggle and icon
+// URLs through this bridge instead of the `config`/`catalog` bindings directly.
+// Does NOT touch the currency overlay itself.
+window.currencyIconsOn = () => !!(config && config.currencyIcons);
+// apiId ('divine', 'exalted', 'chaos', ...) or the short forms 'div'/'ex' -> icon
+// URL, or '' if unknown/not loaded yet.
+window.currencyIconUrl = (apiId) => {
+  const id = apiId === 'ex' ? 'exalted' : apiId === 'div' ? 'divine' : apiId;
+  return (catalog && catalog[id] && catalog[id].icon) || '';
+};
+// `<img class="cur-icon-inline">` for apiId's icon (title/alt = full display
+// name), or null when the toggle is off or no icon is known - callers keep
+// their own text fallback in that case. (-inline, not .cur-icon: that class is
+// already taken by item.css's fixed 40x40 currency-header logo on Price Check.)
+window.currencyIconTag = (apiId) => {
+  if (!window.currencyIconsOn()) return null;
+  const url = window.currencyIconUrl(apiId);
+  if (!url) return null;
+  const id = apiId === 'ex' ? 'exalted' : apiId === 'div' ? 'divine' : apiId;
+  const name = esc(nameOf(id));
+  return `<img class="cur-icon-inline" src="${esc(url)}" title="${name}" alt="${name}">`;
+};
+
 // ---------- shared money readability ----------
 // Thousands of exalts stop meaning anything - anything worth a divine or more
 // gets its divine equivalent alongside. ONLY for absolute prices; exchange
@@ -1581,6 +1608,19 @@ async function initSettings() {
     logAction(`exclude exalted from arb: ${exArb.checked}`);
     await window.api.setExcludeExaltedArb(exArb.checked);
     render(); // routes recompute immediately
+  });
+
+  // Price Check / Desecrate icon-swap (does not affect the currency overlay,
+  // so no render() call here - only those two tabs' own re-render, in case
+  // one is open right now).
+  const curIcons = $('currency-icons');
+  curIcons.checked = !!config.currencyIcons;
+  curIcons.addEventListener('change', async () => {
+    config.currencyIcons = curIcons.checked;
+    logAction(`currency icons: ${curIcons.checked}`);
+    await window.api.setCurrencyIcons(curIcons.checked);
+    if (window.ItemTab && window.ItemTab.refresh) window.ItemTab.refresh();
+    if (window.Desecrate && window.Desecrate.refresh) window.Desecrate.refresh();
   });
 
   // mod-slider visibility. The q20 / filled-rune assumptions now live as a live

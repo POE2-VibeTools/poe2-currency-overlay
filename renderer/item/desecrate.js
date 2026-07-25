@@ -337,11 +337,30 @@
     return { p, pHit, attempts, cost };
   }
 
+  // unit as icon (Settings > "Show currency icons instead of names") or the
+  // plain "div"/"ex" abbreviation, whichever the toggle calls for
+  const curUnit = (apiId, abbr) => (window.currencyIconTag && window.currencyIconTag(apiId)) || abbr;
+
+  // Same icon-or-abbr swap, but for the CLICKABLE ex/div flip control (.des-unit
+  // in moneyField below): no title on the icon itself - an inner title would
+  // shadow the control's own title, which must state both the currency name
+  // and the flip action so the click affordance still reads with an icon.
+  const unitCtrlHtml = (u) => {
+    const name = u === 'div' ? 'Divine' : 'Exalted';
+    if (window.currencyIconsOn && window.currencyIconsOn()) {
+      const url = window.currencyIconUrl && window.currencyIconUrl(u === 'div' ? 'divine' : 'exalted');
+      if (url) return `<img class="cur-icon-inline" src="${esc(url)}" alt="${esc(name)}">`;
+    }
+    return esc(u);
+  };
+
+  // HTML string ("N <icon-or-'ex'/'div'>") for a route/verdict cost or EV - only
+  // for innerHTML sites, since it may contain an <img> tag.
   function fmtEx(v) {
     if (v == null) return '?';
     const div = window.currencyPriceOf ? window.currencyPriceOf('divine') : null;
-    if (div > 0 && Math.abs(v) >= div) return `${(v / div).toFixed(1)} div`;
-    return `${Math.round(v * 10) / 10} ex`;
+    if (div > 0 && Math.abs(v) >= div) return `${(v / div).toFixed(1)} ${curUnit('divine', 'div')}`;
+    return `${Math.round(v * 10) / 10} ${curUnit('exalted', 'ex')}`;
   }
 
   // ---------- pricing searches ----------
@@ -629,8 +648,10 @@
         render();
       };
       row.appendChild(i);
-      const us = el('span', 'des-unit', u);
-      us.title = 'Click to flip between exalts and divines';
+      const us = el('span', 'des-unit', unitCtrlHtml(u));
+      const otherName = u === 'div' ? 'Exalted' : 'Divine';
+      const curName = u === 'div' ? 'Divine' : 'Exalted';
+      us.title = `${curName} — click to switch to ${otherName}`;
       us.onclick = (ev) => {
         ev.preventDefault();
         if (!divRate()) return;
@@ -745,6 +766,10 @@
 
   // ---------- entry ----------
   window.Desecrate = {
+    // re-render from current state with no changes of its own - used when a
+    // global setting the render reads (e.g. currencyIcons) flips while this
+    // tab is open, since state itself didn't change.
+    refresh() { render(); },
     noticeBadPaste() {
       state.notice = "Couldn't read that item text - copy the item in game with Ctrl+C and paste again.";
       render();

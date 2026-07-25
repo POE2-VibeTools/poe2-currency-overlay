@@ -19,9 +19,18 @@
   const divAside = (p) => (p && p.amount != null && window.divAsideHtml
     ? window.divAsideHtml(p.amount, p.currency) : '');
 
+  // unit as icon (Settings > "Show currency icons instead of names") or the
+  // plain escaped currency text, whichever the toggle calls for
+  const curUnitHtml = (currency, cls) => {
+    const tag = window.currencyIconTag && window.currencyIconTag(currency);
+    if (tag) return tag;
+    const text = esc(currency || '');
+    return cls ? `<span class="${cls}">${text}</span>` : text;
+  };
+
   function priceHtml(p) {
     if (!p || p.amount == null) return '<span class="cur">unpriced</span>';
-    return `${p.amount} <span class="cur">${esc(p.currency || '')}</span>${divAside(p)}`;
+    return `${p.amount} ${curUnitHtml(p.currency, 'cur')}${divAside(p)}`;
   }
 
   // GGG's misc_filters, the subset that actually moves a price. Laid out down
@@ -748,7 +757,7 @@
     const floorEl = el('div', 'suggested rh-floor');
     floorEl.appendChild(el('div', 'rh-floor-lab', 'Suggested floor'));
     const val = el('div', 'rh-floor-val');
-    if (sug) val.innerHTML = `${esc(String(sug.amount))} <span class="rh-floor-unit">${esc(sug.currency || '')}</span>${divAside(sug)}`;
+    if (sug) val.innerHTML = `${esc(String(sug.amount))} ${curUnitHtml(sug.currency, 'rh-floor-unit')}${divAside(sug)}`;
     else val.innerHTML = res.suggested ? esc(res.suggested) : '&mdash;';
     floorEl.appendChild(val);
     // sub-label + hover receipt: HOW this number was reached, comp by comp
@@ -862,8 +871,8 @@
       const p = k / 4;
       if (floorPos != null && Math.abs(p - floorPos) < 0.11) continue; // avoid colliding with the floor tick
       const v = axisLo * Math.pow(axisHi / axisLo, p);
-      if (k === 0) addTick(p, `${fmt(v)} ${esc(cur)}`, 'rh-tick-end', 'lo');
-      else if (k === 4) addTick(p, `${fmt(v)} ${esc(cur)}`, 'rh-tick-end', 'hi');
+      if (k === 0) addTick(p, `${fmt(v)} ${curUnitHtml(cur)}`, 'rh-tick-end', 'lo');
+      else if (k === 4) addTick(p, `${fmt(v)} ${curUnitHtml(cur)}`, 'rh-tick-end', 'hi');
       else addTick(p, fmt(v), '', 'mid');
     }
     if (floorPos != null) {

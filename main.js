@@ -167,6 +167,7 @@ const DEFAULT_CONFIG = {
   autoAddDefaults: false,
   overrides: { enabled: false, rates: {}, ratesAt: {} }, // ratesAt: when each was pinned
   excludeExaltedArb: false, // Ange charges gold per unit; exclude exalted as a route middle
+  currencyIcons: false, // show currency icons instead of names next to denominations/prices (dyslexia aid)
   // Ctrl+F, not Ctrl+D: with WASD movement the game reads the physically-held D
   // through Raw Input (below anything an overlay can intercept) and walks the
   // character right, closing stash/vendor windows. F carries no movement.
@@ -1054,6 +1055,12 @@ ipcMain.handle('set-exclude-exalted-arb', (_e, on) => {
   config.excludeExaltedArb = !!on;
   saveConfig();
   return config.excludeExaltedArb;
+});
+
+ipcMain.handle('set-currency-icons', (_e, on) => {
+  config.currencyIcons = !!on;
+  saveConfig();
+  return config.currencyIcons;
 });
 
 ipcMain.handle('set-bg-opacity', (_e, v) => {

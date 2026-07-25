@@ -117,7 +117,7 @@
 /* type the price - the cramped spinner arrows added nothing but clutter */
 .des-price input[type=number]::-webkit-inner-spin-button, .des-price input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .des-price.des-check { cursor: pointer; }
-.des-unit { color: var(--tx-dim); font-size: 10px; text-transform: none; letter-spacing: 0; user-select: none; }
+.des-unit { color: var(--tx-dim); font-size: 10px; text-transform: none; letter-spacing: 0; user-select: none; cursor: pointer; }
 .des-unit:hover { color: var(--desec-dim); }
 .des-price input[type=checkbox] { accent-color: var(--desec-tab); }
 .des-routes { border: 1px solid var(--bd-09); border-radius: 7px; overflow: hidden; }
