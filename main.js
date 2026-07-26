@@ -194,6 +194,7 @@ const DEFAULT_CONFIG = {
   // character right, closing stash/vendor windows. F carries no movement.
   itemHotkey: 'Control+F', // hover an item in game, press this: copies + opens the Items tab; overlay STAYS
   itemHotkeyTemp: 'Control+Alt+F', // same check, but the overlay hides once the mouse visits it and leaves
+  stashHotkey: 'F7', // view a special stash tab in game, press this: reads + values it into the Net Worth tally
   itemQ20: true,       // search armour/weapons as if 20% quality
   itemFillRunes: true, // search as if empty rune sockets held Greater Iron Runes
   itemSliders: true,   // show per-mod range sliders in Price Check
@@ -737,6 +738,7 @@ function registerHotkey(accelerator) {
     globalShortcut.unregisterAll();
     const ok = globalShortcut.register(accelerator, toggleOverlay);
     registerItemHotkey(); // unregisterAll wiped it; always restore alongside
+    registerStashHotkey(); // ditto - restore the stash-capture hotkey
     if (!ok) throw new Error('register returned false');
     return true;
   } catch (err) {
@@ -1156,11 +1158,9 @@ async function getStashPriceMap(force) {
   return map;
 }
 
-ipcMain.handle('stash-capture', async (_e, tab = 'currency') => {
-  const map = STASH_TABS[tab];
-  if (!map) return { ok: false, error: `unknown tab: ${tab}` };
-  // Hide the overlay during the grab so it doesn't occlude the stash panel it's
-  // reading (the screen capture is the composited desktop). Restored in finally.
+async function doStashCapture() {
+  // Hide the overlay during the grab so it doesn't occlude the panel it's reading
+  // (the screen capture is the composited desktop). Restored in finally.
   const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
   try {
     const disp = screen.getPrimaryDisplay();
@@ -1177,16 +1177,31 @@ ipcMain.handle('stash-capture', async (_e, tab = 'currency') => {
     const T = StashReader.templatesFromJSON(STASH_TEMPLATES);
     const P = StashReader.DEFAULTS;
 
-    // Align the map to this capture: with the desat-max channel, a non-"?" read is
-    // trustworthy, so the offset that maximizes valid reads is the correct one.
-    const score = (dx, dy) => map.STATIC_SLOTS.reduce((a, s) =>
-      a + (StashReader.readCell(V, W, H, s.cx + dx, s.cy + dy, T, P) !== '?' ? 1 : 0), 0);
-    let best = { dx: 0, dy: 0, n: -1 };
-    for (let dy = -6; dy <= 10; dy++) for (let dx = -6; dx <= 8; dx++) {
-      const n = score(dx, dy);
-      if (n > best.n || (n === best.n && Math.abs(dx) + Math.abs(dy) < Math.abs(best.dx) + Math.abs(best.dy))) best = { dx, dy, n };
+    // With the desat-max channel a non-"?" read is trustworthy, so the offset that
+    // maximizes valid reads is the correct alignment for a given layout.
+    const alignFor = (m) => {
+      const score = (dx, dy) => m.STATIC_SLOTS.reduce((a, s) =>
+        a + (StashReader.readCell(V, W, H, s.cx + dx, s.cy + dy, T, P) !== '?' ? 1 : 0), 0);
+      let best = { dx: 0, dy: 0, n: -1 };
+      for (let dy = -6; dy <= 10; dy++) for (let dx = -6; dx <= 8; dx++) {
+        const n = score(dx, dy);
+        if (n > best.n || (n === best.n && Math.abs(dx) + Math.abs(dy) < Math.abs(best.dx) + Math.abs(best.dy))) best = { dx, dy, n };
+      }
+      return best;
+    };
+    // Auto-detect WHICH tab is on screen: the layout that reads best is the one in view.
+    let detected = null;
+    for (const id of Object.keys(STASH_TABS)) {
+      const m = STASH_TABS[id];
+      const a = alignFor(m);
+      const frac = a.n / m.STATIC_SLOTS.length;
+      if (!detected || frac > detected.frac) detected = { id, map: m, align: a, frac };
+    }
+    if (!detected || detected.frac < 0.34) {
+      return { ok: true, mismatch: true, readCount: detected ? detected.align.n : 0, slotCount: detected ? detected.map.STATIC_SLOTS.length : 0 };
     }
 
+    const { id: detectedTab, map, align: best } = detected;
     let prices = {};
     try { prices = await getStashPriceMap(); } catch (err) { /* prices optional; counts still shown */ }
     const divPrice = prices.divine && typeof prices.divine.price === 'number' ? prices.divine.price : null;
@@ -1204,18 +1219,34 @@ ipcMain.handle('stash-capture', async (_e, tab = 'currency') => {
       lines.push({ apiId: s.apiId, name, icon: info.icon || null, count, price, valueEx });
     }
     lines.sort((a, b) => (b.valueEx || 0) - (a.valueEx || 0));
-    // Too few reads => not the currency tab, or window moved: tell the user to recapture.
-    const mismatch = best.n < Math.min(8, Math.ceil(map.STATIC_SLOTS.length / 3));
     return {
-      ok: true, tab, w: W, h: H, offset: best, readCount: best.n, slotCount: map.STATIC_SLOTS.length,
-      totalEx: total, divPrice, totalDiv: divPrice ? total / divPrice : null, lines, flags, mismatch,
+      ok: true, tab: detectedTab, w: W, h: H, offset: best, readCount: best.n, slotCount: map.STATIC_SLOTS.length,
+      totalEx: total, divPrice, totalDiv: divPrice ? total / divPrice : null, lines, flags, mismatch: false,
     };
   } catch (err) {
     return { ok: false, error: String(err && err.message || err) };
   } finally {
     if (wasVisible && win && win.getOpacity() === 0) win.setOpacity(1); // never leave it hidden
   }
-});
+}
+
+ipcMain.handle('stash-capture', () => doStashCapture());
+
+// Global capture hotkey: view a special tab in game, press it; the app detects
+// which tab it is, values it, and pushes the result to the Net Worth panel (which
+// updates that tab's row). Works whether or not the overlay is showing.
+function registerStashHotkey() {
+  if (!config || !config.stashHotkey) return;
+  try {
+    const ok = globalShortcut.register(config.stashHotkey, async () => {
+      const res = await doStashCapture();
+      if (win && !win.isDestroyed()) win.webContents.send('stash-captured', res);
+    });
+    if (!ok) console.error(`Stash hotkey "${config.stashHotkey}" is taken by another app`);
+  } catch (err) {
+    console.error(`Failed to register stash hotkey "${config.stashHotkey}":`, err.message);
+  }
+}
 
 // ---------- item price-check (trade2) ----------
 ipcMain.handle('read-clipboard', () => {

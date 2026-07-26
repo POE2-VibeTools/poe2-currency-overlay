@@ -11,21 +11,28 @@
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
   // running tally, this session: tab id -> latest capture result
-  const state = { tabs: {}, busy: false, notice: null };
+  const state = { tabs: {}, expanded: {}, busy: false, notice: null };
   const TAB_LABEL = { currency: 'Currency' };
+
+  // Fold a capture result into the tally (dedup by detected tab), or surface a
+  // notice. Shared by the in-app button and the global hotkey push.
+  function applyResult(res) {
+    if (!res || !res.ok) { state.notice = { kind: 'err', msg: `Capture failed: ${res && res.error || 'unknown error'}` }; return render(); }
+    if (res.mismatch) { state.notice = { kind: 'warn', msg: `Couldn't read a supported tab (${res.readCount || 0} slots). Open a special stash tab in game, keep it fully visible, and capture again.` }; return render(); }
+    state.tabs[res.tab] = res;   // keyed by detected tab -> updates that row, no dupes
+    state.expanded[res.tab] = state.expanded[res.tab] || false;
+    state.notice = null;
+    render();
+  }
 
   async function capture() {
     if (state.busy) return;
     state.busy = true; state.notice = null; render();
     let res;
-    try { res = await window.api.stashCapture('currency'); }
+    try { res = await window.api.stashCapture(); }
     catch (e) { res = { ok: false, error: String(e && e.message || e) }; }
     state.busy = false;
-    if (!res || !res.ok) { state.notice = { kind: 'err', msg: `Capture failed: ${res && res.error || 'unknown error'}` }; return render(); }
-    if (res.mismatch) { state.notice = { kind: 'warn', msg: `Only read ${res.readCount}/${res.slotCount} slots — open the Currency tab in game, make sure it's fully visible, and Capture again.` }; return render(); }
-    state.tabs[res.tab] = res;
-    state.notice = null;
-    render();
+    applyResult(res);
   }
 
   function grandTotals() {
@@ -36,14 +43,21 @@
   }
 
   function tabCard(r) {
-    const card = el('div', 'nw-card');
+    const open = !!state.expanded[r.tab];
+    const card = el('div', 'nw-card' + (open ? ' nw-open' : ''));
     const head = el('div', 'nw-card-head');
-    head.appendChild(el('div', 'nw-card-title', esc(TAB_LABEL[r.tab] || r.tab)));
+    head.title = open ? 'Collapse' : 'Expand';
+    const title = el('div', 'nw-card-title');
+    title.appendChild(el('span', 'nw-chev', open ? '▾' : '▸'));
+    title.appendChild(document.createTextNode(TAB_LABEL[r.tab] || r.tab));
+    head.appendChild(title);
     const tot = el('div', 'nw-card-total');
     tot.appendChild(el('span', 'nw-ex', fmtEx(r.totalEx)));
     if (r.totalDiv != null) tot.appendChild(el('span', 'nw-div', fmtDiv(r.totalDiv)));
     head.appendChild(tot);
+    head.onclick = () => { state.expanded[r.tab] = !state.expanded[r.tab]; render(); };
     card.appendChild(head);
+    if (!open) return card; // collapsed: name + total only
 
     const list = el('div', 'nw-lines');
     for (const ln of r.lines) {
@@ -82,7 +96,7 @@
     totBox.appendChild(gline);
     header.appendChild(totBox);
 
-    const btn = el('button', 'nw-capture', state.busy ? 'Capturing…' : 'Capture current tab');
+    const btn = el('button', 'nw-capture', state.busy ? 'Capturing…' : 'Capture tab (F7)');
     btn.disabled = state.busy;
     btn.onclick = capture;
     header.appendChild(btn);
@@ -92,8 +106,10 @@
 
     if (!captured) {
       wrap.appendChild(el('div', 'nw-empty',
-        'Open a special stash tab in game (Currency for now), keep it fully visible, and press <b>Capture current tab</b>.<br>'
-        + 'Each tab you capture is added here with its own total, plus a running grand total.'));
+        'Open a special stash tab in game, keep it fully visible, and press <b>F7</b> (or the Capture button).<br>'
+        + 'The tab is detected automatically and added here with its own total, plus a running grand total. '
+        + 'Flip to the next tab, press F7 again — re-capturing a tab updates its row.<br>'
+        + '<span style="color:var(--tx-faint)">Currency tab supported now; more tabs coming.</span>'));
     } else {
       for (const k of Object.keys(state.tabs)) wrap.appendChild(tabCard(state.tabs[k]));
       const reset = el('button', 'nw-reset', 'Clear tally');
@@ -101,6 +117,12 @@
       wrap.appendChild(reset);
     }
     root.appendChild(wrap);
+  }
+
+  // Global hotkey pushes capture results here even while the overlay is hidden;
+  // the tally is ready when the user opens the panel.
+  if (window.api && window.api.onStashCaptured) {
+    window.api.onStashCaptured((res) => { state.busy = false; applyResult(res); });
   }
 
   window.NetWorth = { render, capture };

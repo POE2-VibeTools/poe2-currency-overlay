@@ -1164,3 +1164,9 @@ footer {
 .nw-flags { color: var(--tx-faint); font-size: 11px; margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--bd-06); line-height: 1.4; }
 .nw-reset { background: transparent; color: var(--tx-dim); border: 1px solid var(--bd-12); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; }
 .nw-reset:hover { color: var(--tx-body); border-color: var(--bd-16); }
+
+/* Net Worth accordion */
+.nw-card-head { cursor: pointer; user-select: none; }
+.nw-card:not(.nw-open) .nw-card-head { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+.nw-chev { display: inline-block; width: 14px; color: var(--tx-dim); font-size: 10px; }
+.nw-card-head:hover .nw-card-title { color: var(--am-hi); }

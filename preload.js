@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('api', {
   trade2AuthCheck: (league, force) => ipcRenderer.invoke('trade2-auth-check', { league, force }),
   setActiveTab: (which) => ipcRenderer.send('active-tab', which),
   stashCapture: (tab) => ipcRenderer.invoke('stash-capture', tab),
+  onStashCaptured: (cb) => ipcRenderer.on('stash-captured', (_e, res) => cb(res)),
   setCurrencyRates: (rates) => ipcRenderer.invoke('set-currency-rates', rates),
   setDyslexicFont: (on) => ipcRenderer.invoke('set-dyslexic-font', on),
   setSeenVersion: (version) => ipcRenderer.invoke('set-seen-version', version),
