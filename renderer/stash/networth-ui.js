@@ -12,7 +12,7 @@
   const fmtDiv = (n) => n == null ? null : (n >= 100 ? Math.round(n) : n.toFixed(1)).toLocaleString('en-US') + ' div';
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
-  const state = { rows: [], expanded: {}, nextId: 1, dup: false, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
+  const state = { rows: [], expanded: {}, nextId: 1, dup: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
   const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss' };
 
   if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); render(); }).catch(() => {});
@@ -24,6 +24,15 @@
     return same.length <= 1 ? base : `${base} #${same.indexOf(row) + 1}`;
   }
   function addRow(res) { const row = { id: state.nextId++, tab: res.tab, result: res, included: true }; state.rows.push(row); state.expanded[row.id] = false; return row; }
+  function reorderRow(dragId, targetId, before) {
+    const from = state.rows.findIndex((r) => r.id === dragId);
+    if (from < 0) return;
+    const [moved] = state.rows.splice(from, 1);
+    let ti = state.rows.findIndex((r) => r.id === targetId);
+    if (ti < 0) { state.rows.push(moved); return; }
+    if (!before) ti++;
+    state.rows.splice(ti, 0, moved);
+  }
 
   function capture() {
     if (state.busy) return;
@@ -56,6 +65,21 @@
     const card = el('div', 'nw-card' + (open ? ' nw-open' : '') + (row.included ? '' : ' nw-excluded'));
 
     const head = el('div', 'nw-card-head');
+
+    const grip = el('div', 'nw-grip', '⠿'); grip.title = 'Drag to reorder'; grip.draggable = true;
+    grip.onclick = (e) => e.stopPropagation();
+    grip.ondragstart = (e) => { state.dragId = row.id; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(row.id)); } catch {} };
+    grip.ondragend = () => { state.dragId = null; render(); };
+    head.appendChild(grip);
+    card.ondragover = (e) => { if (state.dragId == null || state.dragId === row.id) return; e.preventDefault(); card.classList.add('nw-drop'); };
+    card.ondragleave = () => card.classList.remove('nw-drop');
+    card.ondrop = (e) => {
+      if (state.dragId == null) return; e.preventDefault();
+      const rect = card.getBoundingClientRect();
+      reorderRow(state.dragId, row.id, e.clientY < rect.top + rect.height / 2);
+      state.dragId = null; render();
+    };
+
     const cb = el('input', 'nw-inc'); cb.type = 'checkbox'; cb.checked = row.included; cb.title = 'Include in total';
     cb.onclick = (e) => { e.stopPropagation(); row.included = cb.checked; render(); };
     head.appendChild(cb);
@@ -143,8 +167,9 @@
     const included = state.rows.filter((r) => r.included).length;
     const header = el('div', 'nw-header');
     const totBox = el('div', 'nw-grand');
-    totBox.appendChild(el('div', 'nw-grand-lab', rows ? `Running total · ${included}/${rows} tab${rows === 1 ? '' : 's'}` : 'Running total'));
+    totBox.appendChild(el('div', 'nw-grand-lab', rows ? `${included}/${rows} tab${rows === 1 ? '' : 's'} included` : 'No tabs captured'));
     const gline = el('div', 'nw-grand-val');
+    gline.appendChild(el('span', 'nw-total-lab', 'Total'));
     gline.appendChild(el('span', 'nw-ex', fmtEx(rows ? gt.ex : null)));
     if (gt.div != null) gline.appendChild(el('span', 'nw-div', fmtDiv(gt.div)));
     totBox.appendChild(gline);
