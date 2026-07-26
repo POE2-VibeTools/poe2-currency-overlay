@@ -1,0 +1,30 @@
+name: Build Linux AppImage
+
+# Manual trigger. Builds the experimental Linux AppImage on an Ubuntu runner (it
+# can't be built on Windows) and uploads it + its auto-update metadata as a build
+# artifact. The release itself is still assembled locally so both platforms land in
+# one atomic release.
+on:
+  workflow_dispatch:
+
+jobs:
+  appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install deps
+        run: npm ci
+      - name: Build AppImage
+        run: npx electron-builder --linux AppImage
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          if-no-files-found: error
+          path: |
+            dist/*.AppImage
+            dist/*.AppImage.blockmap
+            dist/latest-linux.yml

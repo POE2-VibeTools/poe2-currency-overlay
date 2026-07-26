@@ -1725,6 +1725,17 @@ async function initSettings() {
     if (window.Desecrate && window.Desecrate.refresh) window.Desecrate.refresh();
   });
 
+  const dysFont = $('dyslexic-font');
+  if (dysFont) {
+    dysFont.checked = !!config.dyslexicFont;
+    dysFont.addEventListener('change', async () => {
+      config.dyslexicFont = dysFont.checked;
+      document.documentElement.classList.toggle('dyslexic-font', dysFont.checked);
+      logAction(`dyslexic font: ${dysFont.checked}`);
+      await window.api.setDyslexicFont(dysFont.checked);
+    });
+  }
+
   // Live-rate sliders (Tab-visible + Background). 4 stops: quiet/low/medium/high.
   const RATE_KEYS = ['quiet', 'low', 'medium', 'high'];
   const RATE_LABEL = { quiet: 'Quiet', low: 'Low', medium: 'Medium', high: 'High' };
@@ -1960,38 +1971,71 @@ window.addEventListener('unhandledrejection', (e) => {
 // ---------- release notes (what's-new popup + Settings history) ----------
 const RELEASE_NOTES = Array.isArray(window.RELEASE_NOTES) ? window.RELEASE_NOTES : [];
 
+function noteAnchorId(version) { return 'notes-v-' + String(version).replace(/\./g, '-'); }
 function renderNoteEntry(rel) {
   const lis = (rel.notes || []).map((n) => `<li>${esc(n)}</li>`).join('');
   const date = rel.date ? `<span class="notes-rel-date">${esc(rel.date)}</span>` : '';
   const sub = rel.title ? `<div class="notes-rel-sub">${esc(rel.title)}</div>` : '';
-  return `<div class="notes-rel"><div class="notes-rel-head"><span class="notes-rel-ver">v${esc(rel.version)}</span>${date}</div>${sub}<ul class="notes-list">${lis}</ul></div>`;
+  return `<div class="notes-rel" id="${noteAnchorId(rel.version)}"><div class="notes-rel-head"><span class="notes-rel-ver">v${esc(rel.version)}</span>${date}</div>${sub}<ul class="notes-list">${lis}</ul></div>`;
 }
 
 let notesMode = 'latest';
-// mode 'latest' = the one-time post-update popup (newest version, dismiss stamps it
-// seen). It is dismissable ONLY by its button - no backdrop click, no X - so the
-// user can't miss it by fat-fingering outside. mode 'history' = the full scrollable
-// list opened from Settings, closable any normal way.
+// Both modes now show the FULL history in one scrollable body (newest first) with a
+// version sidebar (click to jump). 'latest' = the one-time post-update popup, opened
+// scrolled to the newest and dismissable ONLY by its button (no backdrop/X). 'history'
+// = opened from Settings, closable any normal way.
+function highlightNavFor(version) {
+  const nav = $('notes-nav'); if (!nav) return;
+  const v = String(version).replace(/\./g, '-');
+  nav.querySelectorAll('.notes-nav-item').forEach((x) => x.classList.toggle('active', x.dataset.v === v));
+}
 function openNotes(mode) {
   const modal = $('notes-modal');
   const body = $('notes-body');
+  const nav = $('notes-nav');
   if (!modal || !body || !RELEASE_NOTES.length) return;
   notesMode = mode === 'history' ? 'history' : 'latest';
+  body.innerHTML = RELEASE_NOTES.map(renderNoteEntry).join('');
+
+  // version sidebar: one entry per release, click to scroll to it. Hidden when there's
+  // only a single version (nothing to navigate between).
+  if (nav) {
+    if (RELEASE_NOTES.length > 1) {
+      nav.classList.remove('hidden');
+      nav.innerHTML = RELEASE_NOTES.map((r, i) =>
+        `<button class="notes-nav-item${i === 0 ? ' active' : ''}" data-v="${esc(String(r.version).replace(/\./g, '-'))}">v${esc(r.version)}</button>`).join('');
+      nav.querySelectorAll('.notes-nav-item').forEach((b) => b.addEventListener('click', () => {
+        const el = document.getElementById('notes-v-' + b.dataset.v);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        highlightNavFor(b.dataset.v.replace(/-/g, '.'));
+      }));
+      // keep the sidebar in sync as the user scrolls the body
+      body.onscroll = () => {
+        let cur = null;
+        for (const r of body.querySelectorAll('.notes-rel')) {
+          if (r.offsetTop - body.scrollTop <= 48) cur = r.id.replace('notes-v-', '');
+        }
+        if (cur) nav.querySelectorAll('.notes-nav-item').forEach((x) => x.classList.toggle('active', x.dataset.v === cur));
+      };
+    } else {
+      nav.classList.add('hidden');
+      nav.innerHTML = '';
+      body.onscroll = null;
+    }
+  }
+
   if (notesMode === 'history') {
     $('notes-title').textContent = 'Release notes';
     $('notes-sub').textContent = 'Every update, newest first';
-    body.innerHTML = RELEASE_NOTES.map(renderNoteEntry).join('');
-    $('notes-history-lnk').classList.add('hidden');
     $('notes-close').classList.remove('hidden'); // history: X is fine
     $('notes-dismiss').textContent = 'Close';
   } else {
     $('notes-title').textContent = "What's new";
     $('notes-sub').textContent = `Updated to v${RELEASE_NOTES[0].version}`;
-    body.innerHTML = renderNoteEntry(RELEASE_NOTES[0]);
-    $('notes-history-lnk').classList.remove('hidden');
     $('notes-close').classList.add('hidden'); // one-time popup: button-only dismiss
     $('notes-dismiss').textContent = 'Got it';
   }
+  body.scrollTop = 0; // open at the newest release
   modal.classList.remove('hidden');
 }
 
@@ -2120,6 +2164,8 @@ async function main() {
   config = await window.api.getConfig();
   // apply saved background opacity before first paint (no flash at the default)
   document.documentElement.style.setProperty('--bg-alpha', String((config.bgOpacity != null ? config.bgOpacity : 100) / 100));
+  // dyslexia-friendly font (OpenDyslexic) - applied app-wide via a root class
+  document.documentElement.classList.toggle('dyslexic-font', !!config.dyslexicFont);
 
   // footer items are role=button spans - wire click AND Enter/Space so they work by keyboard
   const onActivate = (id, fn) => {
@@ -2142,10 +2188,10 @@ async function main() {
 
   // release-notes viewer (Settings) + the what's-new popup's own controls
   onActivate('btn-release-notes', () => openNotes('history'));
-  onActivate('notes-history-lnk', () => openNotes('history'));
   $('notes-close').addEventListener('click', closeNotes);
   $('notes-dismiss').addEventListener('click', closeNotes);
-  $('notes-modal').addEventListener('click', (e) => { if (e.target.id === 'notes-modal') closeNotes(); });
+  // backdrop click closes only the Settings viewer; the one-time popup is button-only
+  $('notes-modal').addEventListener('click', (e) => { if (e.target.id === 'notes-modal' && notesMode === 'history') closeNotes(); });
 
   // Dropping a currency row anywhere OTHER than a reorder within its own bucket
   // (empty space, another bucket) = offer to remove it. Only preventDefault while a

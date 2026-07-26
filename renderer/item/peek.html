@@ -2,11 +2,18 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://web.poecdn.com data:; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://web.poecdn.com data:; style-src 'unsafe-inline'; font-src 'self'">
 <style>
   /* Refined Ember peek card. This window's CSP allows inline styles; colours are
      hardcoded here (it's a separate document from the main window's tokens). */
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* OpenDyslexic (bundled in ../fonts/) - mirrors the main window's toggle, applied
+     when peek-client adds .dyslexic-font to <html>. Beats #card's `font:` shorthand. */
+  @font-face { font-family: 'OpenDyslexic'; src: url('../fonts/OpenDyslexic-Regular.woff2') format('woff2'); font-weight: normal; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'OpenDyslexic'; src: url('../fonts/OpenDyslexic-Bold.woff2') format('woff2'); font-weight: bold; font-style: normal; font-display: swap; }
+  @font-face { font-family: 'OpenDyslexic'; src: url('../fonts/OpenDyslexic-Italic.woff2') format('woff2'); font-weight: normal; font-style: italic; font-display: swap; }
+  @font-face { font-family: 'OpenDyslexic'; src: url('../fonts/OpenDyslexic-Bold-Italic.woff2') format('woff2'); font-weight: bold; font-style: italic; font-display: swap; }
+  html.dyslexic-font * { font-family: 'OpenDyslexic', "Segoe UI", system-ui, sans-serif !important; font-size-adjust: 0.46 !important; letter-spacing: 0 !important; }
   /* overflow:hidden kills the scrollbar that briefly flashes while the card is
      momentarily taller than the window, before main.js resizes it to fit. The
      window is click-through (setIgnoreMouseEvents) so that scrollbar was never

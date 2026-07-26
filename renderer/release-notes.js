@@ -6,6 +6,16 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.3.5',
+    date: '2026-07-26',
+    title: 'OpenDyslexic support, Linux (EXPERIMENTAL), Patch Notes Modal changes',
+    notes: [
+      "Added OpenDyslexic, a dyslexia-friendly font. Toggle it on in Settings under the App section. Applies to the whole app.",
+      "Experimental Linux support (AppImage). It forces XWayland automatically, so the overlay, hotkey and item-copy work without you adding any command line flags. It's experimental - report anything that misbehaves.",
+      "The patch-notes popup now scrolls through the full history, with a version sidebar on the left. Click any version to jump to it.",
+    ],
+  },
+  {
     version: '2.3.4',
     date: '2026-07-25',
     title: 'API Rates & Small QoL Fixes',

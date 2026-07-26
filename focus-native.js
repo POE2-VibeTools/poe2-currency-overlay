@@ -60,6 +60,7 @@ function bind() {
 // Load koffi off the hotkey path (same reason uiohook is warmed at startup:
 // a native addon's first require can cost hundreds of ms).
 function warm() {
+  if (process.platform !== 'win32') return; // Win32-only (user32 FFI); no-op elsewhere
   const a = bind();
   if (a && !cached) {
     try { cached = findGame(); } catch {}
@@ -121,6 +122,7 @@ function findGame() {
 // GetForegroundWindow actually reports the game afterwards, not just that the
 // calls didn't throw.
 function focus() {
+  if (process.platform !== 'win32') return { ok: false, detail: 'focus-native is Win32-only' };
   const a = bind();
   if (!a) return { ok: false, detail: 'koffi unavailable: ' + loadError };
   if (!cached || !a.IsWindow(cached.hwnd)) cached = findGame();

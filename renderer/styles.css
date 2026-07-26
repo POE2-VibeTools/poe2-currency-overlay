@@ -19,6 +19,28 @@
 select option { background: #201c16; color: #cfc7b6; }
 select option:checked { background: #33291c; color: #f0c078; }
 
+/* OpenDyslexic (SIL OFL 1.1, bundled in fonts/ - see fonts/OFL.txt). Opt-in via
+   Settings > Accessibility; applied by toggling .dyslexic-font on <html>. */
+@font-face { font-family: 'OpenDyslexic'; src: url('fonts/OpenDyslexic-Regular.woff2') format('woff2'); font-weight: normal; font-style: normal; font-display: swap; }
+@font-face { font-family: 'OpenDyslexic'; src: url('fonts/OpenDyslexic-Bold.woff2') format('woff2'); font-weight: bold; font-style: normal; font-display: swap; }
+@font-face { font-family: 'OpenDyslexic'; src: url('fonts/OpenDyslexic-Italic.woff2') format('woff2'); font-weight: normal; font-style: italic; font-display: swap; }
+@font-face { font-family: 'OpenDyslexic'; src: url('fonts/OpenDyslexic-Bold-Italic.woff2') format('woff2'); font-weight: bold; font-style: italic; font-display: swap; }
+/* Force the family on EVERY element (not just inherit): the Price Check UI sets font
+   via the `font:` shorthand in item.css, which resets font-family to Segoe and would
+   otherwise win. !important beats the shorthand; missing glyphs (icons like ⚙ ✕) fall
+   through to the next family per-glyph. font-size-adjust normalizes OpenDyslexic's
+   larger x-height so the swap keeps the same apparent size (the `font:` shorthand also
+   resets font-size-adjust, so it must be re-applied here too). */
+html.dyslexic-font, html.dyslexic-font * {
+  font-family: 'OpenDyslexic', "Segoe UI", system-ui, sans-serif !important;
+  /* 0.46: OpenDyslexic is inherently ~25% wider than Segoe, so even at matched
+     x-height it overflows the dense fixed-width columns. Knocking it down a notch
+     (~1.5pt) plus killing the letter-spacing (the app tracks uppercase tags wide, and
+     this font is already spaced) recovers the horizontal room without touching grids. */
+  font-size-adjust: 0.46 !important;
+  letter-spacing: 0 !important;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
@@ -867,7 +889,7 @@ footer {
   display: flex; align-items: center; justify-content: center;
 }
 .notes-card {
-  width: 340px; max-width: calc(100vw - 40px); max-height: calc(100vh - 60px);
+  width: 430px; max-width: calc(100vw - 40px); max-height: calc(100vh - 60px);
   display: flex; flex-direction: column;
   background: var(--s-card);
   border: 1px solid rgba(214, 126, 44, 0.55); border-radius: 8px;
@@ -879,7 +901,20 @@ footer {
 }
 .notes-title { font-size: 14px; font-weight: 600; color: var(--tx-gold); }
 .notes-sub { font-size: 10.5px; color: var(--tx-dim); margin-top: 2px; }
-.notes-body { padding: 10px 14px; overflow-y: auto; }
+/* body + version sidebar share a scroll region; sidebar hidden when only one version */
+.notes-main { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.notes-nav {
+  flex: 0 0 auto; width: 80px; overflow-y: auto; padding: 10px 6px;
+  border-right: 1px solid var(--bd-08); display: flex; flex-direction: column; gap: 2px;
+}
+.notes-nav-item {
+  background: none; border: none; text-align: left; font-family: inherit; font-size: 11px;
+  color: var(--tx-dim); padding: 4px 7px; border-radius: 5px; cursor: pointer;
+  white-space: nowrap; transition: color 0.12s, background 0.12s;
+}
+.notes-nav-item:hover { color: var(--tx-body2); background: var(--bd-06); }
+.notes-nav-item.active { color: var(--am); background: rgba(214, 126, 44, 0.12); font-weight: 600; }
+.notes-body { flex: 1; padding: 10px 14px; overflow-y: auto; }
 .notes-rel { margin-bottom: 14px; }
 .notes-rel:last-child { margin-bottom: 0; }
 .notes-rel-head {
@@ -898,7 +933,7 @@ footer {
   width: 4px; height: 4px; border-radius: 50%; background: var(--am);
 }
 .notes-actions {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
   padding: 8px 14px 12px; border-top: 1px solid var(--bd-08);
 }
 

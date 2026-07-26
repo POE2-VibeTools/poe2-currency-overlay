@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('api', {
   trade2AuthCheck: (league, force) => ipcRenderer.invoke('trade2-auth-check', { league, force }),
   setActiveTab: (which) => ipcRenderer.send('active-tab', which),
   setCurrencyRates: (rates) => ipcRenderer.invoke('set-currency-rates', rates),
+  setDyslexicFont: (on) => ipcRenderer.invoke('set-dyslexic-font', on),
   setSeenVersion: (version) => ipcRenderer.invoke('set-seen-version', version),
   poeLogin: () => ipcRenderer.invoke('poe-login'),
   setItemHistory: (history) => ipcRenderer.invoke('set-item-history', history),

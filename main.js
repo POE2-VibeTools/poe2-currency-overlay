@@ -17,6 +17,15 @@ if (app.isPackaged) {
   app.setPath('userData', path.join(app.getPath('appData'), 'POE2 Currency Overlay'));
 }
 
+// EXPERIMENTAL Linux support: force the X11/XWayland Ozone backend. Native Wayland
+// can't keep an always-on-top click-through overlay layered over a fullscreen game,
+// and the uiohook input hook is X11-based - both work under XWayland. This bakes in
+// the `--ozone-platform=x11` flag Linux users otherwise add by hand. Must run before
+// app ready. Harmless on pure-X11 sessions (already x11).
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('ozone-platform', 'x11');
+}
+
 const API_BASE = 'https://api.poe2scout.com';
 const USER_AGENT = 'POE2-Price-Overlay/1.0 (https://github.com/POE2-VibeTools/poe2-currency-overlay)';
 const CONFIG_FILE = () => path.join(app.getPath('userData'), 'overlay-config.json');
@@ -168,6 +177,7 @@ const DEFAULT_CONFIG = {
   overrides: { enabled: false, rates: {}, ratesAt: {} }, // ratesAt: when each was pinned
   excludeExaltedArb: false, // Ange charges gold per unit; exclude exalted as a route middle
   currencyIcons: false, // show currency icons instead of names next to denominations/prices (dyslexia aid)
+  dyslexicFont: false, // render the whole app in the bundled OpenDyslexic typeface (accessibility)
   // Live currency-rate polling, two independent rates. Each: 'quiet' (no auto poll) |
   // 'low' | 'medium' | 'high'. Tab = while the Currency tab is the visible view;
   // Bg = while the overlay is up but you're on another tab.
@@ -1094,6 +1104,12 @@ ipcMain.handle('set-currency-icons', (_e, on) => {
   return config.currencyIcons;
 });
 
+ipcMain.handle('set-dyslexic-font', (_e, on) => {
+  config.dyslexicFont = !!on;
+  saveConfig();
+  return config.dyslexicFont;
+});
+
 ipcMain.handle('set-currency-rates', (_e, rates) => {
   const ok = (v, d) => (['quiet', 'low', 'medium', 'high'].includes(v) ? v : d);
   if (rates && rates.tab != null) config.currencyTabRate = ok(rates.tab, config.currencyTabRate || 'medium');
@@ -1164,7 +1180,8 @@ ipcMain.on('item-peek-show', (_e, { html, frac }) => {
     const b = win.getBounds();
     peekAnchorY = b.y + Math.round((frac || 0) * b.height);
     const alpha = Math.max(0.1, Math.min(1, (config && config.bgOpacity ? config.bgOpacity : 100) / 100));
-    const send = () => { try { pw.webContents.send('peek-content', { html: String(html || ''), alpha }); } catch {} };
+    const dyslexic = !!(config && config.dyslexicFont);
+    const send = () => { try { pw.webContents.send('peek-content', { html: String(html || ''), alpha, dyslexic }); } catch {} };
     // first open: the page may still be loading and would miss the message
     if (pw.webContents.isLoading()) pw.webContents.once('did-finish-load', send);
     else send();

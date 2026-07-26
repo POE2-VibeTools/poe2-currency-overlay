@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; connect-src 'self' ee2:; img-src 'self' https://web.poecdn.com data:; style-src 'self'" />
+        content="default-src 'self'; connect-src 'self' ee2:; img-src 'self' https://web.poecdn.com data:; style-src 'self'; font-src 'self'" />
   <title>POE2 Price Overlay</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="item/item.css" />
@@ -72,6 +72,7 @@
               <span class="set-note">Game must be in Windowed or Windowed&nbsp;Fullscreen mode.</span>
             </div>
             <label class="switch set-excl" title="Replace currency names/units with their icons next to prices on the Price Check and Desecrate tabs. Hover or screen readers still get the full name."><input type="checkbox" id="currency-icons" /><span class="sw-track"></span><span class="sw-lab">Show currency icons instead of names</span><span class="set-sub">Price Check &amp; Desecrate - hover still shows the name</span></label>
+            <label class="switch set-excl" title="Render the whole app in OpenDyslexic, a typeface designed to be easier to read with dyslexia. Bundled with the app; off by default."><input type="checkbox" id="dyslexic-font" /><span class="sw-track"></span><span class="sw-lab">Dyslexia-friendly font</span><span class="set-sub">OpenDyslexic, applied app-wide</span></label>
           </section>
 
           <section class="set-card" id="sec-currency">
@@ -240,9 +241,11 @@
         </div>
         <button id="notes-close" class="icon-btn" title="Close">&#x2715;</button>
       </div>
-      <div id="notes-body" class="notes-body"></div>
+      <div class="notes-main">
+        <nav id="notes-nav" class="notes-nav" aria-label="Versions"></nav>
+        <div id="notes-body" class="notes-body"></div>
+      </div>
       <div class="notes-actions">
-        <span id="notes-history-lnk" class="support-lnk" role="button" tabindex="0" title="See every release">View all release notes</span>
         <button id="notes-dismiss" class="mini-btn">Got it</button>
       </div>
     </div>
