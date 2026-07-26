@@ -19,3 +19,6 @@ backend/node_modules/
 
 # personal session memory - never publish
 memory/
+
+# stash-reader test fixtures (full-res tab screenshots, ~3MB each) - local only
+screenshots/

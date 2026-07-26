@@ -8,7 +8,8 @@
     "prestart": "node scripts/build-item-tab.mjs",
     "start": "electron .",
     "predist": "node scripts/build-item-tab.mjs",
-    "dist": "electron-builder --win nsis"
+    "dist": "electron-builder --win nsis",
+    "test:stash": "electron scripts/test-stash-reader.js"
   },
   "build": {
     "appId": "com.poe2vibetools.overlay",
