@@ -8,6 +8,7 @@ const DR = require('./digit-reader');
 const TABS = {
   currency: require('./currency-tab-map'),
   abyss: require('./abyss-tab-map'),
+  essence: require('./essence-tab-map'),
 };
 const TEMPLATES = require('./digit-templates.json');
 
