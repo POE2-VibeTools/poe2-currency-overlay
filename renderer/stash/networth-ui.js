@@ -13,7 +13,7 @@
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
   const state = { rows: [], expanded: {}, nextId: 1, dup: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
-  const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss' };
+  const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence' };
 
   if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); render(); }).catch(() => {});
 
