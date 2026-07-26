@@ -174,6 +174,7 @@
       <button id="tab-currency" class="tab active" title="Currency prices, best-value payments and arbitrage">Currency</button>
       <button id="tab-items" class="tab" title="Price-check items: hover one in game and press your price-check hotkey (default Ctrl+F)">Price Check</button>
       <button id="tab-desecrate" class="tab" title="Is this item worth Omen of Light + bone rerolling? Load an item from Price Check, or paste one here with Ctrl+V.">Desecrate</button>
+      <button id="tab-networth" class="tab" title="Value your special stash tabs: open a tab in game, click Capture, and it reads the counts and totals what they're worth.">Net Worth</button>
     </nav>
 
     <div id="status" class="hidden"></div>
@@ -187,6 +188,8 @@
     <main id="item-root"></main>
 
     <main id="desecrate-root" class="hidden"></main>
+
+    <main id="networth-root" class="hidden"></main>
 
     <div id="support-bar">
       <span id="btn-bug" class="support-bug" role="button" tabindex="0" title="Report a bug (attaches a short activity log)">
@@ -271,6 +274,7 @@
   <script src="item/classify.js"></script>
   <script src="item/item-ui.js"></script>
   <script src="item/desecrate.js"></script>
+  <script src="stash/networth-ui.js"></script>
   <script src="item/item-tab.js"></script>
 </body>
 </html>

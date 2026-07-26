@@ -1521,6 +1521,12 @@
       if (rec.cachedRaw && rec.cachedRaw.raw) {
         // rebuild presentation from the raw cache - always current format
         state.results = buildResults(rec.cachedRaw.raw, rec.cachedRaw.total);
+        // backfill the suggested floor for rows saved before it was cached, so
+        // the Recent-searches row reads at a glance next time
+        if (rec.floor == null && state.results && state.results.suggested) {
+          rec.floor = state.results.suggested;
+          window.api.setItemHistory(state.history);
+        }
         state.notice = `Cached result from ${ageStr(rec.ts)} - Search re-runs it live.`;
       } else {
         // pre-raw-cache history entry: its snapshot is stale-formatted, don't show it
@@ -2068,9 +2074,11 @@
     $('tab-items').classList.toggle('active', which === 'items');
     $('tab-currency').classList.toggle('active', which === 'currency');
     $('tab-desecrate').classList.toggle('active', which === 'desec');
+    const nwTab = $('tab-networth'); if (nwTab) nwTab.classList.toggle('active', which === 'networth');
     $('item-root').classList.toggle('hidden', which !== 'items');
     $('buckets').classList.toggle('hidden', which !== 'currency');
     $('desecrate-root').classList.toggle('hidden', which !== 'desec');
+    const nwRoot = $('networth-root'); if (nwRoot) nwRoot.classList.toggle('hidden', which !== 'networth');
     document.querySelector('footer').classList.toggle('hidden', which !== 'currency');
     // #status is currency-feed state; keep it off the other tabs
     if (which !== 'currency') $('status').classList.add('hidden');
@@ -2080,6 +2088,7 @@
       render();
     }
     if (which === 'desec' && window.Desecrate) window.Desecrate.render();
+    if (which === 'networth' && window.NetWorth) window.NetWorth.render();
   }
 
   // ---------- wiring ----------
@@ -2087,11 +2096,12 @@
     $('tab-currency').addEventListener('click', () => setTab('currency'));
     $('tab-items').addEventListener('click', () => setTab('items'));
     $('tab-desecrate').addEventListener('click', () => setTab('desec'));
+    { const t = $('tab-networth'); if (t) t.addEventListener('click', () => setTab('networth')); }
     // Reopen on whichever tab you left it on last (persisted in config.lastTab);
     // first-ever launch falls back to Currency. Also syncs tab state + reports it.
     window.api.getConfig().then((c) => {
       state.itemHotkey = c.itemHotkey;
-      setTab(['currency', 'items', 'desec'].includes(c.lastTab) ? c.lastTab : 'currency');
+      setTab(['currency', 'items', 'desec', 'networth'].includes(c.lastTab) ? c.lastTab : 'currency');
       if (state.active) render();
     }).catch(() => setTab('currency'));
 

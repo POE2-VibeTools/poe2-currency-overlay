@@ -1,7 +1,13 @@
-const { app, BrowserWindow, globalShortcut, ipcMain, Tray, Menu, nativeImage, shell, Notification, protocol } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, Tray, Menu, nativeImage, shell, Notification, protocol, desktopCapturer, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const focusNative = require('./focus-native'); // lazy inside - koffi binds on first use
+
+// Stash net-worth reader (screen-OCR of fixed-layout special tabs). See
+// renderer/stash/* and memory stash-networth-feature.
+const StashReader = require('./renderer/stash/digit-reader');
+const STASH_TABS = { currency: require('./renderer/stash/currency-tab-map') };
+const STASH_TEMPLATES = require('./renderer/stash/digit-templates.json');
 
 // ee2:// serves the vendored parser's data files (renderer/vendor/ee2/data) to the
 // renderer, which fetch()es them at startup (file:// pages cannot fetch file:// URLs).
@@ -1135,6 +1141,81 @@ ipcMain.handle('set-ui-scale', (_e, v) => {
 });
 
 ipcMain.handle('get-live-rates', () => Object.fromEntries(liveRates));
+
+// ---------- stash net-worth: capture a fixed-layout special tab and value it ----------
+// Screen capture (crisp; window/DirectX grabs are soft) -> desat-max flat-white
+// filter -> read each static slot via the baked digit templates -> price via the
+// live poe2scout catalog -> tab total. Empty/unreadable slots flag, never guess.
+let stashPriceCache = null; // { at, map: apiId -> {price, icon, name} }
+async function getStashPriceMap(force) {
+  if (!force && stashPriceCache && Date.now() - stashPriceCache.at < 5 * 60_000) return stashPriceCache.map;
+  const full = await fetchFullCatalog();
+  const map = {};
+  for (const g of full.groups) for (const it of g.items) if (!map[it.apiId]) map[it.apiId] = { price: it.price, icon: it.icon, name: it.text };
+  stashPriceCache = { at: Date.now(), map };
+  return map;
+}
+
+ipcMain.handle('stash-capture', async (_e, tab = 'currency') => {
+  const map = STASH_TABS[tab];
+  if (!map) return { ok: false, error: `unknown tab: ${tab}` };
+  // Hide the overlay during the grab so it doesn't occlude the stash panel it's
+  // reading (the screen capture is the composited desktop). Restored in finally.
+  const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
+  try {
+    const disp = screen.getPrimaryDisplay();
+    const cw = Math.round(disp.size.width * disp.scaleFactor);
+    const ch = Math.round(disp.size.height * disp.scaleFactor);
+    if (wasVisible) { win.setOpacity(0); await new Promise((r) => setTimeout(r, 70)); }
+    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: cw, height: ch } });
+    if (wasVisible) win.setOpacity(1);
+    const src = sources.find((s) => s.id.startsWith('screen')) || sources[0];
+    if (!src) return { ok: false, error: 'no screen source' };
+    const img = src.thumbnail;
+    const { width: W, height: H } = img.getSize();
+    const V = StashReader.valueChannelDesatMax(img.toBitmap(), W, H);
+    const T = StashReader.templatesFromJSON(STASH_TEMPLATES);
+    const P = StashReader.DEFAULTS;
+
+    // Align the map to this capture: with the desat-max channel, a non-"?" read is
+    // trustworthy, so the offset that maximizes valid reads is the correct one.
+    const score = (dx, dy) => map.STATIC_SLOTS.reduce((a, s) =>
+      a + (StashReader.readCell(V, W, H, s.cx + dx, s.cy + dy, T, P) !== '?' ? 1 : 0), 0);
+    let best = { dx: 0, dy: 0, n: -1 };
+    for (let dy = -6; dy <= 10; dy++) for (let dx = -6; dx <= 8; dx++) {
+      const n = score(dx, dy);
+      if (n > best.n || (n === best.n && Math.abs(dx) + Math.abs(dy) < Math.abs(best.dx) + Math.abs(best.dy))) best = { dx, dy, n };
+    }
+
+    let prices = {};
+    try { prices = await getStashPriceMap(); } catch (err) { /* prices optional; counts still shown */ }
+    const divPrice = prices.divine && typeof prices.divine.price === 'number' ? prices.divine.price : null;
+
+    const lines = []; const flags = []; let total = 0;
+    for (const s of map.STATIC_SLOTS) {
+      const raw = StashReader.readCell(V, W, H, s.cx + best.dx, s.cy + best.dy, T, P);
+      const info = prices[s.apiId] || {};
+      const name = info.name || s.apiId;
+      if (raw === '?') { flags.push({ apiId: s.apiId, name, cx: s.cx, cy: s.cy }); continue; }
+      const count = parseInt(raw, 10);
+      const price = typeof info.price === 'number' ? info.price : null;
+      const valueEx = price != null ? count * price : null;
+      if (valueEx != null) total += valueEx;
+      lines.push({ apiId: s.apiId, name, icon: info.icon || null, count, price, valueEx });
+    }
+    lines.sort((a, b) => (b.valueEx || 0) - (a.valueEx || 0));
+    // Too few reads => not the currency tab, or window moved: tell the user to recapture.
+    const mismatch = best.n < Math.min(8, Math.ceil(map.STATIC_SLOTS.length / 3));
+    return {
+      ok: true, tab, w: W, h: H, offset: best, readCount: best.n, slotCount: map.STATIC_SLOTS.length,
+      totalEx: total, divPrice, totalDiv: divPrice ? total / divPrice : null, lines, flags, mismatch,
+    };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message || err) };
+  } finally {
+    if (wasVisible && win && win.getOpacity() === 0) win.setOpacity(1); // never leave it hidden
+  }
+});
 
 // ---------- item price-check (trade2) ----------
 ipcMain.handle('read-clipboard', () => {
