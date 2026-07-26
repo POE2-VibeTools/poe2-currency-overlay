@@ -26,12 +26,7 @@ const OUT = path.join(__dirname, '..', 'renderer', 'stash', 'digit-templates.jso
 app.whenReady().then(() => {
   const img = nativeImage.createFromPath(process.env.IMG || IMG);
   const { width: W, height: H } = img.getSize();
-  const buf = img.toBitmap();
-  const V = new Uint8Array(W * H);
-  for (let i = 0, p = 0; i < W * H; i++, p += 4) {
-    let m = buf[p]; if (buf[p + 1] > m) m = buf[p + 1]; if (buf[p + 2] > m) m = buf[p + 2];
-    V[i] = m;
-  }
+  const V = DR.valueChannelDesatMax(img.toBitmap(), W, H); // flat-white isolation
   const { templates, counts } = DR.extractTemplates(V, W, H, GT, DR.DEFAULTS);
   // serialize: char -> { w, h, data:[0/1,...] }
   const out = { res: `${W}x${H}`, params: DR.DEFAULTS, templates: {} };

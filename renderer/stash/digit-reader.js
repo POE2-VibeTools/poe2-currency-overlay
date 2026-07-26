@@ -345,11 +345,32 @@
 
   // Default winning params (currency tab: 48/49).
   const DEFAULTS = {
-    floor: 122, up: 12, dn: 12, stripWidth: 14,
+    floor: 122, up: 12, dn: 12, stripWidth: 15,
     iouThresh: 0.76, dyLo: -2, dyHi: 3, minInkFrac: 0.45,
   };
 
-  // Build a value channel (max R,G,B) from RGBA or BGRA bytes.
+  // Max saturation (max-min) for a pixel to count as "flat white" text. Stack
+  // counts are flat white with a black outline; icon art is saturated/blended, so
+  // gating max(R,G,B) by low saturation isolates the digits and drops the icon.
+  const DESAT_SAT = 40;
+
+  // Value channel = max(R,G,B) but ONLY for low-saturation (near-white) pixels;
+  // saturated icon pixels -> 0. Order-agnostic (RGBA or BGRA) since max/min/sat
+  // don't depend on channel order. This is the channel the stash reader uses.
+  function valueChannelDesatMax(buf, W, H, sat) {
+    sat = sat == null ? DESAT_SAT : sat;
+    const V = new Uint8Array(W * H);
+    for (let i = 0, p = 0; i < W * H; i++, p += 4) {
+      const a = buf[p], g = buf[p + 1], c = buf[p + 2];
+      let mx = a, mn = a;
+      if (g > mx) mx = g; if (g < mn) mn = g;
+      if (c > mx) mx = c; if (c < mn) mn = c;
+      V[i] = (mx - mn) <= sat ? mx : 0;
+    }
+    return V;
+  }
+
+  // Plain max(R,G,B) value channel (kept for the reference file-screenshot path).
   function valueChannelFromRGBA(buf, W, H, bgra) {
     const V = new Uint8Array(W * H);
     for (let i = 0, p = 0; i < W * H; i++, p += 4) {
@@ -376,6 +397,7 @@
 
   return {
     otsu, crop, binarize, components, iou, slideMatch, greyOpening,
-    extractTemplates, readCell, valueChannelFromRGBA, templatesFromJSON, DEFAULTS,
+    extractTemplates, readCell, valueChannelFromRGBA, valueChannelDesatMax,
+    templatesFromJSON, DEFAULTS, DESAT_SAT,
   };
 });

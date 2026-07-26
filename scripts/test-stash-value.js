@@ -15,12 +15,7 @@ const fmt = (n) => n.toLocaleString('en-US', { maximumFractionDigits: n >= 100 ?
 app.whenReady().then(() => {
   const img = nativeImage.createFromPath(process.env.IMG || IMG);
   const { width: W, height: H } = img.getSize();
-  const buf = img.toBitmap();
-  const V = new Uint8Array(W * H);
-  for (let i = 0, p = 0; i < W * H; i++, p += 4) {
-    let m = buf[p]; if (buf[p + 1] > m) m = buf[p + 1]; if (buf[p + 2] > m) m = buf[p + 2];
-    V[i] = m;
-  }
+  const V = DR.valueChannelDesatMax(img.toBitmap(), W, H); // flat-white isolation
 
   const templates = DR.templatesFromJSON(TEMPLATES); // baked set — no ground truth
   const items = PRICES.items, divPx = PRICES.divine_price_ex;

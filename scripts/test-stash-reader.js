@@ -27,14 +27,8 @@ app.whenReady().then(() => {
   const abs = process.env.IMG || IMG;
   const img = nativeImage.createFromPath(abs);
   const { width: W, height: H } = img.getSize();
-  const buf = img.toBitmap(); // W*H*4, BGRA/RGBA — irrelevant for max(R,G,B)
-  console.log(`image ${W}x${H}, bitmap ${buf.length} bytes (expect ${W * H * 4})`);
-
-  const V = new Uint8Array(W * H);
-  for (let i = 0, p = 0; i < W * H; i++, p += 4) {
-    let m = buf[p]; if (buf[p + 1] > m) m = buf[p + 1]; if (buf[p + 2] > m) m = buf[p + 2];
-    V[i] = m;
-  }
+  console.log(`image ${W}x${H}`);
+  const V = DR.valueChannelDesatMax(img.toBitmap(), W, H); // flat-white isolation
 
   const P = DR.DEFAULTS;
   const { templates, counts } = DR.extractTemplates(V, W, H, GT, P);
