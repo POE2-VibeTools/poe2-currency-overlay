@@ -581,7 +581,9 @@
       if (state.stale && !state.searching) {
         wrap.appendChild(el('div', 'stale-note', 'Filters changed - these results are from your previous search. Hit <b>Search</b> when you\'re done adjusting.'));
       }
-      wrap.appendChild(resultsPanel(state.results, h, state.searching, state.stale));
+      const ctx = state.searchCtx;
+      const paging = ctx ? { more: ctx.loaded < ctx.ids.length, remaining: ctx.ids.length - ctx.loaded } : null;
+      wrap.appendChild(resultsPanel(state.results, h, state.searching, state.stale, paging));
     } else if (state.searching && !state.waitUntil) wrap.appendChild(el('div', 'res-group-title', 'Searching&hellip;'));
     return wrap;
   }
@@ -903,14 +905,17 @@
     return box;
   }
 
-  function resultsPanel(res, h, updating, stale) {
+  function resultsPanel(res, h, updating, stale, paging) {
     const wrap = el('div', 'results' + (updating ? ' updating' : '') + (stale && !updating ? ' stale' : ''));
     // highly → similar → plain, concatenated into one flat, cheapest-first list
     const allListings = [].concat(res.highly || [], res.similar || [], res.plain || []);
     // shared hook so a histogram band-click can un-truncate the list before scrolling
     const reveal = { fn: null };
     if (res.suggested || allListings.length) wrap.appendChild(resultsHead(res, allListings, reveal));
-    const CUTOFF = 8; // long lists truncate behind a "show N more" toggle
+    // Live paged searches show every row already fetched (each page is a deliberate
+    // fetch); "Load more results" pages the rest. Only cached/sample lists (no paging)
+    // keep the client-side "show N more" truncation.
+    const CUTOFF = paging ? Infinity : 8;
     const rows = [];
     let liIdx = 0;
     peekPinned = null; // fresh results release any pinned card
@@ -949,6 +954,13 @@
       reveal.fn = revealAll;
       wrap.appendChild(more);
     }
+    // live paged search: fetch the next page on demand (button only while ids remain)
+    if (paging && paging.more && h.onLoadMore) {
+      const btn = el('button', 'load-more', `Load more results (${paging.remaining} left)`);
+      btn.disabled = !!updating;
+      btn.onclick = () => h.onLoadMore();
+      wrap.appendChild(btn);
+    }
     if (!allListings.length) wrap.appendChild(el('div', 'no-results', 'No listings matched. Lower some minimums or turn mods off, then hit Search again.'));
     return wrap;
   }
@@ -976,7 +988,8 @@
     const hist = state.history || [];
     if (hist.length) {
       wrap.appendChild(el('div', 'history-title', 'Recent searches'));
-      hist.forEach((rec, i) => {
+      const shown = Math.min(hist.length, state.histShown || 10);
+      hist.slice(0, shown).forEach((rec, i) => {
         const it = el('div', 'hist-item');
         it.onclick = () => h.onHistoryOpen && h.onHistoryOpen(i);
         const body = el('div', 'hist-body');
@@ -986,6 +999,11 @@
         it.appendChild(el('div', 'hist-age', ageStr(rec.ts)));
         wrap.appendChild(it);
       });
+      if (hist.length > shown && h.onHistoryMore) {
+        const more = el('button', 'load-more', `Load more (${hist.length - shown} left)`);
+        more.onclick = () => h.onHistoryMore();
+        wrap.appendChild(more);
+      }
     }
     return wrap;
   }

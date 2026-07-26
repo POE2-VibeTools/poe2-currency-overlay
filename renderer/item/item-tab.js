@@ -34,6 +34,8 @@
     authed: null,        // logged in to pathofexile.com? null = unknown
     loginHint: false,
     assume: { q20: true, fillRunes: true }, // settings-panel search assumptions
+    searchCtx: null,     // live search paging: { queryId, ids, loaded, rawAll, total, page }
+    histShown: 10,       // Recent-searches paging: how many history rows are visible
     excAssume: null,     // per-item assume override for Exceptional Normal bases (q20 ON, runes OFF); null otherwise
     autoCorrupted: false, // true when corrupted=No was auto-seeded for an Exceptional base (not user-chosen)
     showSliders: true, // settings-panel: per-mod sliders (off = compact rows)
@@ -156,6 +158,7 @@
       const it = await currencyPrice(state.item.currencyTag);
       state.currencyResult = it || null;
       if (!it) state.notice = 'No exchange price found for this item yet.';
+      else pushCurrencyHistory(it); // currency lookups belong in Recent searches too
     } catch (err) {
       state.notice = 'Price lookup failed: ' + (err && err.message || err);
     }
@@ -475,7 +478,10 @@
         id: 'prop.' + key, prop: true, kind: 'property', ref: label,
         text: `${label}: ${v}${note ? ` (${note})` : ''}`,
         value: v, min: null, max: null, tier: null, searchMin: null,
-        mode: on ? 'strict' : 'off', damage: null, form: null, weight: null, group: null, altIds: [],
+        // Exceptional Normal bases search their defence/DPS at the EXACT q20 value
+        // (no stat-range % loosening) - matching the game's base search. The player
+        // can still type a lower min to widen it from there.
+        mode: on ? 'strict' : 'off', exact: excBase, damage: null, form: null, weight: null, group: null, altIds: [],
       });
     };
 
@@ -1480,6 +1486,19 @@
     onHistoryOpen(i) {
       const rec = state.history[i];
       if (!rec) return;
+      // currency entry: restore the exchange-value view and re-fetch a live price
+      if (rec.currency && rec.model && rec.model.currencyTag) {
+        state.item = rec.model;
+        state.currencyResult = null;
+        state.results = null;
+        state.searchCtx = null;
+        state.view = 'item';
+        state.stale = false;
+        state.notice = null;
+        render();
+        doCurrencyPrice();
+        return;
+      }
       backfillModel(rec.model); // older saves lack icon/sockets - derive them
       // A restored search runs as a DEFAULT search: stamped per-mod minimums
       // ("set mins" tier-floor/exact-roll stamps, typed mins) don't survive the
@@ -1493,6 +1512,7 @@
       state.item = rec.model;
       state.itemOriginal = JSON.parse(JSON.stringify(rec.model)); // reset -> as restored
       state.opts = { ...state.opts, ...rec.opts };
+      state.searchCtx = null; // cached restore has no live query to page; Search re-runs it
       // keep the Exceptional-base override state consistent with the restored item
       state.excAssume = rec.model.exceptionalBase ? { q20: true, fillRunes: false } : null;
       state.autoCorrupted = !!(rec.model.exceptionalBase && (state.opts.misc || {}).corrupted === 'false');
@@ -1513,9 +1533,13 @@
       state.view = 'empty';
       state.item = null;
       state.results = null;
+      state.searchCtx = null;
+      state.histShown = 10; // reset Recent-searches paging when returning to the landing
       state.notice = null;
       render();
     },
+    onLoadMore() { loadMoreResults(); },
+    onHistoryMore() { state.histShown = (state.histShown || 10) + 10; render(); },
     // "See an example" on the empty landing: load the sample ring as a normal
     // item (local synth comps, no API), decoupled from the tutorial demo path
     async onLoadSample() {
@@ -1663,26 +1687,55 @@
         return { query: c.query, sort: c.sort };
       };
       const tryServer = hasPseudo && state.authed !== false;
-      let res = await window.api.trade2SearchFetch(league, compileWith(tryServer ? 'server' : 'client'), 20);
+      const PAGE = 10; // fetch + show 10 comps at a time; "Load more" pages the rest
+      let res = await window.api.trade2SearchFetch(league, compileWith(tryServer ? 'server' : 'client'), PAGE);
       // "Query too complex / Logging in will increase this limit" == logged out.
       // Remember it (so future searches skip straight to client), fall back, retry.
       if (!res.ok && tryServer && /complex|logg?ing? ?in|log in/i.test(res.error || '')) {
         state.authed = false;
-        res = await window.api.trade2SearchFetch(league, compileWith('client'), 20);
+        res = await window.api.trade2SearchFetch(league, compileWith('client'), PAGE);
       } else if (tryServer && res.ok) {
         state.authed = true; // a weighted search that succeeded proves the login
       }
       state.loginHint = hasPseudo && state.authed === false;
       if (!res.ok) throw new Error(res.error);
-      learnRanges(res.data.listings);
-      state.results = buildResults(res.data.listings || [], res.data.total);
-      pushHistory(res.data.listings || [], res.data.total);
+      const d = res.data;
+      const rawAll = (d.listings || []).slice();
+      // keep the full id list + query id so "Load more" can fetch the next page on
+      // demand (one fetch each), until the result ids run out
+      state.searchCtx = { queryId: d.id, ids: d.result || [], loaded: rawAll.length, rawAll, total: d.total, page: PAGE };
+      learnRanges(rawAll);
+      state.results = buildResults(rawAll, d.total);
+      pushHistory(rawAll, d.total);
     } catch (err) {
       state.notice = `Search failed: ${err.message}`;
       if (window.logAction) window.logAction('item-search-error', String(err.message));
     }
     state.searching = false;
     state.stale = false; // results now reflect the current filters
+    clearWait();
+    render();
+  }
+
+  // "Load more results": fetch the NEXT page of listing ids for the current search
+  // (one fetch call) and append them. No-op once every id has been loaded.
+  async function loadMoreResults() {
+    const ctx = state.searchCtx;
+    if (!ctx || state.searching || ctx.loaded >= ctx.ids.length) return;
+    state.searching = true;
+    render();
+    try {
+      const next = ctx.ids.slice(ctx.loaded, ctx.loaded + ctx.page);
+      const res = await window.api.trade2Fetch(next, ctx.queryId);
+      if (!res.ok) throw new Error(res.error);
+      ctx.rawAll.push(...(res.data || []));
+      ctx.loaded += next.length;
+      learnRanges(res.data || []);
+      state.results = buildResults(ctx.rawAll, ctx.total);
+    } catch (err) {
+      state.notice = `Couldn't load more: ${err.message}`;
+    }
+    state.searching = false;
     clearWait();
     render();
   }
@@ -1785,7 +1838,25 @@
     };
     // replace an earlier search of the same item (same base + same mod ids)
     const key = (r) => r.base + '|' + (r.model.mods || []).map((m) => m.id).join(',');
-    state.history = [rec, ...state.history.filter((r) => key(r) !== key(rec))].slice(0, 30);
+    state.history = [rec, ...state.history.filter((r) => key(r) !== key(rec))].slice(0, 100);
+    window.api.setItemHistory(state.history);
+  }
+
+  // Currency exchange lookups share the Recent-searches list. Flagged `currency: true`
+  // so onHistoryOpen restores the exchange-value view (and re-fetches a live price)
+  // instead of trying to rebuild gear comps. Deduped per currency, newest first.
+  function pushCurrencyHistory(it) {
+    const m = state.item;
+    if (!m || !m.currencyTag) return;
+    const rec = {
+      ts: Date.now(),
+      base: m.currencyName || it.text || m.base || 'Currency',
+      summary: it && it.price > 0 ? `${fmtNum(it.price)} ex` : 'no price yet',
+      model: m,
+      currency: true,
+    };
+    const tagOf = (r) => (r.currency && r.model && r.model.currencyTag) || null;
+    state.history = [rec, ...state.history.filter((r) => tagOf(r) !== m.currencyTag)].slice(0, 100);
     window.api.setItemHistory(state.history);
   }
 
@@ -1986,6 +2057,9 @@
     if (which === true) which = 'items'; // legacy boolean callers
     if (which === false) which = 'currency';
     state.active = which === 'items';
+    // Tell main which tab is live so the trade-exchange poll only runs on Currency
+    // (see main.js liveTick) - polling a tab the user isn't viewing burned the API budget.
+    try { window.api.setActiveTab(which); } catch {}
     $('tab-items').classList.toggle('active', which === 'items');
     $('tab-currency').classList.toggle('active', which === 'currency');
     $('tab-desecrate').classList.toggle('active', which === 'desec');
@@ -2008,8 +2082,13 @@
     $('tab-currency').addEventListener('click', () => setTab('currency'));
     $('tab-items').addEventListener('click', () => setTab('items'));
     $('tab-desecrate').addEventListener('click', () => setTab('desec'));
-    // landing prompt + notices show the user's real price-check bind
-    window.api.getConfig().then((c) => { state.itemHotkey = c.itemHotkey; if (state.active) render(); }).catch(() => {});
+    // Reopen on whichever tab you left it on last (persisted in config.lastTab);
+    // first-ever launch falls back to Currency. Also syncs tab state + reports it.
+    window.api.getConfig().then((c) => {
+      state.itemHotkey = c.itemHotkey;
+      setTab(['currency', 'items', 'desec'].includes(c.lastTab) ? c.lastTab : 'currency');
+      if (state.active) render();
+    }).catch(() => setTab('currency'));
 
     document.addEventListener('paste', async (e) => {
       const text = e.clipboardData && e.clipboardData.getData('text');

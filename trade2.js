@@ -78,17 +78,17 @@ function ingestHeaders(fallbackPolicy, headers) {
   const ruleStr = headers['x-rate-limit-ip'];
   if (ruleStr) lim.rules = parseRules(ruleStr);
   const state = headers['x-rate-limit-ip-state'];
-  if (state && ruleStr) {
-    const rules = ruleStr.split(',').map((p) => p.split(':').map(Number)); // [max,window,ban]
-    const parts = state.split(',').map((p) => p.split(':').map(Number));  // [used,window,ban]
+  if (state) {
+    // Honor a server-reported ban (the one signal that actually means "stop").
+    // We deliberately DO NOT backfill synthetic "used" hits: the old code stuffed
+    // each window's used-count into one shared timestamp list, all stamped NOW - so
+    // the 6h count (e.g. 32 used) made the 60s/300s windows think 32 requests fired
+    // this instant and impose bogus 3-5 minute self-waits while the server reported
+    // the IP perfectly healthy. That self-inflicted stall WAS the "instant ban".
     const t = nowMs();
-    for (let i = 0; i < parts.length; i++) {
-      const [used, window, ban] = parts[i];
+    for (const p of state.split(',')) {
+      const ban = Number(p.split(':')[2]);
       if (ban > 0) lim.bannedUntil = Math.max(lim.bannedUntil, t + ban * 1000);
-      // the server saw more requests in this window than we tracked (another tool on
-      // this IP, or an app restart) - backfill synthetic hits so we slow down for them
-      const tracked = lim.hits.filter((ts) => t - ts < window * 1000).length;
-      for (let k = tracked; k < used; k++) lim.hits.push(t);
     }
   }
   return policy;
@@ -162,12 +162,29 @@ async function fetchListings(ids, queryId) {
   return out;
 }
 
-// convenience: search then fetch the first `limit` listings in one call
-async function searchAndFetch(league, query, limit = 20) {
+// bulk currency exchange (the Currency tab's live order book). Routed through the
+// SAME self-configuring limiter as search/fetch so a background poll can never blow
+// the IP budget and get gear searches escalation-banned. Its own policy bucket.
+async function exchange(league, have, want) {
+  const body = { query: { status: { option: 'online' }, have: [have], want: [want] }, sort: { have: 'asc' } };
+  const r = await call('POST', `/api/trade2/exchange/poe2/${encodeURIComponent(league)}`, body, 'trade-exchange-request-limit');
+  if (r.status !== 200) {
+    const msg = (r.json && r.json.error && r.json.error.message) || `HTTP ${r.status}`;
+    throw new Error(`trade2 exchange failed (${r.status}): ${msg}`);
+  }
+  return r.json; // { id, result:[...] }
+}
+
+// search, then fetch only the FIRST page of listings. Returns the full result-id
+// list (capped at 100, the API's practical ceiling) + the query id so the renderer
+// can page the rest on demand via fetchListings(nextIds, queryId) - one fetch per
+// "Load more", nothing wasted on pages the user never opens.
+async function searchAndFetch(league, query, limit = 10) {
   const s = await search(league, query);
-  const ids = (s.result || []).slice(0, limit);
-  const listings = ids.length ? await fetchListings(ids, s.id) : [];
-  return { id: s.id, total: s.total, listings };
+  const ids = (s.result || []).slice(0, 100);
+  const page = ids.slice(0, limit);
+  const listings = page.length ? await fetchListings(page, s.id) : [];
+  return { id: s.id, total: s.total, result: ids, listings };
 }
 
 // Is the session logged in to pathofexile.com? Weighted Sum groups are rejected for
@@ -209,4 +226,4 @@ async function leagues() {
   return (r.json.result || []).map((l) => l.id);
 }
 
-module.exports = { search, fetchListings, searchAndFetch, leagues, authCheck, setOnWait };
+module.exports = { search, fetchListings, searchAndFetch, exchange, leagues, authCheck, setOnWait };

@@ -534,6 +534,17 @@
 .li-hidden { display: none; }
 .show-more { text-align: center; color: var(--tx-faint); font-size: 10.5px; padding: 4px 0 2px; cursor: pointer; user-select: none; }
 .show-more:hover { color: var(--tx-dim); }
+/* "Load more results" (search comps) + "Load more" (history) - fetches/reveals the
+   next page of 10. Full-width, quiet, matches the app's amber-on-dark surfaces. */
+.load-more {
+  display: block; width: 100%; margin: 8px 0 2px; padding: 7px 0;
+  background: rgba(214, 126, 44, 0.08); color: var(--tx-gold);
+  border: 1px solid rgba(214, 126, 44, 0.28); border-radius: 6px;
+  font-size: 11.5px; font-family: inherit; cursor: pointer; user-select: none;
+  transition: background 0.12s, border-color 0.12s;
+}
+.load-more:hover:not(:disabled) { background: rgba(214, 126, 44, 0.16); border-color: rgba(214, 126, 44, 0.45); }
+.load-more:disabled { opacity: 0.5; cursor: default; }
 /* Miscellaneous accordion - collapsed by default, but never silently: the
    header shows how many toggles are active so a filtered search can't hide */
 .misc-acc { flex: 2; min-width: 0; border: 1px solid var(--bd-09); border-radius: 6px; }

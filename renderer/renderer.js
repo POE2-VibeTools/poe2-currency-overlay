@@ -8,6 +8,9 @@ let fetchedAt = 0;
 let fullCatalog = null;     // { league, groups: [{category,label,items}] }
 let pickerMode = null;      // { type: 'add-item', bucketId } | { type: 'add-bucket' }
 let refreshing = false;
+let dragState = null;       // { bucketId, apiId } while a currency row is being dragged
+let dragReordered = false;  // set true when a drag ends as an in-bucket reorder (vs dropped outside)
+let skipRemoveConfirm = false; // "don't ask again this session" for pair removal; resets on restart/update
 
 const $ = (id) => document.getElementById(id);
 
@@ -735,6 +738,50 @@ function updateMeta() {
 
 let renderToken = 0;
 
+function clearDropMarkers() {
+  document.querySelectorAll('.row.drop-before, .row.drop-after')
+    .forEach((r) => r.classList.remove('drop-before', 'drop-after'));
+}
+
+// Move a currency row within its bucket (never across buckets - the caller only
+// invokes this when source and target share bucketId). Persists + re-renders.
+function reorderWithinBucket(bucketId, fromApiId, toApiId, after) {
+  if (fromApiId === toApiId) return;
+  const bucket = (config.buckets || []).find((b) => b.id === bucketId);
+  if (!bucket || !Array.isArray(bucket.items)) return;
+  const items = bucket.items;
+  const fromIdx = items.findIndex((x) => x.apiId === fromApiId);
+  const targetIdx = items.findIndex((x) => x.apiId === toApiId);
+  if (fromIdx < 0 || targetIdx < 0) return;
+  const [moved] = items.splice(fromIdx, 1);
+  // recompute the target index after removal, then insert before/after it
+  let insertAt = items.findIndex((x) => x.apiId === toApiId);
+  if (after) insertAt += 1;
+  items.splice(insertAt, 0, moved);
+  window.api.saveBuckets(config.buckets);
+  logAction(`reorder ${fromApiId} within ${bucket.base.apiId}`);
+  render();
+}
+
+// Remove a currency from its bucket. Shared by the row X and the drag-out-of-bucket
+// gesture. Confirms first (with a "don't ask again this session" checkbox) unless
+// the user already opted out this session. skipRemoveConfirm is a module var, so it
+// resets naturally on every app restart / update.
+async function removeCurrencyPair(bucket, apiId) {
+  if (!bucket || !Array.isArray(bucket.items) || !bucket.items.some((x) => x.apiId === apiId)) return;
+  if (!skipRemoveConfirm) {
+    const res = await confirmDialog(
+      `Remove ${nameOf(apiId) || apiId} from your ${nameOf(bucket.base.apiId) || 'bucket'} payments?`,
+      { confirmLabel: 'Remove', danger: true, checkboxLabel: "Don't ask again this session" });
+    if (!res.confirmed) { render(); return; } // re-render drops any leftover drag markers
+    if (res.dontAsk) skipRemoveConfirm = true;
+  }
+  bucket.items = bucket.items.filter((x) => x.apiId !== apiId);
+  logAction(`remove pair ${apiId} from ${bucket.base.apiId}`);
+  persistBuckets();
+  render();
+}
+
 function render() {
   unpinTip(); // rebuilt DOM invalidates the pinned element
   updateMeta();
@@ -811,6 +858,7 @@ function render() {
       cols.className = 'bucket-cols';
       cols.innerHTML =
         '<span></span>' +
+        '<span></span>' +
         '<span>Pay with</span>' +
         '<span>7d trend</span><span>Price</span><span>Vol</span><span>Arb</span><span></span>';
       el.appendChild(cols);
@@ -849,6 +897,48 @@ function render() {
       row.className = 'row';
       row.dataset.item = ref.apiId;
       if (isBest) row.classList.add('best');
+
+      // drag-to-reorder handle (leftmost column). Reorders rows WITHIN this bucket
+      // only - see dragState guard on bucket.id in the row drop handler below.
+      const handle = document.createElement('span');
+      handle.className = 'row-drag';
+      handle.textContent = '⠿'; // braille 6-dot grip
+      handle.title = 'Drag to reorder';
+      handle.setAttribute('aria-label', 'Drag to reorder');
+      handle.draggable = true;
+      handle.addEventListener('dragstart', (e) => {
+        dragState = { bucketId: bucket.id, apiId: ref.apiId };
+        dragReordered = false;
+        row.classList.add('dragging');
+        try {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', ref.apiId);
+          e.dataTransfer.setDragImage(row, 24, row.offsetHeight / 2);
+        } catch {}
+      });
+      handle.addEventListener('dragend', () => { row.classList.remove('dragging'); clearDropMarkers(); dragState = null; });
+      row.appendChild(handle);
+
+      // drop target: only reacts to a drag from the SAME bucket
+      row.addEventListener('dragover', (e) => {
+        if (!dragState || dragState.bucketId !== bucket.id || dragState.apiId === ref.apiId) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const r = row.getBoundingClientRect();
+        const after = (e.clientY - r.top) > r.height / 2;
+        clearDropMarkers();
+        row.classList.add(after ? 'drop-after' : 'drop-before');
+      });
+      row.addEventListener('dragleave', () => { row.classList.remove('drop-before', 'drop-after'); });
+      row.addEventListener('drop', (e) => {
+        if (!dragState || dragState.bucketId !== bucket.id) return;
+        e.preventDefault();
+        const r = row.getBoundingClientRect();
+        const after = (e.clientY - r.top) > r.height / 2;
+        dragReordered = true; // consumed as an in-bucket reorder, not a drop-outside
+        reorderWithinBucket(bucket.id, dragState.apiId, ref.apiId, after);
+        clearDropMarkers();
+      });
 
       // rates computed up front so every column's tooltip can reference them
       const cross =
@@ -1073,12 +1163,7 @@ function render() {
       del.className = 'row-del';
       del.title = 'Remove';
       del.textContent = '✕';
-      del.addEventListener('click', () => {
-        bucket.items = bucket.items.filter((x) => x.apiId !== ref.apiId);
-        logAction(`remove pair ${ref.apiId} from ${bucket.base.apiId}`);
-        persistBuckets();
-        render();
-      });
+      del.addEventListener('click', () => removeCurrencyPair(bucket, ref.apiId));
       actions.appendChild(del);
       row.appendChild(actions);
       if (isManual) row.classList.add('has-ovr');
@@ -1246,9 +1331,21 @@ function pickItem(item) {
       renderDefaults();
     }
   }
-  closePicker();
   catalog[item.apiId] = item; // have price already from picker data
+  // Adding payments (to a bucket or to the defaults list) is usually a batch job -
+  // keep the picker open so you can add several in a row. The just-added item drops
+  // out of the list (renderPickerList excludes it). Keep the typed text but re-focus
+  // and SELECT it, so the next keystroke replaces it for a new search while pressing
+  // Enter again would still add the next match. Only add-bucket closes.
+  const keepOpen = pickerMode.type === 'add-item' || pickerMode.type === 'add-default';
   render();
+  if (keepOpen) {
+    const s = $('picker-search');
+    renderPickerList(s ? s.value : '');
+    if (s) { s.focus(); s.select(); }
+  } else {
+    closePicker();
+  }
   refresh(false); // make sure any newly-referenced category is loaded
 }
 
@@ -1498,10 +1595,15 @@ window.divAsideText = (amount, currency) => {
   const d = divEquivalent(amount * rate);
   return d ? ` (${d} div)` : '';
 };
-// HTML for rendered markup
+// HTML for rendered markup. When the currency-icon toggle is on, the "div" unit
+// swaps to the divine icon too - matching the main price's unit (curUnitHtml), so
+// the parenthetical isn't left as the only place still spelling out "div".
 window.divAsideHtml = (amount, currency) => {
-  const t = window.divAsideText(amount, currency);
-  return t ? ` <span class="cur-div">${t.trim()}</span>` : '';
+  const t = window.divAsideText(amount, currency); // " (8.6 div)" or ""
+  if (!t) return '';
+  const num = t.trim().replace(/^\(/, '').replace(/\s*div\)$/, ''); // "8.6"
+  const icon = window.currencyIconTag && window.currencyIconTag('div');
+  return ` <span class="cur-div">(${esc(num)} ${icon || 'div'})</span>`;
 };
 window.divEquivalent = divEquivalent;
 
@@ -1622,6 +1724,36 @@ async function initSettings() {
     if (window.ItemTab && window.ItemTab.refresh) window.ItemTab.refresh();
     if (window.Desecrate && window.Desecrate.refresh) window.Desecrate.refresh();
   });
+
+  // Live-rate sliders (Tab-visible + Background). 4 stops: quiet/low/medium/high.
+  const RATE_KEYS = ['quiet', 'low', 'medium', 'high'];
+  const RATE_LABEL = { quiet: 'Quiet', low: 'Low', medium: 'Medium', high: 'High' };
+  const wireRateSlider = (sliderId, valueId, cfgKey, defIdx) => {
+    const s = $(sliderId), v = $(valueId);
+    if (!s) return;
+    const cur = RATE_KEYS.indexOf(config[cfgKey]);
+    s.value = String(cur >= 0 ? cur : defIdx);
+    const labels = s.parentElement.querySelectorAll('.live-labels [data-rate]');
+    const paint = () => {
+      const key = RATE_KEYS[Number(s.value)] || 'quiet';
+      if (v) v.textContent = RATE_LABEL[key];
+      labels.forEach((el) => el.classList.toggle('active', el.dataset.rate === key));
+    };
+    const commit = () => {
+      const key = RATE_KEYS[Number(s.value)] || 'quiet';
+      config[cfgKey] = key;
+      logAction(`${cfgKey} = ${key}`);
+      window.api.setCurrencyRates(cfgKey === 'currencyTabRate' ? { tab: key } : { bg: key });
+    };
+    paint();
+    s.addEventListener('input', paint);
+    s.addEventListener('change', commit);
+    labels.forEach((el) => el.addEventListener('click', () => {
+      s.value = String(RATE_KEYS.indexOf(el.dataset.rate)); paint(); commit();
+    }));
+  };
+  wireRateSlider('currency-tabrate', 'tabrate-value', 'currencyTabRate', 2);
+  wireRateSlider('currency-bgrate', 'bgrate-value', 'currencyBgRate', 0);
 
   // mod-slider visibility. The q20 / filled-rune assumptions now live as a live
   // toggle on the Price Check page (Miscellaneous); their config values persist
@@ -1825,6 +1957,72 @@ window.addEventListener('unhandledrejection', (e) => {
   logAction(`REJECTION ${(e.reason && e.reason.message) || e.reason || ''}`);
 });
 
+// ---------- release notes (what's-new popup + Settings history) ----------
+const RELEASE_NOTES = Array.isArray(window.RELEASE_NOTES) ? window.RELEASE_NOTES : [];
+
+function renderNoteEntry(rel) {
+  const lis = (rel.notes || []).map((n) => `<li>${esc(n)}</li>`).join('');
+  const date = rel.date ? `<span class="notes-rel-date">${esc(rel.date)}</span>` : '';
+  const sub = rel.title ? `<div class="notes-rel-sub">${esc(rel.title)}</div>` : '';
+  return `<div class="notes-rel"><div class="notes-rel-head"><span class="notes-rel-ver">v${esc(rel.version)}</span>${date}</div>${sub}<ul class="notes-list">${lis}</ul></div>`;
+}
+
+let notesMode = 'latest';
+// mode 'latest' = the one-time post-update popup (newest version, dismiss stamps it
+// seen). It is dismissable ONLY by its button - no backdrop click, no X - so the
+// user can't miss it by fat-fingering outside. mode 'history' = the full scrollable
+// list opened from Settings, closable any normal way.
+function openNotes(mode) {
+  const modal = $('notes-modal');
+  const body = $('notes-body');
+  if (!modal || !body || !RELEASE_NOTES.length) return;
+  notesMode = mode === 'history' ? 'history' : 'latest';
+  if (notesMode === 'history') {
+    $('notes-title').textContent = 'Release notes';
+    $('notes-sub').textContent = 'Every update, newest first';
+    body.innerHTML = RELEASE_NOTES.map(renderNoteEntry).join('');
+    $('notes-history-lnk').classList.add('hidden');
+    $('notes-close').classList.remove('hidden'); // history: X is fine
+    $('notes-dismiss').textContent = 'Close';
+  } else {
+    $('notes-title').textContent = "What's new";
+    $('notes-sub').textContent = `Updated to v${RELEASE_NOTES[0].version}`;
+    body.innerHTML = renderNoteEntry(RELEASE_NOTES[0]);
+    $('notes-history-lnk').classList.remove('hidden');
+    $('notes-close').classList.add('hidden'); // one-time popup: button-only dismiss
+    $('notes-dismiss').textContent = 'Got it';
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeNotes() {
+  const modal = $('notes-modal');
+  if (modal) modal.classList.add('hidden');
+  // whichever way it closes, the newest version has now been seen - never re-pop it
+  const latest = RELEASE_NOTES[0] && RELEASE_NOTES[0].version;
+  if (latest) window.api.setSeenVersion(latest).catch(() => {});
+}
+
+// show the popup once, on the first launch after the app version changes. Brand-new
+// users (mid first-run tutorial) are skipped so onboarding isn't double-stacked - we
+// just stamp the current version so their NEXT update shows notes normally.
+async function maybeShowPatchNotes() {
+  if (!RELEASE_NOTES.length) return;
+  const latest = RELEASE_NOTES[0].version;
+  let version = latest;
+  try { version = await window.api.getAppVersion(); } catch {}
+  if (config && config.lastSeenVersion === version) return; // already seen this build
+  if (config && !config.tutorialDone) { // brand-new install: let the tutorial lead
+    window.api.setSeenVersion(version).catch(() => {});
+    return;
+  }
+  if (RELEASE_NOTES[0].version !== version) { // no notes authored for this build yet
+    window.api.setSeenVersion(version).catch(() => {});
+    return;
+  }
+  openNotes('latest');
+}
+
 // ---------- support / feedback ----------
 const KOFI_URL = 'https://ko-fi.com/tryfoundry';
 const FAQ_URL = 'https://poe2-vibetools.github.io/poe2-currency-overlay/faq.html';
@@ -1859,19 +2057,26 @@ async function maybeCloseFeedback() {
 // styled replacement for window.confirm: a small modal that matches the app,
 // resolving a Promise<boolean>. Message is set via textContent (no HTML injection),
 // so it's safe with arbitrary strings. Enter = confirm, Esc / backdrop = cancel.
+// Resolves false/true normally. When opts.checkboxLabel is set, a checkbox is shown
+// and it resolves { confirmed, dontAsk } instead (so callers can read the checkbox).
 function confirmDialog(message, opts = {}) {
+  const hasBox = !!opts.checkboxLabel;
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.className = 'confirm-modal';
     overlay.innerHTML =
       '<div class="cf-card">'
       + '<div class="cf-msg"></div>'
+      + (hasBox ? '<label class="cf-skip"><input type="checkbox" class="cf-skip-box"><span></span></label>' : '')
       + '<div class="cf-actions">'
       + `<button class="cf-btn cf-cancel">${esc(opts.cancelLabel || 'Cancel')}</button>`
       + `<button class="cf-btn cf-ok${opts.danger ? ' danger' : ''}">${esc(opts.confirmLabel || 'OK')}</button>`
       + '</div></div>';
     overlay.querySelector('.cf-msg').textContent = String(message == null ? '' : message);
-    const done = (val) => { document.removeEventListener('keydown', onKey, true); overlay.remove(); resolve(val); };
+    if (hasBox) overlay.querySelector('.cf-skip span').textContent = opts.checkboxLabel;
+    const box = () => !!(hasBox && overlay.querySelector('.cf-skip-box').checked);
+    const result = (ok) => (hasBox ? { confirmed: ok, dontAsk: ok && box() } : ok);
+    const done = (ok) => { document.removeEventListener('keydown', onKey, true); overlay.remove(); resolve(result(ok)); };
     const onKey = (e) => {
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); }
       else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done(true); }
@@ -1934,6 +2139,28 @@ async function main() {
   $('fb-cancel').addEventListener('click', closeFeedback);
   $('fb-send').addEventListener('click', sendFeedback);
   $('feedback-modal').addEventListener('click', (e) => { if (e.target.id === 'feedback-modal') maybeCloseFeedback(); });
+
+  // release-notes viewer (Settings) + the what's-new popup's own controls
+  onActivate('btn-release-notes', () => openNotes('history'));
+  onActivate('notes-history-lnk', () => openNotes('history'));
+  $('notes-close').addEventListener('click', closeNotes);
+  $('notes-dismiss').addEventListener('click', closeNotes);
+  $('notes-modal').addEventListener('click', (e) => { if (e.target.id === 'notes-modal') closeNotes(); });
+
+  // Dropping a currency row anywhere OTHER than a reorder within its own bucket
+  // (empty space, another bucket) = offer to remove it. Only preventDefault while a
+  // currency drag is live so we don't interfere with any other drag interactions.
+  document.addEventListener('dragover', (e) => { if (dragState) e.preventDefault(); });
+  document.addEventListener('drop', (e) => {
+    if (!dragState) return;
+    e.preventDefault();
+    const ctx = dragState; // capture: dragend clears dragState before an async confirm resolves
+    if (!dragReordered) {
+      const bucket = (config.buckets || []).find((b) => b.id === ctx.bucketId);
+      if (bucket) removeCurrencyPair(bucket, ctx.apiId);
+    }
+    clearDropMarkers();
+  });
 
   $('btn-refresh').addEventListener('click', () => { logAction('refresh (manual)'); refresh(true); });
   $('btn-hide').addEventListener('click', () => window.api.hide());
@@ -2073,6 +2300,18 @@ async function main() {
   });
   window.api.onLiveRates((r) => { liveRates = r || {}; });
   window.api.getLiveRates().then((r) => { liveRates = r || {}; }).catch(() => {});
+  // Each time the overlay is brought up, tell main which tab is actually in view so
+  // the currency exchange poll runs ONLY while the user is looking at the Currency
+  // tab (never on startup, never in the background, never on Price Check/Desecrate).
+  const reportVisibleTab = () => {
+    const active = document.querySelector('#tabs .tab.active');
+    const which = !active ? 'items'
+      : active.id === 'tab-currency' ? 'currency'
+      : active.id === 'tab-desecrate' ? 'desec' : 'items';
+    try { window.api.setActiveTab(which); } catch {}
+  };
+  if (window.api.onShown) window.api.onShown(reportVisibleTab);
+
   window.api.onUpdateState(showUpdateBanner);
   window.api.getUpdateState().then(showUpdateBanner).catch(() => {});
   window.api.getAppVersion().then((v) => {
@@ -2092,6 +2331,7 @@ async function main() {
 
   render();
   refresh(false);
+  maybeShowPatchNotes(); // one-time "what's new" popup after an update
 }
 
 main();

@@ -112,6 +112,7 @@
     notice: null,
     history: [],          // past evaluations, newest first (persisted)
     view: 'item',         // 'item' | 'history'
+    histShown: 10,        // how many history rows are visible (paged 10 at a time)
   };
 
   // ---------- history ----------
@@ -140,7 +141,7 @@
       alteredP: state.alteredP,
     };
     const key = (r) => `${r.base}|${r.curDesText || ''}|${(r.hits || []).map((h) => h[0]).join(',')}`;
-    state.history = [rec, ...state.history.filter((r) => key(r) !== key(rec))].slice(0, 30);
+    state.history = [rec, ...state.history.filter((r) => key(r) !== key(rec))].slice(0, 100);
     if (window.api.setDesecHistory) window.api.setDesecHistory(state.history);
   }
 
@@ -475,7 +476,8 @@
       }
       if (state.history.length) {
         root.appendChild(el('div', 'history-title', 'Recent desecration checks'));
-        state.history.forEach((rec) => {
+        const shown = Math.min(state.history.length, state.histShown || 10);
+        state.history.slice(0, shown).forEach((rec) => {
           const it = el('div', 'hist-item');
           const hits = (rec.hits || []).length;
           it.innerHTML = `<span class="hist-base">${esc(rec.title || rec.base)}</span>`
@@ -484,6 +486,11 @@
           it.onclick = () => restore(rec);
           root.appendChild(it);
         });
+        if (state.history.length > shown) {
+          const more = el('button', 'load-more', `Load more (${state.history.length - shown} left)`);
+          more.onclick = () => { state.histShown = shown + 10; render(); };
+          root.appendChild(more);
+        }
       }
       return;
     }

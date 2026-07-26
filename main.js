@@ -168,6 +168,11 @@ const DEFAULT_CONFIG = {
   overrides: { enabled: false, rates: {}, ratesAt: {} }, // ratesAt: when each was pinned
   excludeExaltedArb: false, // Ange charges gold per unit; exclude exalted as a route middle
   currencyIcons: false, // show currency icons instead of names next to denominations/prices (dyslexia aid)
+  // Live currency-rate polling, two independent rates. Each: 'quiet' (no auto poll) |
+  // 'low' | 'medium' | 'high'. Tab = while the Currency tab is the visible view;
+  // Bg = while the overlay is up but you're on another tab.
+  currencyTabRate: 'medium',
+  currencyBgRate: 'quiet',
   // Ctrl+F, not Ctrl+D: with WASD movement the game reads the physically-held D
   // through Raw Input (below anything an overlay can intercept) and walks the
   // character right, closing stash/vendor windows. F carries no movement.
@@ -182,6 +187,9 @@ const DEFAULT_CONFIG = {
   itemRanges: {},  // learned per-stat roll bounds from fetched listings (slider bounds)
   garbagePool: [], // user-curated worthless-mod stat ids (starts empty by design)
   tutorialDone: false,
+  lastSeenVersion: null, // last app version whose "what's new" popup was shown+dismissed
+  lastTab: 'currency',   // tab to reopen on (remembered across restarts): 'currency' | 'items' | 'desec'
+
   // fresh installs start empty: the first-run tutorial builds the Exalted bucket
   // hands-on; skipping the tutorial seeds the standard bucket instead (renderer)
   buckets: []
@@ -248,34 +256,20 @@ function saveConfig() {
 // visible; everything else is queried on-demand (user click). 429s trigger a
 // cooldown honoring Retry-After. This keeps us a polite citizen of GGG's API.
 const MAJOR_IDS = ['exalted', 'chaos', 'divine', 'annul'];
-const TRADE_TICK_MS = 20_000;
+// Poll spacing per rate. QUIET = 0 = no auto poll (manual ⟳ only for that context).
+// HIGH (12s) is the floor GGG's exchange budget allows (30 per 300s) without risking
+// a throttle - the poll is limiter-routed regardless, so it can never exceed.
+const LIVE_CADENCE_MS = { quiet: 0, low: 60_000, medium: 30_000, high: 12_000 };
+const LIVE_HEARTBEAT_MS = 6_000; // heartbeat; each beat honors whichever rate applies now
 const liveRates = new Map(); // 'have|want' -> { best, median, count, at }
 let liveCycle = [];
 let liveIdx = 0;
-let tradeCooldownUntil = 0;
 
 async function tradeExchangeQuery(have, want) {
-  if (Date.now() < tradeCooldownUntil) throw new Error('cooling down');
   const league = await resolveLeague();
-  const res = await fetch(
-    `https://www.pathofexile.com/api/trade2/exchange/poe2/${encodeURIComponent(league)}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'User-Agent': USER_AGENT },
-      body: JSON.stringify({
-        query: { status: { option: 'online' }, have: [have], want: [want] },
-        sort: { have: 'asc' }
-      }),
-      signal: AbortSignal.timeout(12_000)
-    }
-  );
-  if (res.status === 429) {
-    const ra = Number(res.headers.get('retry-after')) || 120;
-    tradeCooldownUntil = Date.now() + ra * 1000;
-    throw new Error('rate limited');
-  }
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const d = await res.json();
+  // routed through trade2's self-configuring limiter (own policy bucket) - it waits
+  // for a slot and honors server bans, so this poll can never exceed GGG's budget
+  const d = await trade2.exchange(league, have, want);
   const vals = Array.isArray(d.result) ? d.result : Object.values(d.result || {});
   const rates = [];
   for (const v of vals) {
@@ -302,9 +296,28 @@ function pushLiveRates() {
   }
 }
 
-async function liveTick() {
-  if (!overlayShown) return; // no polling while the overlay is hidden
-  if (Date.now() < tradeCooldownUntil) return;
+let liveTickBusy = false;
+let lastLiveAt = 0;
+// the cadence that applies right now: the Tab rate while the Currency tab is the
+// visible view, otherwise the Background rate. 0 = quiet (no auto poll).
+function liveCadenceNow() {
+  const rate = currencyTabActive
+    ? (config && config.currencyTabRate) || 'medium'
+    : (config && config.currencyBgRate) || 'quiet';
+  return LIVE_CADENCE_MS[rate] || 0;
+}
+async function liveTick(force) {
+  if (!overlayShown) return; // never poll an invisible overlay
+  const cad = liveCadenceNow();
+  if (!cad) return; // quiet for this context - manual ⟳ only
+  if (!force && Date.now() - lastLiveAt < cad - 500) return; // honor the spacing
+  if (liveTickBusy) return; // the limiter may make a call wait; never stack ticks
+  liveTickBusy = true;
+  lastLiveAt = Date.now();
+  try { await liveTickOnce(); } finally { liveTickBusy = false; }
+}
+
+async function liveTickOnce() {
   if (liveCycle.length === 0 || liveIdx % liveCycle.length === 0) {
     // rebuild each full pass: majors cross + every bucket row's pair, so the
     // rates the user is LOOKING AT track the live order book (what Ange shows)
@@ -636,6 +649,16 @@ function logToggle(source, note) {
 // Instead it stays alive at opacity 0 with clicks passing through, and "show"
 // is just opacity 1: no recomposite, no repaint, no flicker.
 let overlayShown = false;
+// The live trade-exchange poll (liveTick) feeds ONLY the Currency tab's rate grid.
+// It must not run while the user is on Price Check / Desecrate - those tabs read the
+// cached poe2scout catalog, not this live order book. Polling a tab the user isn't
+// looking at silently burned GGG's trade2 IP budget and got item searches rate-limited.
+// Defaults FALSE: never poll until the renderer explicitly says the user opened the
+// Currency tab (setActiveTab -> 'active-tab'). The app's default landing tab is
+// Currency, but "shown by default" is NOT "the user is watching rates" - assuming so
+// let the poll fire on startup and burned the API budget. Opening the tab flips this
+// on (and kicks one immediate refresh); leaving it flips it off.
+let currencyTabActive = false;
 
 function showOverlay() {
   overlayShown = true; // state first - a throw below must not desync the toggle
@@ -952,6 +975,14 @@ ipcMain.handle('set-tutorial-done', () => {
   return true;
 });
 
+// remember the version whose "what's new" popup the user just dismissed, so it
+// never fires again until the next update bumps app.getVersion() past this
+ipcMain.handle('set-seen-version', (_e, version) => {
+  config.lastSeenVersion = String(version || '');
+  saveConfig();
+  return true;
+});
+
 ipcMain.handle('set-overrides', (_e, overrides) => {
   const rates = {};
   if (overrides && overrides.rates) {
@@ -1063,6 +1094,15 @@ ipcMain.handle('set-currency-icons', (_e, on) => {
   return config.currencyIcons;
 });
 
+ipcMain.handle('set-currency-rates', (_e, rates) => {
+  const ok = (v, d) => (['quiet', 'low', 'medium', 'high'].includes(v) ? v : d);
+  if (rates && rates.tab != null) config.currencyTabRate = ok(rates.tab, config.currencyTabRate || 'medium');
+  if (rates && rates.bg != null) config.currencyBgRate = ok(rates.bg, config.currencyBgRate || 'quiet');
+  saveConfig();
+  lastLiveAt = 0; // let the new cadence take effect on the next heartbeat right away
+  return { tab: config.currencyTabRate, bg: config.currencyBgRate };
+});
+
 ipcMain.handle('set-bg-opacity', (_e, v) => {
   const o = Math.min(100, Math.max(10, Number(v) || 92));
   config.bgOpacity = o;
@@ -1088,12 +1128,12 @@ ipcMain.handle('write-clipboard', (_e, text) => {
   try { require('electron').clipboard.writeText(String(text || '')); return true; } catch { return false; }
 });
 ipcMain.handle('set-item-history', (_e, history) => {
-  config.itemHistory = Array.isArray(history) ? history.slice(0, 30) : [];
+  config.itemHistory = Array.isArray(history) ? history.slice(0, 100) : [];
   saveConfig();
   return true;
 });
 ipcMain.handle('set-desec-history', (_e, history) => {
-  config.desecHistory = Array.isArray(history) ? history.slice(0, 30) : [];
+  config.desecHistory = Array.isArray(history) ? history.slice(0, 100) : [];
   saveConfig();
   return true;
 });
@@ -1277,6 +1317,21 @@ ipcMain.handle('trade2-search-fetch', async (_e, { league, query, limit }) => {
   catch (err) { return { ok: false, error: String(err.message || err) }; }
 });
 
+// Renderer reports which tab is active so the live trade-exchange poll runs ONLY
+// while the Currency tab is open (see liveTick / currencyTabActive). Opening the
+// tab kicks an immediate refresh so the grid isn't stale for up to a full tick.
+ipcMain.on('active-tab', (_e, which) => {
+  const wasActive = currencyTabActive;
+  currencyTabActive = which === 'currency';
+  // remember the tab so the app reopens on it next launch
+  if (config && ['currency', 'items', 'desec'].includes(which) && config.lastTab !== which) {
+    config.lastTab = which;
+    saveConfig();
+  }
+  // opening the tab kicks an immediate refresh (unless the Tab rate is quiet)
+  if (currencyTabActive && !wasActive) liveTick(true).catch(() => {});
+});
+
 ipcMain.on('check-updates-now', () => {
   if (autoUpdaterRef) autoUpdaterRef.checkForUpdates().catch(() => {});
   else checkUpdateManual();
@@ -1423,7 +1478,7 @@ if (!gotLock) {
     setTimeout(() => { try { focusNative.warm(); } catch {} }, 0);
     checkFeed(); // pick data source on load
     setInterval(checkFeed, FEED_CHECK_MS); // re-check every 15 minutes
-    setInterval(liveTick, TRADE_TICK_MS); // live core-pair rates, only while visible
+    setInterval(liveTick, LIVE_HEARTBEAT_MS); // live core-pair rates; each beat honors the Tab/Bg rate
     // hotkey watchdog: games/apps can steal or drop the global hotkey; if our
     // registration ever vanishes, take it back and log the recovery
     setInterval(() => {

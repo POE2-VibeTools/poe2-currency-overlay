@@ -91,13 +91,13 @@ function currencySteps() {
     },
     {
       title: 'Fix a rate, or refresh',
-      text: 'Feed prices can lag. Hover a row and click the blue <b>✎</b> to type the rate you see in game - fractions like <b>1/4</b> work - and it drives the math until you clear it. The <b>⟳</b> button pulls fresh prices now (core pairs also refresh every 20s).',
+      text: 'Feed prices can lag. Hover a row and click the blue <b>✎</b> to type the rate you see in game - fractions like <b>1/4</b> work - and it drives the math until you clear it. The <b>⟳</b> button pulls fresh prices now (core pairs also refresh every ~30s while you\'re on this tab).',
       target: () => document.getElementById('btn-refresh'),
       inert: true
     },
     {
       title: 'You\'re all set',
-      text: 'That\'s the core. <b>⚙ Settings</b> holds manual rates (laid out like Ange), your default currencies, and <b>Replay tutorial</b>. Drop any currency with its <b>✕</b>, or add more with <b>+ Add currency</b>. Next, a quick look at the other two tabs - good hunting, exile.',
+      text: 'That\'s the core. <b>⚙ Settings</b> holds manual rates (laid out like Ange), your default currencies, and <b>Replay tutorial</b>. Reorder a bucket\'s payments by dragging the handle on the left, and remove one by dragging it out of the bucket or clicking its <b>✕</b>; add more with <b>+ payment</b>. Next, a quick look at the other two tabs - good hunting, exile.',
       target: () => document.getElementById('btn-settings'),
       inert: true
     }
@@ -589,6 +589,9 @@ async function startTutorial(section = 'currency') {
   tutSection = section === 'pricecheck' || section === 'desecrate' ? section : 'currency';
   tutIdx = -1;
   if (tutSection === 'currency') {
+    // the app now opens on Price Check, so the currency tour must bring the
+    // Currency tab forward itself (this is also what starts its live-rate poll)
+    try { const t = document.getElementById('tab-currency'); if (t) t.click(); } catch {}
     try {
       tutSnapshot = JSON.stringify({
         buckets: config.buckets || [],

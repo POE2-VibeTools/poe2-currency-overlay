@@ -87,6 +87,29 @@
               <div class="set-legend"><span class="legend-swatch"></span>blue border = your override</div>
             </div>
             <label class="switch set-excl" title="Ange charges gold per unit traded, so routing thousands of low-value Exalted through a loop drains gold. This skips Exalted as an intermediate hop when building arbitrage routes."><input type="checkbox" id="exclude-exalted-arb" /><span class="sw-track"></span><span class="sw-lab">Exclude Exalted from arbitrage routes</span><span class="set-sub">avoids gold-heavy loops</span></label>
+            <div class="set-live-group">
+              <div class="set-live-title" title="How often the Currency tab's live trade-site rates refresh. Two independent rates: while you're viewing the tab, and while it runs in the background. Every setting stays safely under GGG's limits - the poll self-throttles, so none of these can rate-limit you.">Live rate updates</div>
+              <div class="set-live-row">
+                <div class="set-live-cap">While viewing the Currency tab</div>
+                <input type="range" id="currency-tabrate" class="live-slider" min="0" max="3" step="1" value="2" aria-label="Currency update rate while viewing" />
+                <div class="live-labels">
+                  <span data-rate="quiet" title="No auto-refresh while viewing - only the ⟳ button updates rates.">Quiet</span>
+                  <span data-rate="low" title="Refreshes about one pair every 60s while you watch.">Low</span>
+                  <span data-rate="medium" title="Refreshes about one pair every 30s while you watch. Default.">Medium</span>
+                  <span data-rate="high" title="Refreshes about one pair every 12s - as fast as GGG allows (a full sweep of the majors lands every ~2.5 min).">High</span>
+                </div>
+              </div>
+              <div class="set-live-row">
+                <div class="set-live-cap">In the background (while on other tabs)</div>
+                <input type="range" id="currency-bgrate" class="live-slider" min="0" max="3" step="1" value="0" aria-label="Currency update rate in the background" />
+                <div class="live-labels">
+                  <span data-rate="quiet" title="Off. No background polling - the tab only updates when you open it. Default, lightest on the API.">Quiet</span>
+                  <span data-rate="low" title="Keeps rates warm in the background, slowly (about one pair every 60s).">Low</span>
+                  <span data-rate="medium" title="Background refresh at a moderate pace (about one pair every 30s).">Medium</span>
+                  <span data-rate="high" title="Background refresh as fast as GGG allows (about one pair every 12s). Still can't get you rate-limited.">High</span>
+                </div>
+              </div>
+            </div>
           </section>
 
           <div class="set-half">
@@ -110,6 +133,10 @@
                   <button class="tut-chip" data-tut="pricecheck">Price Check</button>
                   <button class="tut-chip" data-tut="desecrate">Desecrate</button>
                 </div>
+              </div>
+              <div class="set-field">
+                <label title="See what changed in each release">Release notes</label>
+                <button id="btn-release-notes" class="set-login-btn">View release notes</button>
               </div>
               <div class="settings-support">
                 <span id="set-bug" class="support-bug" role="button" tabindex="0" title="Report a bug (attaches a short activity log)">
@@ -150,13 +177,13 @@
 
     <div id="status" class="hidden"></div>
 
-    <main id="buckets"></main>
+    <main id="buckets" class="hidden"></main>
 
-    <footer>
+    <footer class="hidden">
       <button id="btn-add-bucket">+ Track another currency</button>
     </footer>
 
-    <main id="item-root" class="hidden"></main>
+    <main id="item-root"></main>
 
     <main id="desecrate-root" class="hidden"></main>
 
@@ -204,6 +231,23 @@
     </div>
   </div>
 
+  <div id="notes-modal" class="hidden">
+    <div class="notes-card">
+      <div class="notes-head">
+        <div>
+          <div id="notes-title" class="notes-title">What's new</div>
+          <div id="notes-sub" class="notes-sub"></div>
+        </div>
+        <button id="notes-close" class="icon-btn" title="Close">&#x2715;</button>
+      </div>
+      <div id="notes-body" class="notes-body"></div>
+      <div class="notes-actions">
+        <span id="notes-history-lnk" class="support-lnk" role="button" tabindex="0" title="See every release">View all release notes</span>
+        <button id="notes-dismiss" class="mini-btn">Got it</button>
+      </div>
+    </div>
+  </div>
+
   <div id="spark-tip" class="hidden"></div>
 
   <div id="picker" class="hidden">
@@ -216,6 +260,7 @@
     </div>
   </div>
 
+  <script src="release-notes.js"></script>
   <script src="renderer.js"></script>
   <script src="tutorial.js"></script>
   <script src="item-tab.bundle.js"></script>

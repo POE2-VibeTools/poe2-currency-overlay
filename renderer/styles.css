@@ -256,6 +256,11 @@ html, body {
   padding: 16px 18px; width: 300px; max-width: calc(100vw - 40px);
 }
 .confirm-modal .cf-msg { color: var(--tx-body2); font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+.confirm-modal .cf-skip {
+  display: flex; align-items: center; gap: 7px; margin: -4px 0 14px;
+  font-size: 11.5px; color: var(--tx-dim); cursor: pointer; user-select: none;
+}
+.confirm-modal .cf-skip input { accent-color: var(--am); cursor: pointer; margin: 0; }
 .confirm-modal .cf-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .confirm-modal .cf-btn {
   font-size: 12px; padding: 5px 14px; border-radius: 6px; cursor: pointer;
@@ -619,7 +624,7 @@ body.tut-active #spark-tip { z-index: 45; } /* the user's reward tooltip must ne
 /* persistent column-label strip above the rows - same grid as .row */
 .bucket-cols {
   display: grid;
-  grid-template-columns: 24px minmax(72px, 1fr) 80px 76px 48px 52px 36px;
+  grid-template-columns: 16px 24px minmax(72px, 1fr) 80px 76px 48px 52px 36px;
   column-gap: 8px;
   align-items: center;
   padding: 5px 12px 4px;
@@ -630,14 +635,14 @@ body.tut-active #spark-tip { z-index: 45; } /* the user's reward tooltip must ne
   font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em;
   color: var(--tx-faint); text-align: right; white-space: nowrap; overflow: hidden;
 }
-.bucket-cols span:nth-child(2) { text-align: left; }
+.bucket-cols span:nth-child(3) { text-align: left; }
 
 .row {
   display: grid;
   /* icon | name | 7d spark | price | vol | arb | actions. The edit/delete buttons
      get their OWN trailing column (revealed on hover) so they never sit on top of
      the arb cell - the arb stays visible and hoverable for its route tooltip. */
-  grid-template-columns: 24px minmax(72px, 1fr) 80px 76px 48px 52px 36px;
+  grid-template-columns: 16px 24px minmax(72px, 1fr) 80px 76px 48px 52px 36px;
   align-items: center;
   column-gap: 8px;
   padding: calc(5px * var(--pad-k, 1)) 12px;
@@ -667,6 +672,20 @@ body.tut-active #spark-tip { z-index: 45; } /* the user's reward tooltip must ne
 .tip-sum .up { color: #7ec46a; }
 .tip-sum .down { color: #d08a80; }
 .row:last-child { border-bottom: none; }
+/* drag-to-reorder handle (leftmost column). Dim until you hover the row, grabbable
+   on hover. Reorders rows WITHIN a bucket only. */
+.row-drag {
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; user-select: none; -webkit-user-select: none;
+  color: var(--tx-faint); opacity: 0; font-size: 12px; line-height: 1;
+  transition: opacity 0.12s, color 0.12s; align-self: stretch;
+}
+.row:hover .row-drag { opacity: 0.6; }
+.row-drag:hover { color: var(--am); opacity: 1; }
+.row-drag:active { cursor: grabbing; }
+.row.dragging { opacity: 0.45; }
+.row.drop-before { box-shadow: inset 0 2px 0 var(--am); }
+.row.drop-after { box-shadow: inset 0 -2px 0 var(--am); }
 .row:hover { background: rgba(232, 160, 76, 0.04); }
 .row img { width: calc(22px * var(--icon-k, 1)); height: calc(22px * var(--icon-k, 1)); }
 .row .name { color: var(--tx-body); font-size: 12.5px; display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -811,6 +830,77 @@ footer {
 .fb-status { flex: 1; font-size: 10.5px; color: #9a927e; }
 .fb-status.ok { color: #7bbf6a; }
 .fb-status.err { color: #d08a80; }
+
+/* ---------- live-rate sliders (Currency settings) ---------- */
+/* its own subsection: a divider + real space above so it doesn't hug the arbitrage
+   toggle, and generous internal spacing so the two sliders + labels breathe. */
+.set-live-group {
+  margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--bd-08);
+}
+.set-live-title {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--tx-dim); margin-bottom: 18px;
+}
+.set-live-row { margin-bottom: 26px; }
+.set-live-row:last-child { margin-bottom: 2px; }
+.set-live-cap { font-size: 11.5px; color: var(--tx-body2); margin-bottom: 12px; }
+.live-slider {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 4px; margin: 0 0 12px;
+  background: var(--bd-12); border-radius: 3px; outline: none; cursor: pointer;
+}
+.live-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 15px; height: 15px; border-radius: 50%;
+  background: var(--am); border: 2px solid var(--s-card); box-shadow: 0 0 0 1px var(--am); cursor: grab;
+}
+.live-slider::-webkit-slider-thumb:active { cursor: grabbing; }
+.live-labels { display: flex; justify-content: space-between; }
+.live-labels span {
+  font-size: 10px; color: var(--tx-faint); cursor: pointer; user-select: none; transition: color 0.12s;
+}
+.live-labels span:hover { color: var(--tx-dim); }
+.live-labels span.active { color: var(--am); font-weight: 600; }
+
+/* ---------- release-notes popup + history viewer ---------- */
+#notes-modal {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(8, 6, 4, 0.6);
+  display: flex; align-items: center; justify-content: center;
+}
+.notes-card {
+  width: 340px; max-width: calc(100vw - 40px); max-height: calc(100vh - 60px);
+  display: flex; flex-direction: column;
+  background: var(--s-card);
+  border: 1px solid rgba(214, 126, 44, 0.55); border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.8);
+}
+.notes-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+  padding: 12px 14px 8px; border-bottom: 1px solid var(--bd-08);
+}
+.notes-title { font-size: 14px; font-weight: 600; color: var(--tx-gold); }
+.notes-sub { font-size: 10.5px; color: var(--tx-dim); margin-top: 2px; }
+.notes-body { padding: 10px 14px; overflow-y: auto; }
+.notes-rel { margin-bottom: 14px; }
+.notes-rel:last-child { margin-bottom: 0; }
+.notes-rel-head {
+  display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;
+}
+.notes-rel-ver { font-size: 12.5px; font-weight: 600; color: var(--am); }
+.notes-rel-date { font-size: 10px; color: var(--tx-faint); }
+.notes-rel-sub { font-size: 11px; color: var(--tx-dim); margin: 1px 0 8px; }
+.notes-list { list-style: none; margin: 0; padding: 0; }
+.notes-list li {
+  position: relative; padding-left: 14px; margin-bottom: 6px;
+  font-size: 12px; line-height: 1.45; color: var(--tx-body);
+}
+.notes-list li::before {
+  content: ''; position: absolute; left: 2px; top: 7px;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--am);
+}
+.notes-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 14px 12px; border-top: 1px solid var(--bd-08);
+}
 
 /* ---------- pencil edit/clear menu ---------- */
 #ovr-menu {
