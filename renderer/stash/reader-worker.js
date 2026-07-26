@@ -5,7 +5,10 @@
 // static slot's count. Pricing stays in main (needs network/cache).
 const { parentPort } = require('worker_threads');
 const DR = require('./digit-reader');
-const TABS = { currency: require('./currency-tab-map') };
+const TABS = {
+  currency: require('./currency-tab-map'),
+  abyss: require('./abyss-tab-map'),
+};
 const TEMPLATES = require('./digit-templates.json');
 
 const T = DR.templatesFromJSON(TEMPLATES);

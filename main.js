@@ -2,12 +2,8 @@ const { app, BrowserWindow, globalShortcut, ipcMain, Tray, Menu, nativeImage, sh
 const path = require('path');
 const fs = require('fs');
 const focusNative = require('./focus-native'); // lazy inside - koffi binds on first use
-
-// Stash net-worth reader (screen-OCR of fixed-layout special tabs). See
-// renderer/stash/* and memory stash-networth-feature.
-const StashReader = require('./renderer/stash/digit-reader');
-const STASH_TABS = { currency: require('./renderer/stash/currency-tab-map') };
-const STASH_TEMPLATES = require('./renderer/stash/digit-templates.json');
+// Stash net-worth reader runs in a worker (renderer/stash/reader-worker.js); main
+// only does screen capture + pricing. See memory stash-networth-feature.
 
 // ee2:// serves the vendored parser's data files (renderer/vendor/ee2/data) to the
 // renderer, which fetch()es them at startup (file:// pages cannot fetch file:// URLs).

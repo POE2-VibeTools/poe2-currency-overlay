@@ -111,7 +111,7 @@
         'Open a special stash tab in game, keep it fully visible, and press <b>F7</b> (or the Capture button).<br>'
         + 'The tab is detected automatically and added here with its own total, plus a running grand total. '
         + 'Flip to the next tab, press F7 again — re-capturing a tab updates its row.<br>'
-        + '<span style="color:var(--tx-faint)">Currency tab supported now; more tabs coming.</span>'));
+        + '<span style="color:var(--tx-faint)">Currency & Abyss tabs supported now; more coming.</span>'));
     } else {
       for (const k of Object.keys(state.tabs)) {
         if (k === pending) wrap.appendChild(busyCard(k)); // updating this row
