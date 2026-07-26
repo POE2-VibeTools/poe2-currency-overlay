@@ -17,7 +17,7 @@ a tab updates its row.
   "duplicate tabs" setting (replace-which/add-new modal), staged "Capturing…/Calculating…"
   feedback, worker-thread OCR (main stays responsive), offset caching (~0.1s repeat capture).
 - **Tabs live: Currency, Abyss, Essence.**
-- **Icon-matcher solved** (see below) — not yet ported to a runtime module.
+- **Icon-matcher ported** to `renderer/stash/icon-matcher.js` (20/20 parity; validate with `node dev/stash-matcher/validate-matcher.js`).
 
 **Not done:** Runes (5 subtabs), Ritual (labels ready, needs grid pinning), breach /
 expedition / delirium / augments, and the **dynamic currency rows** (the matcher's real job).
@@ -87,10 +87,11 @@ Cracked via 5 parallel agents on diverse metrics vs the Abyss ground truth (20 k
 82 candidates). **Winner: foreground-weighted SSD + ±4px alignment search = 20/20.**
 - Reference impl: `dev/stash-matcher/icon-matcher-reference.js` (harness test form) +
   `dev/stash-matcher/harness.js`. Regenerate the abyss dataset with `buildset.js` (in scratchpad).
-- **TODO: port into `renderer/stash/icon-matcher.js`** as a reusable module. Needed for (a) the
-  dynamic currency rows at runtime, (b) faster tab auto-labeling. Approach: composite candidate
-  RGBA on navy [26,26,40], mask top-left number corner, weight by foreground, min weighted-SSD
-  over dx,dy∈[-4,4].
+- **DONE: ported to `renderer/stash/icon-matcher.js`** — pure typed-array UMD module
+  (`prepCell`/`prepCandidate`/`score`/`match`), 20/20 on the abyss dataset via
+  `dev/stash-matcher/validate-matcher.js`. Still the enabler for (a) the dynamic currency rows at
+  runtime and (b) faster tab auto-labeling. (Composites candidate RGBA on navy [26,26,40], masks the
+  top-left number corner, weights by foreground, min weighted-SSD over dx,dy∈[-4,4].)
 
 ## NEXT UP (priority order)
 1. **Runes** — Drew's "most annoying": **5 subtabs**, each its own grid. Treat each subtab as a
