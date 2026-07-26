@@ -1830,6 +1830,10 @@
       ts: Date.now(),
       base: state.item.title ? `${state.item.title} (${state.item.base})` : state.item.base,
       summary: summaryOf(state.item),
+      icon: state.item.icon || null,
+      // cache the suggested floor so the Recent-searches row reads at a glance
+      // (object {amount,currency} when priced; may be a string/null otherwise)
+      floor: (state.results && state.results.suggested) || null,
       model: state.item,
       opts: { defaultLowerPct: state.opts.defaultLowerPct, misc: { ...(state.opts.misc || {}) }, status: state.opts.status },
       // cache the RAW API listings; presentation is rebuilt on restore so cached
@@ -1852,6 +1856,7 @@
       ts: Date.now(),
       base: m.currencyName || it.text || m.base || 'Currency',
       summary: it && it.price > 0 ? `${fmtNum(it.price)} ex` : 'no price yet',
+      icon: m.currencyIcon || (it && it.icon) || null,
       model: m,
       currency: true,
     };

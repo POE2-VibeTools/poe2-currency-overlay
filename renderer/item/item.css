@@ -776,3 +776,8 @@
 .hist-summary { color: #9a927f; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hist-sum { flex: 1; min-width: 0; color: #9a927f; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* desecrate history summary */
 .hist-age { margin-left: auto; flex-shrink: 0; color: #6f6a5e; font-size: 11px; white-space: nowrap; }
+.hist-icon { width: 28px; height: 28px; object-fit: contain; flex: 0 0 auto; }
+.hist-right { margin-left: auto; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.hist-right .hist-age { margin-left: 0; } /* column context: no auto-push needed */
+.hist-floor { color: #e8c88a; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.hist-floor .cur-icon-inline { width: 15px; height: 15px; }

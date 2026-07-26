@@ -992,11 +992,26 @@
       hist.slice(0, shown).forEach((rec, i) => {
         const it = el('div', 'hist-item');
         it.onclick = () => h.onHistoryOpen && h.onHistoryOpen(i);
+        const iconSrc = rec.icon || (rec.model && rec.model.icon);
+        if (iconSrc) {
+          const img = el('img', 'hist-icon');
+          img.src = iconSrc;
+          img.onerror = () => img.remove();
+          it.appendChild(img);
+        }
         const body = el('div', 'hist-body');
         body.appendChild(el('div', 'hist-base', esc(rec.base)));
         body.appendChild(el('div', 'hist-summary', esc(rec.summary || '')));
         it.appendChild(body);
-        it.appendChild(el('div', 'hist-age', ageStr(rec.ts)));
+        const right = el('div', 'hist-right');
+        // gear rows carry a cached suggested floor; currency rows put the rate in
+        // the summary already, so skip the floor line for them
+        const f = rec.floor;
+        if (!rec.currency && f && typeof f === 'object' && f.amount != null) {
+          right.appendChild(el('div', 'hist-floor', priceHtml(f)));
+        }
+        right.appendChild(el('div', 'hist-age', ageStr(rec.ts)));
+        it.appendChild(right);
         wrap.appendChild(it);
       });
       if (hist.length > shown && h.onHistoryMore) {
