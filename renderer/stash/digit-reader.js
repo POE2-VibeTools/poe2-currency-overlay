@@ -362,8 +362,20 @@
     return V;
   }
 
+  // Rehydrate a baked template set ({ templates: { ch: {w,h,data:[…]} } } or the
+  // bare { ch: {w,h,data} } map) into the {data:Uint8Array,w,h} form readCell wants.
+  function templatesFromJSON(obj) {
+    const src = obj && obj.templates ? obj.templates : obj;
+    const out = {};
+    for (const ch of Object.keys(src || {})) {
+      const t = src[ch];
+      out[ch] = { w: t.w, h: t.h, data: Uint8Array.from(t.data) };
+    }
+    return out;
+  }
+
   return {
     otsu, crop, binarize, components, iou, slideMatch, greyOpening,
-    extractTemplates, readCell, valueChannelFromRGBA, DEFAULTS,
+    extractTemplates, readCell, valueChannelFromRGBA, templatesFromJSON, DEFAULTS,
   };
 });
