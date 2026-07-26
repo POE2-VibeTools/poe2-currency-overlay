@@ -11,7 +11,7 @@
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
   // running tally, this session: tab id -> latest capture result
-  const state = { tabs: {}, expanded: {}, busy: false, notice: null };
+  const state = { tabs: {}, expanded: {}, busy: false, phase: 'idle', pendingTab: null, notice: null };
   const TAB_LABEL = { currency: 'Currency' };
 
   // Fold a capture result into the tally (dedup by detected tab), or surface a
@@ -25,14 +25,12 @@
     render();
   }
 
-  async function capture() {
+  // Fire-and-forget: main runs the capture in a worker and streams staged events
+  // (capturing -> detected -> captured) back, which drive the UI below.
+  function capture() {
     if (state.busy) return;
-    state.busy = true; state.notice = null; render();
-    let res;
-    try { res = await window.api.stashCapture(); }
-    catch (e) { res = { ok: false, error: String(e && e.message || e) }; }
-    state.busy = false;
-    applyResult(res);
+    state.notice = null;
+    try { window.api.stashCaptureStart(); } catch (e) { state.notice = { kind: 'err', msg: 'Capture unavailable.' }; render(); }
   }
 
   function grandTotals() {
@@ -104,25 +102,50 @@
 
     if (state.notice) wrap.appendChild(el('div', 'nw-notice nw-' + state.notice.kind, esc(state.notice.msg)));
 
-    if (!captured) {
+    // while a capture runs, show a placeholder for the tab being worked on so the
+    // detected tab appears immediately with a spinner, then fills in when ready
+    const pending = state.busy && state.phase === 'detecting' ? state.pendingTab : null;
+
+    if (!captured && !state.busy) {
       wrap.appendChild(el('div', 'nw-empty',
         'Open a special stash tab in game, keep it fully visible, and press <b>F7</b> (or the Capture button).<br>'
         + 'The tab is detected automatically and added here with its own total, plus a running grand total. '
         + 'Flip to the next tab, press F7 again — re-capturing a tab updates its row.<br>'
         + '<span style="color:var(--tx-faint)">Currency tab supported now; more tabs coming.</span>'));
     } else {
-      for (const k of Object.keys(state.tabs)) wrap.appendChild(tabCard(state.tabs[k]));
-      const reset = el('button', 'nw-reset', 'Clear tally');
-      reset.onclick = () => { state.tabs = {}; state.notice = null; render(); };
-      wrap.appendChild(reset);
+      for (const k of Object.keys(state.tabs)) {
+        if (k === pending) wrap.appendChild(busyCard(k)); // updating this row
+        else wrap.appendChild(tabCard(state.tabs[k]));
+      }
+      if (pending && !state.tabs[pending]) wrap.appendChild(busyCard(pending));   // new tab, first capture
+      if (state.busy && state.phase !== 'detecting') wrap.appendChild(busyCard(null)); // scanning
+      if (captured) {
+        const reset = el('button', 'nw-reset', 'Clear tally');
+        reset.onclick = () => { state.tabs = {}; state.notice = null; render(); };
+        wrap.appendChild(reset);
+      }
     }
     root.appendChild(wrap);
   }
 
-  // Global hotkey pushes capture results here even while the overlay is hidden;
-  // the tally is ready when the user opens the panel.
-  if (window.api && window.api.onStashCaptured) {
-    window.api.onStashCaptured((res) => { state.busy = false; applyResult(res); });
+  // placeholder card shown while a capture is in flight
+  function busyCard(tabId) {
+    const card = el('div', 'nw-card nw-busy');
+    const head = el('div', 'nw-card-head');
+    head.appendChild(el('div', 'nw-card-title', tabId ? esc(TAB_LABEL[tabId] || tabId) : 'Scanning…'));
+    const st = el('div', 'nw-card-total');
+    st.appendChild(el('span', 'nw-spin'));
+    st.appendChild(el('span', 'nw-busy-lab', tabId ? 'Calculating…' : 'Detecting tab…'));
+    head.appendChild(st);
+    card.appendChild(head);
+    return card;
+  }
+
+  // staged events from main drive the live feedback (works even while hidden)
+  if (window.api) {
+    if (window.api.onStashCapturing) window.api.onStashCapturing(() => { state.busy = true; state.phase = 'scanning'; state.pendingTab = null; state.notice = null; render(); });
+    if (window.api.onStashDetected) window.api.onStashDetected((tab) => { state.busy = true; state.phase = 'detecting'; state.pendingTab = tab; render(); });
+    if (window.api.onStashCaptured) window.api.onStashCaptured((res) => { state.busy = false; state.phase = 'idle'; state.pendingTab = null; applyResult(res); });
   }
 
   window.NetWorth = { render, capture };

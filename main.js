@@ -1158,7 +1158,28 @@ async function getStashPriceMap(force) {
   return map;
 }
 
-async function doStashCapture() {
+// Run the heavy stash OCR in a worker thread so the main event loop (hotkeys, IPC,
+// window toggle) stays responsive. `onDetected(tab)` fires as soon as the worker
+// knows which tab it is, before the full read finishes.
+function runReaderWorker(bitmap, W, H, onDetected) {
+  return new Promise((resolve) => {
+    let w;
+    try {
+      const { Worker } = require('worker_threads');
+      w = new Worker(path.join(__dirname, 'renderer', 'stash', 'reader-worker.js'));
+    } catch (e) { return resolve({ ok: false, error: String(e && e.message || e) }); }
+    const finish = (r) => { try { w.terminate(); } catch {} resolve(r); };
+    w.on('message', (msg) => {
+      if (msg && msg.phase === 'detected') { if (onDetected) onDetected(msg.tab); return; }
+      finish(msg); // final payload (done / mismatch / error)
+    });
+    w.on('error', (e) => finish({ ok: false, error: String(e && e.message || e) }));
+    const ab = bitmap.buffer.slice(bitmap.byteOffset, bitmap.byteOffset + bitmap.byteLength);
+    w.postMessage({ bitmap: ab, W, H }, [ab]); // transfer the ~8MB frame, no copy
+  });
+}
+
+async function doStashCapture(onDetected) {
   // Hide the overlay during the grab so it doesn't occlude the panel it's reading
   // (the screen capture is the composited desktop). Restored in finally.
   const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
@@ -1173,54 +1194,28 @@ async function doStashCapture() {
     if (!src) return { ok: false, error: 'no screen source' };
     const img = src.thumbnail;
     const { width: W, height: H } = img.getSize();
-    const V = StashReader.valueChannelDesatMax(img.toBitmap(), W, H);
-    const T = StashReader.templatesFromJSON(STASH_TEMPLATES);
-    const P = StashReader.DEFAULTS;
 
-    // With the desat-max channel a non-"?" read is trustworthy, so the offset that
-    // maximizes valid reads is the correct alignment for a given layout.
-    const alignFor = (m) => {
-      const score = (dx, dy) => m.STATIC_SLOTS.reduce((a, s) =>
-        a + (StashReader.readCell(V, W, H, s.cx + dx, s.cy + dy, T, P) !== '?' ? 1 : 0), 0);
-      let best = { dx: 0, dy: 0, n: -1 };
-      for (let dy = -6; dy <= 10; dy++) for (let dx = -6; dx <= 8; dx++) {
-        const n = score(dx, dy);
-        if (n > best.n || (n === best.n && Math.abs(dx) + Math.abs(dy) < Math.abs(best.dx) + Math.abs(best.dy))) best = { dx, dy, n };
-      }
-      return best;
-    };
-    // Auto-detect WHICH tab is on screen: the layout that reads best is the one in view.
-    let detected = null;
-    for (const id of Object.keys(STASH_TABS)) {
-      const m = STASH_TABS[id];
-      const a = alignFor(m);
-      const frac = a.n / m.STATIC_SLOTS.length;
-      if (!detected || frac > detected.frac) detected = { id, map: m, align: a, frac };
-    }
-    if (!detected || detected.frac < 0.34) {
-      return { ok: true, mismatch: true, readCount: detected ? detected.align.n : 0, slotCount: detected ? detected.map.STATIC_SLOTS.length : 0 };
-    }
+    const res = await runReaderWorker(img.toBitmap(), W, H, onDetected);
+    if (!res || !res.ok) return res || { ok: false, error: 'reader failed' };
+    if (res.mismatch) return { ok: true, mismatch: true, readCount: res.readCount, slotCount: res.slotCount };
 
-    const { id: detectedTab, map, align: best } = detected;
     let prices = {};
     try { prices = await getStashPriceMap(); } catch (err) { /* prices optional; counts still shown */ }
     const divPrice = prices.divine && typeof prices.divine.price === 'number' ? prices.divine.price : null;
 
     const lines = []; const flags = []; let total = 0;
-    for (const s of map.STATIC_SLOTS) {
-      const raw = StashReader.readCell(V, W, H, s.cx + best.dx, s.cy + best.dy, T, P);
-      const info = prices[s.apiId] || {};
-      const name = info.name || s.apiId;
-      if (raw === '?') { flags.push({ apiId: s.apiId, name, cx: s.cx, cy: s.cy }); continue; }
-      const count = parseInt(raw, 10);
+    for (const r of res.reads) {
+      const info = prices[r.apiId] || {};
+      const name = info.name || r.apiId;
+      if (r.count == null) { flags.push({ apiId: r.apiId, name }); continue; }
       const price = typeof info.price === 'number' ? info.price : null;
-      const valueEx = price != null ? count * price : null;
+      const valueEx = price != null ? r.count * price : null;
       if (valueEx != null) total += valueEx;
-      lines.push({ apiId: s.apiId, name, icon: info.icon || null, count, price, valueEx });
+      lines.push({ apiId: r.apiId, name, icon: info.icon || null, count: r.count, price, valueEx });
     }
     lines.sort((a, b) => (b.valueEx || 0) - (a.valueEx || 0));
     return {
-      ok: true, tab: detectedTab, w: W, h: H, offset: best, readCount: best.n, slotCount: map.STATIC_SLOTS.length,
+      ok: true, tab: res.tab, w: W, h: H, offset: res.offset, readCount: res.readCount, slotCount: res.slotCount,
       totalEx: total, divPrice, totalDiv: divPrice ? total / divPrice : null, lines, flags, mismatch: false,
     };
   } catch (err) {
@@ -1230,18 +1225,31 @@ async function doStashCapture() {
   }
 }
 
-ipcMain.handle('stash-capture', () => doStashCapture());
+// One capture, broadcasting staged progress to the Net Worth panel so it can show
+// "Capturing…", then a placeholder row the instant the tab is detected, then fill.
+let stashCaptureBusy = false;
+async function captureAndBroadcast() {
+  if (stashCaptureBusy) return;
+  stashCaptureBusy = true;
+  const send = (ch, payload) => { if (win && !win.isDestroyed()) win.webContents.send(ch, payload); };
+  send('stash-capturing');
+  try {
+    const res = await doStashCapture((tab) => send('stash-detected', tab));
+    send('stash-captured', res);
+  } finally {
+    stashCaptureBusy = false;
+  }
+}
 
-// Global capture hotkey: view a special tab in game, press it; the app detects
-// which tab it is, values it, and pushes the result to the Net Worth panel (which
-// updates that tab's row). Works whether or not the overlay is showing.
+ipcMain.on('stash-capture-start', () => captureAndBroadcast());
+
+// Global capture hotkey: view a special tab in game, press it; the app detects the
+// tab, values it, and updates its row in the Net Worth tally. Works whether or not
+// the overlay is showing.
 function registerStashHotkey() {
   if (!config || !config.stashHotkey) return;
   try {
-    const ok = globalShortcut.register(config.stashHotkey, async () => {
-      const res = await doStashCapture();
-      if (win && !win.isDestroyed()) win.webContents.send('stash-captured', res);
-    });
+    const ok = globalShortcut.register(config.stashHotkey, () => captureAndBroadcast());
     if (!ok) console.error(`Stash hotkey "${config.stashHotkey}" is taken by another app`);
   } catch (err) {
     console.error(`Failed to register stash hotkey "${config.stashHotkey}":`, err.message);
