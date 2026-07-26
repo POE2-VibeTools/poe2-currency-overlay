@@ -3,11 +3,12 @@
 Planned features, in priority order. Release targets are aims, not commitments.
 
 **By release**
-- **~2.4** — Currency-tab Calculator (#1), Regex Builder / Tab Filter (#2), Command Hotkeys (#5), Reorder currencies within a bucket (#7), Multi-select add to bucket (#8), Paginate history lists (#9), Richer Search History rows (#10), Dyslexia-friendly font toggle (#11)
+- **~2.4** — Currency-tab Calculator (#1), Regex Builder / Tab Filter (#2), Command Hotkeys (#5), Richer Search History rows (#10)
 - **~2.5** — Dedicated Arbitrage Route tab (#3), In-app bug reporting for explicit events (#4)
 - **~2.6** — Full currency exchange table (#6)
+- **Shipped** — Reorder currencies within a bucket (#7, 2.3.4), Multi-select add to bucket (#8, 2.3.4), Paginate history lists (#9, 2.3.4), Dyslexia-friendly font toggle (#11, 2.3.5)
 
-_Last shipped: **v2.3.1** — optional currency icons in place of names (Price Check + Desecrate)._
+_Last shipped: **v2.3.5** — OpenDyslexic font toggle, experimental Linux (AppImage), scrollable patch-notes viewer._
 
 ---
 
@@ -59,27 +60,27 @@ Inspired by Ange's in-game market screen (the "I HAVE" / "I WANT" view): show ev
 
 ---
 
-## 7. Reorder currencies within a bucket — target ~2.4
+## 7. Reorder currencies within a bucket — SHIPPED 2.3.4
 
 Drag the currencies inside a bucket to reorder them, so each bucket sits the way you like instead of the app's default order.
 
-**Status:** Not started (concept).
+**Status:** Shipped in v2.3.4. Drag-to-reorder within a bucket; drag out of the bucket or ✕ to remove (shared confirm dialog with a "don't ask again this session" option).
 
 ---
 
-## 8. Multi-select when adding to a bucket — target ~2.4
+## 8. Multi-select when adding to a bucket — SHIPPED 2.3.4
 
 Add more than one currency to a bucket at once with multi-select, instead of adding them one at a time.
 
-**Status:** Not started (concept).
+**Status:** Shipped in v2.3.4. The picker stays open when you add a payment, keeping and highlighting the search text so you can add several in a row.
 
 ---
 
-## 9. Paginate history lists — target ~2.4
+## 9. Paginate history lists — SHIPPED 2.3.4
 
 Give the Price Check and Desecrate history proper pagination instead of a "load more" button that grows one endlessly long list.
 
-**Status:** Not started (concept).
+**Status:** Shipped in v2.3.4. Search results, Recent searches, and Desecrate history load 10 at a time via "Load more" (shown only while more remain); history cap raised to 100.
 
 ---
 
@@ -91,8 +92,8 @@ Show each Price Check history row with the item's icon and its suggested floor p
 
 ---
 
-## 11. Dyslexia-friendly font toggle — target ~2.4
+## 11. Dyslexia-friendly font toggle — SHIPPED 2.3.5
 
 A setting to switch the app's font to a dyslexia-friendly typeface, pairing with the currency-icon accessibility option shipped in 2.3.1.
 
-**Status:** Not started (concept). Community request.
+**Status:** Shipped in v2.3.5. OpenDyslexic toggle in Settings, applied app-wide including the hover/peek window (x-height normalized via font-size-adjust). Community request.
