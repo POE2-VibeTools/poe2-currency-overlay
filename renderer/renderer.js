@@ -2188,6 +2188,9 @@ async function main() {
 
   // release-notes viewer (Settings) + the what's-new popup's own controls
   onActivate('btn-release-notes', () => openNotes('history'));
+  // clicking the version in the titlebar opens the patch-notes viewer
+  const verEl = $('app-version');
+  if (verEl) { verEl.title = 'View patch notes'; verEl.addEventListener('click', () => openNotes('history')); }
   $('notes-close').addEventListener('click', closeNotes);
   $('notes-dismiss').addEventListener('click', closeNotes);
   // backdrop click closes only the Settings viewer; the one-time popup is button-only

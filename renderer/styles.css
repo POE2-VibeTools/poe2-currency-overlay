@@ -80,7 +80,8 @@ html, body {
   background: var(--am); box-shadow: 0 0 6px rgba(232, 160, 76, 0.6); flex-shrink: 0;
 }
 .app-title { font-weight: 700; color: var(--tx-hi); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.app-version { font-size: 10px; font-weight: 400; color: var(--tx-faint); white-space: nowrap; flex-shrink: 0; }
+.app-version { font-size: 10px; font-weight: 400; color: var(--tx-faint); white-space: nowrap; flex-shrink: 0; cursor: pointer; }
+.app-version:hover { color: var(--am); }
 .league {
   color: var(--tx-dim); font-size: 10px;
   background: var(--bd-06); border: 1px solid var(--bd-08);
