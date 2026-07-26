@@ -103,8 +103,15 @@ Cracked via 5 parallel agents on diverse metrics vs the Abyss ground truth (20 k
    apiIds all resolve (ritual omens + `head-of-the-king` + `an-audience-with-the-king` in fragments).
    Dense twin-column-group layout broke auto-detect → pin the fixed grid carefully before baking.
 3. **breach, expedition, delirium, augments** — should go like essence (screenshots in `screenshots/`).
-4. **Dynamic currency rows** — the 2 bottom rows of the currency tab hold arbitrary items; no static
-   map possible → runtime icon-match vs the full currency pool. This is why the matcher exists.
+4. **Dynamic currency rows** (DEFERRED — do the static tabs first) — the 2 bottom rows of the currency
+   tab hold arbitrary currency-class items; no static map → runtime icon-match. PROTO'd in
+   `dev/stash-matcher/match-dynamic-rows.js`: matches well against a BROAD pool — abyss bones and
+   ritual omens landed correctly; the match score is a clean confidence gate (~-4k good, ~-10k flag).
+   To finish: (a) pool must include ESSENCES (the blue/red crystals are essences), plus the full
+   currency-class catalog; (b) needs a FRESH live capture — the `currency tab.png` fixture is STALE
+   (Drew reorganised the rows, counts/items changed); (c) confidence-flag + click-to-fill for the
+   uncertain ones (no silent misses). The bones/omens result validates the approach; just needs the
+   full pool + a live frame + the correction UI.
 
 ## Test commands
 - `npm run test:stash` — reader self-check on reference currency screenshot (expect 48/49).
