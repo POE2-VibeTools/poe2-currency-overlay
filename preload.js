@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('api', {
   trade2AuthCheck: (league, force) => ipcRenderer.invoke('trade2-auth-check', { league, force }),
   setActiveTab: (which) => ipcRenderer.send('active-tab', which),
   stashCaptureStart: () => ipcRenderer.send('stash-capture-start'),
+  setStashDupTabs: (on) => ipcRenderer.invoke('set-stash-dup', on),
   onStashCapturing: (cb) => ipcRenderer.on('stash-capturing', () => cb()),
   onStashDetected: (cb) => ipcRenderer.on('stash-detected', (_e, tab) => cb(tab)),
   onStashCaptured: (cb) => ipcRenderer.on('stash-captured', (_e, res) => cb(res)),
