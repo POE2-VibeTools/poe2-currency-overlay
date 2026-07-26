@@ -1158,6 +1158,7 @@ async function getStashPriceMap(force) {
 // Run the heavy stash OCR in a worker thread so the main event loop (hotkeys, IPC,
 // window toggle) stays responsive. `onDetected(tab)` fires as soon as the worker
 // knows which tab it is, before the full read finishes.
+let stashOffsetHint = null; // last good {dx,dy}; reused so repeat captures skip the scan
 function runReaderWorker(bitmap, W, H, onDetected) {
   return new Promise((resolve) => {
     let w;
@@ -1168,11 +1169,12 @@ function runReaderWorker(bitmap, W, H, onDetected) {
     const finish = (r) => { try { w.terminate(); } catch {} resolve(r); };
     w.on('message', (msg) => {
       if (msg && msg.phase === 'detected') { if (onDetected) onDetected(msg.tab); return; }
+      if (msg && msg.ok && msg.offset) stashOffsetHint = msg.offset; // cache alignment
       finish(msg); // final payload (done / mismatch / error)
     });
     w.on('error', (e) => finish({ ok: false, error: String(e && e.message || e) }));
     const ab = bitmap.buffer.slice(bitmap.byteOffset, bitmap.byteOffset + bitmap.byteLength);
-    w.postMessage({ bitmap: ab, W, H }, [ab]); // transfer the ~8MB frame, no copy
+    w.postMessage({ bitmap: ab, W, H, hint: stashOffsetHint }, [ab]); // transfer the ~8MB frame, no copy
   });
 }
 
