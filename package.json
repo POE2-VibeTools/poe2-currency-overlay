@@ -9,7 +9,8 @@
     "start": "electron .",
     "predist": "node scripts/build-item-tab.mjs",
     "dist": "electron-builder --win nsis",
-    "test:stash": "electron scripts/test-stash-reader.js"
+    "test:stash": "electron scripts/test-stash-reader.js",
+    "test:value": "electron scripts/test-stash-value.js"
   },
   "build": {
     "appId": "com.poe2vibetools.overlay",
