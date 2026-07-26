@@ -18,7 +18,9 @@ jobs:
       - name: Install deps
         run: npm ci
       - name: Build AppImage
-        run: npx electron-builder --linux AppImage
+        # --publish never: on CI electron-builder otherwise auto-publishes (needs a
+        # token). We only want the artifact; the release is assembled locally.
+        run: npx electron-builder --linux AppImage --publish never
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
