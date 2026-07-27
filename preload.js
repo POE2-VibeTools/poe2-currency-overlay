@@ -61,6 +61,8 @@ contextBridge.exposeInMainWorld('api', {
   setDesecHistory: (history) => ipcRenderer.invoke('set-desec-history', history),
   setRegexBuckets: (buckets) => ipcRenderer.invoke('set-regex-buckets', buckets),
   setTabShown: (which, shown) => ipcRenderer.invoke('set-tab-shown', which, shown),
+  getSafeCommands: () => ipcRenderer.invoke('get-safe-commands'),
+  setCommandHotkeys: (rows) => ipcRenderer.invoke('set-command-hotkeys', rows),
   setItemRanges: (ranges) => ipcRenderer.invoke('set-item-ranges', ranges),
   setGarbagePool: (ids) => ipcRenderer.invoke('set-garbage-pool', ids),
   setItemSearchOpts: (o) => ipcRenderer.invoke('set-item-search-opts', o),

@@ -1660,6 +1660,77 @@ async function initSettings() {
     return ok;
   });
 
+  // ---------- command hotkeys (Settings → Hotkeys) ----------
+  // Rows of {command, accelerator}; the whitelist comes from main (enforced
+  // there too) so renderer never invents commands.
+  let safeCommands = ['/hideout'];
+  const cmdRowsEl = $('cmd-hotkeys-rows');
+  const saveCmdHotkeys = () => window.api.setCommandHotkeys(config.commandHotkeys || []);
+  const renderCmdHotkeys = () => {
+    if (!cmdRowsEl) return;
+    cmdRowsEl.innerHTML = '';
+    const rows = Array.isArray(config.commandHotkeys) ? config.commandHotkeys : (config.commandHotkeys = []);
+    if (!rows.length) {
+      const empty = document.createElement('div');
+      empty.className = 'cmdhk-empty';
+      empty.textContent = 'Nothing bound yet - add a hotkey and pick its command.';
+      cmdRowsEl.appendChild(empty);
+    }
+    rows.forEach((row, i) => {
+      const div = document.createElement('div');
+      div.className = 'cmdhk-row';
+      const cmdSel = document.createElement('select');
+      cmdSel.className = 'cmdhk-cmd';
+      cmdSel.title = 'The chat command this key sends';
+      for (const c of safeCommands) {
+        const o = document.createElement('option');
+        o.value = c; o.textContent = c;
+        if (c === row.command) o.selected = true;
+        cmdSel.appendChild(o);
+      }
+      cmdSel.addEventListener('change', async () => {
+        row.command = cmdSel.value;
+        logAction(`cmd-hotkey command: ${cmdSel.value}`);
+        await saveCmdHotkeys();
+      });
+      div.appendChild(cmdSel);
+      const field = document.createElement('div');
+      field.className = 'kb-field';
+      const input = document.createElement('input');
+      input.className = 'kb-input'; input.readOnly = true; input.placeholder = 'click, then press keys';
+      const hint = document.createElement('span');
+      hint.className = 'kb-hint'; hint.textContent = 'click to rebind';
+      field.appendChild(input); field.appendChild(hint);
+      div.appendChild(field);
+      bindHotkeyInput(input, () => row.accelerator || '', async (acc) => {
+        row.accelerator = acc;
+        logAction(`cmd-hotkey bind: ${row.command} -> ${acc}`);
+        await saveCmdHotkeys();
+        return true;
+      });
+      const del = document.createElement('button');
+      del.className = 'cmdhk-del'; del.textContent = '✕'; del.title = 'Remove this hotkey';
+      del.addEventListener('click', async () => {
+        rows.splice(i, 1);
+        await saveCmdHotkeys();
+        renderCmdHotkeys();
+      });
+      div.appendChild(del);
+      cmdRowsEl.appendChild(div);
+    });
+  };
+  window.api.getSafeCommands().then((l) => {
+    if (Array.isArray(l) && l.length) safeCommands = l;
+    renderCmdHotkeys();
+  }).catch(() => renderCmdHotkeys());
+  const cmdAdd = $('cmd-hotkeys-add');
+  if (cmdAdd) cmdAdd.addEventListener('click', async () => {
+    (config.commandHotkeys = config.commandHotkeys || []).push({ command: safeCommands[0] || '/hideout', accelerator: '' });
+    logAction('cmd-hotkey row added');
+    await saveCmdHotkeys();
+    renderCmdHotkeys();
+  });
+
   const sel = $('league-select');
   sel.value = config.league || 'auto';
   const leagues = await window.api.listLeagues();

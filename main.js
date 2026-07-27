@@ -199,6 +199,7 @@ const DEFAULT_CONFIG = {
   stashSortLayout: false, // Net Worth: list a tab's items in stash reading order instead of by value
   stashShowMissing: false, // Net Worth: show empty/unread slots as editable x0 lines
   stashShowConfidence: false, // Net Worth: show the per-line OCR confidence %
+  commandHotkeys: [], // Hotkeys settings: [{command:'/hideout', accelerator:'F8'}] - whitelist-only safe chat commands, one key = one manual command
   stashCalibration: null, // Net Worth: {x,y,w,h} panel box from one-time calibration; null = assume reference res
   itemQ20: true,       // search armour/weapons as if 20% quality
   itemFillRunes: true, // search as if empty rune sockets held Greater Iron Runes
@@ -794,6 +795,7 @@ function registerHotkey(accelerator) {
     const ok = globalShortcut.register(accelerator, toggleOverlay);
     registerItemHotkey(); // unregisterAll wiped it; always restore alongside
     registerStashHotkey(); // ditto - restore the stash-capture hotkey
+    registerCommandHotkeys(); // ditto - restore the chat-command binds
     if (!ok) throw new Error('register returned false');
     return true;
   } catch (err) {
@@ -1521,6 +1523,87 @@ function registerStashHotkey() {
     console.error(`Failed to register stash hotkey "${config.stashHotkey}":`, err.message);
   }
 }
+
+// ---------- command hotkeys (safe chat commands) ----------
+// One key = one manually-triggered chat command from a fixed whitelist - the
+// 1:1 press-to-action shape GGG's macro rules allow. Nothing here automates,
+// chains, or reacts; the player presses, the game gets exactly one command.
+// Standalone (no arguments) + non-destructive only. Deliberately excluded:
+// /destroy (destroys the cursor item), /clear_ignore_list (unrecoverable
+// social state), and everything needing an argument (/invite, /itemfilter...).
+const SAFE_COMMANDS = [
+  '/hideout', '/guild', '/leave', '/exit', '/remaining', '/itemlevel',
+  '/afk', '/dnd', '/reset_xp', '/played', '/age', '/deaths', '/kills',
+  '/ladder', '/bug', '/nochat', '/clear',
+];
+let cmdHotkeyBusy = false;
+async function sendChatCommand(cmd) {
+  if (!SAFE_COMMANDS.includes(cmd) || cmdHotkeyBusy) return;
+  cmdHotkeyBusy = true;
+  try {
+    // Never type into whatever else holds focus (Discord, a browser): the game
+    // must already be the foreground window, otherwise the press is a no-op.
+    if (!focusNative.foregroundIsGame()) {
+      logToggle('cmd-hotkey', `${cmd}: game not foreground - ignored`);
+      return;
+    }
+    const hook = loadHook();
+    if (!hook) { logToggle('cmd-hotkey', 'uiohook unavailable'); return; }
+    const { uIOhook, UiohookKey } = hook;
+    const { clipboard } = require('electron');
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    // Paste, don't type: layout-proof and one atomic insert. Clipboard is
+    // restored afterwards. Timing follows the item-copy doctrine: modifier
+    // release on a separate event-loop batch, small waits between game inputs
+    // so the per-frame input poll sees each step (see synthCopy).
+    const before = clipboard.readText();
+    clipboard.writeText(cmd);
+    uIOhook.keyTap(UiohookKey.Enter); // open chat
+    await wait(80);
+    uIOhook.keyToggle(UiohookKey.Ctrl, 'down');
+    uIOhook.keyTap(UiohookKey.V); // paste the command
+    await wait(1); // separate batch for the release
+    uIOhook.keyToggle(UiohookKey.Ctrl, 'up');
+    await wait(80);
+    uIOhook.keyTap(UiohookKey.Enter); // send
+    await wait(120);
+    clipboard.writeText(before);
+    logToggle('cmd-hotkey', `${cmd} sent`);
+  } catch (err) {
+    logToggle('cmd-hotkey', `${cmd} ERROR ${(err && err.message) || err}`);
+  } finally {
+    cmdHotkeyBusy = false;
+  }
+}
+
+function registerCommandHotkeys() {
+  if (!config || !Array.isArray(config.commandHotkeys)) return;
+  for (const row of config.commandHotkeys) {
+    if (!row || !row.accelerator || !SAFE_COMMANDS.includes(row.command)) continue;
+    try {
+      const ok = globalShortcut.register(row.accelerator, () => sendChatCommand(row.command));
+      if (!ok) console.error(`Command hotkey "${row.accelerator}" is taken by another app`);
+    } catch (err) {
+      console.error(`Failed to register command hotkey "${row.accelerator}":`, err.message);
+    }
+  }
+}
+
+ipcMain.handle('get-safe-commands', () => SAFE_COMMANDS.slice());
+ipcMain.handle('set-command-hotkeys', (_e, rows) => {
+  // whitelist is enforced HERE, not in the renderer - rows with unknown
+  // commands are dropped, empty accelerators kept (row bound later)
+  const clean = (Array.isArray(rows) ? rows : [])
+    .filter((r) => r && SAFE_COMMANDS.includes(r.command))
+    .map((r) => ({ command: r.command, accelerator: typeof r.accelerator === 'string' ? r.accelerator : '' }));
+  for (const r of config.commandHotkeys || []) {
+    if (r && r.accelerator) { try { globalShortcut.unregister(r.accelerator); } catch {} }
+  }
+  config.commandHotkeys = clean;
+  saveConfig();
+  registerCommandHotkeys();
+  return true;
+});
 
 // ---------- item price-check (trade2) ----------
 ipcMain.handle('read-clipboard', () => {

@@ -165,4 +165,24 @@ function focus() {
   }
 }
 
-module.exports = { warm, focus, findGame, listWindows };
+// Is the game the CURRENT foreground window? Cheap gate for synthesized
+// keystrokes: never type into whatever else (Discord, a browser) happens to
+// hold focus when a global hotkey fires.
+function foregroundIsGame() {
+  if (process.platform !== 'win32') return false;
+  const a = bind();
+  if (!a) return false;
+  try {
+    const fg = a.GetForegroundWindow();
+    if (!fg) return false;
+    const pidOut = [0];
+    a.GetWindowThreadProcessId(fg, pidOut);
+    if (!pidOut[0]) return false;
+    if (pidOut[0] === process.pid) return false; // our own overlay
+    return /^pathofexile.*\.exe$/i.test(exeOf(a, pidOut[0]));
+  } catch {
+    return false;
+  }
+}
+
+module.exports = { warm, focus, findGame, listWindows, foregroundIsGame };

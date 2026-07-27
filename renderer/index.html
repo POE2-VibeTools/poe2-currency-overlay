@@ -36,6 +36,7 @@
           <button class="set-nav" data-sec="currency">Currency</button>
           <button class="set-nav" data-sec="pricecheck">Price Check</button>
           <button class="set-nav" data-sec="networth">Net Worth</button>
+          <button class="set-nav" data-sec="hotkeys">Hotkeys</button>
           <button class="set-nav" data-sec="help">Help &amp; About</button>
           <button id="btn-quit" class="set-quit" title="Quit the app entirely">Quit app</button>
         </nav>
@@ -172,6 +173,16 @@
               <div class="kb-field"><input id="stash-hotkey-input" class="kb-input" readonly placeholder="click, then press keys" /><span class="kb-hint">click to rebind</span></div>
             </div>
             <div id="nw-set-root"></div>
+          </section>
+
+          <section class="set-card" id="sec-hotkeys">
+            <div class="set-card-lab">Command Hotkeys</div>
+            <div class="cmdhk-head">
+              <label title="Each hotkey sends exactly one chat command when pressed. Commands come from a fixed safe list - one key, one manual action, nothing GGG's rules disallow.">Bind a key to a chat command</label>
+              <span class="set-sub">One press, one command - fires only while the game is focused, with the chat input closed.</span>
+            </div>
+            <div id="cmd-hotkeys-rows" class="cmdhk-rows"></div>
+            <button id="cmd-hotkeys-add" class="chip-add" title="Add a command hotkey">+ Add hotkey</button>
           </section>
         </div>
       </div>
