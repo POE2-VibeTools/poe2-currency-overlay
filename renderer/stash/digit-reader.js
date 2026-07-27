@@ -211,7 +211,10 @@
     for (const a of accepted) {
       const xo = Math.max(0, Math.min(x + tw, a.x + a.tw) - Math.max(x, a.x));
       const minW = Math.min(tw, a.tw);
-      if (xo > OVERLAP * minW) return true;
+      // Tolerate <=1px of template-width slop so tightly-kerned digits (e.g. "41"
+      // where a wide template's edge grazes the next digit) aren't dropped; real
+      // double-detections of one glyph overlap far more than 1px.
+      if (xo > OVERLAP * minW && xo > 1) return true;
     }
     return false;
   }

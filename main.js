@@ -192,6 +192,7 @@ const DEFAULT_CONFIG = {
   itemHotkeyTemp: 'Control+Alt+F', // same check, but the overlay hides once the mouse visits it and leaves
   stashHotkey: 'F7', // view a special stash tab in game, press this: reads + values it into the Net Worth tally
   stashDupTabs: false, // Net Worth: re-capturing a tab type asks replace-which/add-new instead of just replacing
+  stashSortLayout: false, // Net Worth: list a tab's items in stash reading order instead of by value
   itemQ20: true,       // search armour/weapons as if 20% quality
   itemFillRunes: true, // search as if empty rune sockets held Greater Iron Runes
   itemSliders: true,   // show per-mod range sliders in Price Check
@@ -1243,6 +1244,7 @@ async function captureAndBroadcast() {
 
 ipcMain.on('stash-capture-start', () => captureAndBroadcast());
 ipcMain.handle('set-stash-dup', (_e, on) => { config.stashDupTabs = !!on; saveConfig(); return true; });
+ipcMain.handle('set-stash-sort', (_e, on) => { config.stashSortLayout = !!on; saveConfig(); return true; });
 
 // Global capture hotkey: view a special tab in game, press it; the app detects the
 // tab, values it, and updates its row in the Net Worth tally. Works whether or not

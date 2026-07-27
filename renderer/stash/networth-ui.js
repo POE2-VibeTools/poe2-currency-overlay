@@ -15,7 +15,7 @@
   const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
   const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence', runes: 'Runes', 'runes-kalguuran': 'Kalguuran Runes', ritual: 'Ritual' };
 
-  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); render(); }).catch(() => {});
+  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); render(); }).catch(() => {});
 
   const rowsOfType = (tab) => state.rows.filter((r) => r.tab === tab);
   function labelFor(row) {
@@ -194,7 +194,7 @@
     // Net Worth setting: item sort order within each tab's list
     const sortline = el('label', 'nw-setting');
     const scb = el('input'); scb.type = 'checkbox'; scb.checked = state.sortLayout;
-    scb.onchange = () => { state.sortLayout = scb.checked; render(); };
+    scb.onchange = () => { state.sortLayout = scb.checked; try { window.api.setStashSortLayout(state.sortLayout); } catch {} render(); };
     sortline.appendChild(scb);
     sortline.appendChild(el('span', null, 'Sort items by stash layout'));
     sortline.title = 'On: list items in stash reading order (left to right, top to bottom). Off: list by value, highest first.';

@@ -2,10 +2,11 @@
 // Static slot -> omen map for the PoE2 Ritual stash tab (fixed, irregular twin-cluster layout).
 // Coords = stack-count number center, LIVE 1920x1080 desktopCapturer frame. Identities
 // Drew-verified 2026-07-26; positions read cluster-by-cluster (auto-detect misses cells here).
-// Omens are grouped into "buckets", each with a small marker icon in the top-left corner that
-// bleeds into the number region (Drew's insight) - the ritual equivalent of Kalguuran art-bleed.
-// 29/30 owned cells read clean at these positions; KNOWN: sinistral-crystallisation reads its
-// "41" as "4" (bucket marker corrupts the 2nd digit) - needs a corner-mask digit-read fix.
+// Omens are grouped into "buckets", each with a small marker icon in the top-left corner of the
+// leftmost omen (Drew's insight); the number is layered on top. All owned cells read clean here.
+// sinistral-crystallisation's "41" (rune art fused to the "1") is fixed by the digit-reader's
+// 1px kerning-overlap tolerance (see digit-reader overlaps()). chance @(258,520) is tuned to read
+// "?" on the empty cell past its bucket marker.
 // TODO: 3 unowned/unknown empties not mapped (R1 slot3, R2 slot1, R4 slot1).
 (function (root, factory) {
   const api = factory();
