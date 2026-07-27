@@ -32,7 +32,7 @@
     { cx: 462, cy: 233, apiId: 'olroths-saga' },
     // R2: Triskelion pair (large 2x2 slots)
     { cx: 214, cy: 322, apiId: 'shattered-triskelion' },
-    { cx: 340, cy: 322, apiId: 'the-triskelion-reforged' }, // empty -> position UNVERIFIED
+    { cx: 327, cy: 322, apiId: 'the-triskelion-reforged' }, // count position verified live 2026-07-27
     // R3: Verisium tiers
     { cx: 209, cy: 441, apiId: 'verisium' },
     { cx: 270, cy: 441, apiId: 'exceptional-verisium' },

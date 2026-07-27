@@ -27,7 +27,8 @@
     // top pair + center
     { cx: 268, cy: 280, apiId: 'breach-splinter' },
     { cx: 330, cy: 280, apiId: 'breachstone' },
-    { cx: 270, cy: 342, apiId: 'breachlord-sac' }, // large slot, empty -> position UNVERIFIED
+    { cx: 271, cy: 339, apiId: 'breachlord-sac' }, // large slot, still empty; position derived from
+    // the Triskelion Reforged's verified 2x2-slot count offset (+13,+11 from slot top-left)
     // base catalysts, row A (6-cell, centered)
     { cx: 145, cy: 474, apiId: 'flesh-catalyst' },
     { cx: 209, cy: 474, apiId: 'neural-catalyst' },
