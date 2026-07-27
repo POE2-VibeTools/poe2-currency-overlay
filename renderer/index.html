@@ -35,6 +35,7 @@
           <button class="set-nav active" data-sec="general">App</button>
           <button class="set-nav" data-sec="currency">Currency</button>
           <button class="set-nav" data-sec="pricecheck">Price Check</button>
+          <button class="set-nav" data-sec="networth">Net Worth</button>
           <button class="set-nav" data-sec="help">Help &amp; About</button>
           <button id="btn-quit" class="set-quit" title="Quit the app entirely">Quit app</button>
         </nav>
@@ -161,6 +162,15 @@
               </div>
             </section>
           </div>
+
+          <section class="set-card" id="sec-networth">
+            <div class="set-card-lab">Net Worth</div>
+            <div class="set-field">
+              <label title="Global key: open a special stash tab in game and press this to scan and value it into the tally.">Capture hotkey</label>
+              <div class="kb-field"><input id="stash-hotkey-input" class="kb-input" readonly placeholder="click, then press keys" /><span class="kb-hint">click to rebind</span></div>
+            </div>
+            <div id="nw-set-root"></div>
+          </section>
         </div>
       </div>
     </section>

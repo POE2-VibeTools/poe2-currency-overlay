@@ -8,15 +8,23 @@
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const fmtEx = (n) => n == null ? '—' : Math.round(n).toLocaleString('en-US') + ' ex';
-  const fmtDiv = (n) => n == null ? null : (n >= 100 ? Math.round(n) : n.toFixed(1)).toLocaleString('en-US') + ' div';
+  // respect the global "Show currency icons instead of names" toggle for the ex/div units
+  const unit = (name, apiId) => {
+    if (window.currencyIconsOn && window.currencyIconsOn() && window.currencyIconUrl) {
+      const u = window.currencyIconUrl(apiId);
+      if (u) return `<img class="nw-unit-ic" src="${u}" alt="${name}" title="${name}">`;
+    }
+    return name;
+  };
+  const fmtEx = (n) => n == null ? '—' : Math.round(n).toLocaleString('en-US') + ' ' + unit('ex', 'exalted');
+  const fmtDiv = (n) => n == null ? null : (n >= 100 ? Math.round(n) : n.toFixed(1)).toLocaleString('en-US') + ' ' + unit('div', 'divine');
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
-  const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, showMissing: false, togglesOpen: false, calibrated: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
+  const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, showMissing: false, showConfidence: false, calibrated: false, hotkey: 'F7', dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
   const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence', runes: 'Runes', 'runes-kalguuran': 'Kalguuran Runes', ritual: 'Ritual', soulcore: 'Soul Cores', idol: 'Idols', 'ancient-augment': 'Ancient Augments', delirium: 'Delirium', breach: 'Breach', expedition: 'Expedition' };
   const MIRROR_ICON = 'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lEdXBsaWNhdGUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/26bc31680e/CurrencyDuplicate.png';
 
-  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); state.showMissing = !!(c && c.stashShowMissing); state.togglesOpen = !!(c && c.stashTogglesOpen); state.calibrated = !!(c && c.stashCalibration); render(); }).catch(() => {});
+  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); state.showMissing = !!(c && c.stashShowMissing); state.showConfidence = !!(c && c.stashShowConfidence); state.calibrated = !!(c && c.stashCalibration); state.hotkey = (c && c.stashHotkey) || 'F7'; render(); }).catch(() => {});
 
   const rowsOfType = (tab) => state.rows.filter((r) => r.tab === tab);
   function labelFor(row) {
@@ -54,10 +62,78 @@
     render();
   }
 
+  // effective per-line values, honouring manual count edits (userCount) + toggles (excluded)
+  const effCount = (ln) => (ln.userCount != null ? ln.userCount : ln.count) || 0;
+  const lineOn = (ln) => !ln.excluded;
+  const lineVal = (ln) => (lineOn(ln) && ln.price != null) ? effCount(ln) * ln.price : 0;
+  const rowTotalEx = (res) => (res.lines || []).reduce((s, ln) => s + lineVal(ln), 0);
+  const rowEdited = (res) => (res.lines || []).some((ln) => ln.userCount != null);
+
   function grandTotals() {
-    let ex = 0, divPrice = null, mirrorPrice = null;
-    for (const r of state.rows) { if (!r.included) continue; ex += r.result.totalEx || 0; if (r.result.divPrice) divPrice = r.result.divPrice; if (r.result.mirrorPrice) mirrorPrice = r.result.mirrorPrice; }
-    return { ex, div: divPrice ? ex / divPrice : null, mirrors: mirrorPrice && ex >= mirrorPrice ? Math.floor(ex / mirrorPrice) : null };
+    let ex = 0, divPrice = null, mirrorPrice = null, edited = false;
+    for (const r of state.rows) {
+      if (!r.included) continue;
+      ex += rowTotalEx(r.result);
+      if (rowEdited(r.result)) edited = true;
+      if (r.result.divPrice) divPrice = r.result.divPrice;
+      if (r.result.mirrorPrice) mirrorPrice = r.result.mirrorPrice;
+    }
+    return { ex, div: divPrice ? ex / divPrice : null, mirrors: mirrorPrice && ex >= mirrorPrice ? Math.floor(ex / mirrorPrice) : null, edited };
+  }
+  const anyEdits = () => state.rows.some((r) => (r.result.lines || []).some((ln) => ln.userCount != null || ln.excluded));
+
+  // Net Worth settings live in the app Settings page (Settings -> Net Worth). This fills
+  // that section with the toggles + calibration; the capture-hotkey field there is static
+  // HTML bound in renderer.js. Called by renderer.js when the section opens.
+  function renderSettings(root) {
+    if (!root) return;
+    root.innerHTML = '';
+    // reuse the app's native switch component so it matches the rest of Settings
+    const mkToggle = (checked, label, sub, apply) => {
+      const lab = el('label', 'switch set-excl');
+      const cbx = el('input'); cbx.type = 'checkbox'; cbx.checked = checked;
+      cbx.onchange = () => { apply(cbx.checked); renderSettings(root); render(); };
+      lab.appendChild(cbx);
+      lab.appendChild(el('span', 'sw-track'));
+      lab.appendChild(el('span', 'sw-lab', label));
+      if (sub) lab.appendChild(el('span', 'set-sub', sub));
+      return lab;
+    };
+    const toggles = el('div', 'nw-set-toggles');
+    toggles.appendChild(mkToggle(state.dup, 'Capture duplicate tabs as separate rows',
+      'Re-capturing a tab type asks whether to replace its row or add a new one.',
+      (v) => { state.dup = v; try { window.api.setStashDupTabs(v); } catch {} }));
+    toggles.appendChild(mkToggle(state.sortLayout, 'Sort items by stash layout',
+      'List items in stash reading order instead of by value.',
+      (v) => { state.sortLayout = v; try { window.api.setStashSortLayout(v); } catch {} }));
+    toggles.appendChild(mkToggle(state.showMissing, 'Show missing / unread items',
+      'List empty or unread slots as editable ×0 lines, so you can fill in anything the scan missed.',
+      (v) => { state.showMissing = v; try { window.api.setStashShowMissing(v); } catch {} }));
+    toggles.appendChild(mkToggle(state.showConfidence, 'Show OCR confidence %',
+      'Show how sure the scan was of each count; low numbers are worth double-checking.',
+      (v) => { state.showConfidence = v; try { window.api.setStashShowConfidence(v); } catch {} }));
+    root.appendChild(toggles);
+    // resolution calibration
+    const cal = el('div', 'nw-set-cal');
+    const head = el('div', 'nw-set-cal-head');
+    head.appendChild(el('div', 'nw-set-cal-title', 'Resolution'));
+    head.appendChild(el('div', 'nw-set-cal-badge' + (state.calibrated ? ' on' : ''), state.calibrated ? 'Calibrated' : 'Default 1920×1080'));
+    cal.appendChild(head);
+    cal.appendChild(el('div', 'nw-set-cal-desc', state.calibrated
+      ? 'Reads are scaled to your window. If a scan ever mismatches its tab, re-calibrate.'
+      : 'Assumes the game is fullscreen at 1920×1080. Any other size or a smaller window? Open a special tab, then calibrate once.'));
+    const btns = el('div', 'nw-set-cal-btns');
+    const calBtn = el('button', 'nw-set-btn', state.calibrated ? 'Re-calibrate' : 'Calibrate for my resolution');
+    calBtn.onclick = () => { try { window.api.stashCalibrateStart(); } catch {} };
+    btns.appendChild(calBtn);
+    if (state.calibrated) {
+      const clr = el('button', 'nw-set-btn nw-set-btn-ghost', 'Reset to default');
+      clr.title = 'Remove calibration and go back to the default 1920×1080 assumption';
+      clr.onclick = () => { try { window.api.clearStashCalibration(); } catch {} state.calibrated = false; renderSettings(root); render(); };
+      btns.appendChild(clr);
+    }
+    cal.appendChild(btns);
+    root.appendChild(cal);
   }
 
   function rowCard(row) {
@@ -90,9 +166,10 @@
     title.appendChild(document.createTextNode(labelFor(row)));
     head.appendChild(title);
 
-    const tot = el('div', 'nw-card-total');
-    tot.appendChild(el('span', 'nw-ex', fmtEx(r.totalEx)));
-    if (r.totalDiv != null) tot.appendChild(el('span', 'nw-div', fmtDiv(r.totalDiv)));
+    const rowEx = rowTotalEx(r);
+    const tot = el('div', 'nw-card-total' + (rowEdited(r) ? ' nw-edited' : ''));
+    tot.appendChild(el('span', 'nw-ex', fmtEx(rowEx)));
+    if (r.divPrice) tot.appendChild(el('span', 'nw-div', fmtDiv(rowEx / r.divPrice)));
     head.appendChild(tot);
     head.onclick = (e) => { if (e.target === cb) return; state.expanded[row.id] = !open; render(); };
 
@@ -104,25 +181,60 @@
     if (!open) return card;
 
     const list = el('div', 'nw-lines');
-    const ordered = r.lines.slice().sort(state.sortLayout
-      ? (a, b) => (a.slot || 0) - (b.slot || 0)          // stash reading order
-      : (a, b) => (b.valueEx || 0) - (a.valueEx || 0));   // value, highest first
-    for (const ln of ordered) {
-      if (!ln.count) continue;
-      const line = el('div', 'nw-line');
+    const byVal = (a, b) => (lineVal(b) - lineVal(a)) || ((b.count || 0) - (a.count || 0));
+    const bySlot = (a, b) => (a.slot || 0) - (b.slot || 0);
+    const all = r.lines.slice();
+    const owned = all.filter((ln) => !ln.missing).sort(state.sortLayout ? bySlot : byVal);
+    const missing = all.filter((ln) => ln.missing).sort(bySlot); // shown only with "Show missing", at the bottom
+    const shown = state.showMissing ? owned.concat(missing) : owned;
+    for (const ln of shown) {
+      const line = el('div', 'nw-line'
+        + (ln.userCount != null ? ' nw-line-edited' : '')
+        + (ln.excluded ? ' nw-line-off' : '')
+        + (ln.missing ? ' nw-line-missing' : ''));
+      const tg = el('input', 'nw-line-inc'); tg.type = 'checkbox'; tg.checked = !ln.excluded; tg.title = 'Include in total';
+      tg.onclick = (e) => { e.stopPropagation(); ln.excluded = !tg.checked; render(); };
+      line.appendChild(tg);
       if (ln.icon) { const img = el('img', 'nw-ic'); img.src = ln.icon; img.onerror = () => img.remove(); line.appendChild(img); }
       else line.appendChild(el('div', 'nw-ic nw-ic-none'));
       line.appendChild(el('div', 'nw-name', esc(ln.name)));
-      line.appendChild(el('div', 'nw-cnt', '×' + fmtCount(ln.count)));
-      line.appendChild(el('div', 'nw-val', ln.valueEx == null ? '<span class="nw-noprice">no price</span>' : fmtEx(ln.valueEx)));
+      if (state.showConfidence && ln.conf != null) {
+        const pct = Math.round(ln.conf * 100);
+        const cl = pct >= 88 ? 'ok' : (pct >= 80 ? 'mid' : 'low');
+        const cf = el('div', 'nw-conf nw-conf-' + cl, pct + '%');
+        cf.title = 'OCR confidence - low numbers are worth double-checking';
+        line.appendChild(cf);
+      }
+      const cnt = el('div', 'nw-cnt'); cnt.innerHTML = `<span class="nw-x">×</span>${esc(fmtCount(effCount(ln)))}`;
+      cnt.title = 'Click to edit count';
+      cnt.onclick = (e) => { e.stopPropagation(); startEdit(ln, cnt); };
+      line.appendChild(cnt);
+      line.appendChild(el('div', 'nw-val', ln.price == null ? '<span class="nw-noprice">no price</span>' : fmtEx(lineVal(ln))));
+      const rb = el('button', 'nw-line-reset' + ((ln.userCount != null || ln.excluded) ? '' : ' nw-line-reset-off'), '↺');
+      rb.title = 'Reset this line to its scanned value';
+      rb.onclick = (e) => { e.stopPropagation(); ln.userCount = undefined; ln.excluded = false; render(); };
+      line.appendChild(rb);
       list.appendChild(line);
     }
     card.appendChild(list);
-    if (state.showMissing && r.flags && r.flags.length) {
-      const names = r.flags.map((f) => esc(f.name)).join(', ');
-      card.appendChild(el('div', 'nw-flags', `${r.flags.length} slot${r.flags.length === 1 ? '' : 's'} empty or unread (not counted): ${names}`));
-    }
     return card;
+  }
+
+  // click-to-edit a line's count; matching the original value clears the override
+  function startEdit(ln, cntEl) {
+    const inp = el('input', 'nw-cnt-edit');
+    inp.type = 'text'; inp.inputMode = 'numeric'; inp.value = String(effCount(ln));
+    cntEl.replaceWith(inp); inp.focus(); inp.select();
+    let done = false;
+    const commit = () => {
+      if (done) return; done = true;
+      const raw = String(inp.value).replace(/[^0-9]/g, '');
+      const v = raw === '' ? 0 : parseInt(raw, 10);
+      ln.userCount = (v === (ln.count || 0)) ? undefined : v;
+      render();
+    };
+    inp.onblur = commit;
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } else if (e.key === 'Escape') { done = true; render(); } };
   }
 
   function busyCard(tabId) {
@@ -172,7 +284,7 @@
     const header = el('div', 'nw-header');
     const totBox = el('div', 'nw-grand');
     totBox.appendChild(el('div', 'nw-grand-lab', rows ? `${included}/${rows} tab${rows === 1 ? '' : 's'} included` : 'No tabs captured'));
-    const gline = el('div', 'nw-grand-val');
+    const gline = el('div', 'nw-grand-val' + (rows && gt.edited ? ' nw-edited' : ''));
     gline.appendChild(el('span', 'nw-total-lab', 'Total'));
     gline.appendChild(el('span', 'nw-ex', fmtEx(rows ? gt.ex : null)));
     if (gt.div != null) gline.appendChild(el('span', 'nw-div', fmtDiv(gt.div)));
@@ -180,71 +292,37 @@
       `(${gt.mirrors.toLocaleString('en-US')}<img class="nw-mirror-ic" src="${MIRROR_ICON}" alt="mirror">)`));
     totBox.appendChild(gline);
     header.appendChild(totBox);
-    const btn = el('button', 'nw-capture', state.busy ? 'Capturing…' : 'Capture tab (F7)');
-    btn.disabled = state.busy; btn.onclick = capture;
-    header.appendChild(btn);
+    const controls = el('div', 'nw-controls');
+    if (state.busy) controls.appendChild(el('span', 'nw-scanning', 'Scanning…'));
+    const gear = el('button', 'nw-gear', '⚙'); gear.title = `Net Worth settings (capture hotkey: ${state.hotkey})`;
+    gear.onclick = () => { if (window.openNetWorthSettings) window.openNetWorthSettings(); };
+    controls.appendChild(gear);
+    header.appendChild(controls);
     wrap.appendChild(header);
-
-    // Collapsible "Toggles" section - keeps the settings from stacking up on the
-    // page. Open state + each toggle persist in config (survive sessions + updates).
-    const toggles = el('div', 'nw-toggles');
-    const thead = el('button', 'nw-toggles-head');
-    thead.innerHTML = `<span class="nw-caret">${state.togglesOpen ? '▾' : '▸'}</span>Toggles`;
-    thead.onclick = () => { state.togglesOpen = !state.togglesOpen; try { window.api.setStashTogglesOpen(state.togglesOpen); } catch {} render(); };
-    toggles.appendChild(thead);
-    if (state.togglesOpen) {
-      const body = el('div', 'nw-toggles-body');
-      const mkToggle = (checked, label, title, apply) => {
-        const lab = el('label', 'nw-setting');
-        const cb = el('input'); cb.type = 'checkbox'; cb.checked = checked;
-        cb.onchange = () => { apply(cb.checked); render(); };
-        lab.appendChild(cb); lab.appendChild(el('span', null, label)); lab.title = title;
-        return lab;
-      };
-      body.appendChild(mkToggle(state.dup, 'Capture duplicate tabs as separate rows',
-        'On: re-capturing a tab type you already have asks whether to replace an existing row or add a new one - for owning multiple of the same tab. Off: re-capturing just updates the one row.',
-        (v) => { state.dup = v; try { window.api.setStashDupTabs(v); } catch {} }));
-      body.appendChild(mkToggle(state.sortLayout, 'Sort items by stash layout',
-        'On: list items in stash reading order (left to right, top to bottom). Off: list by value, highest first.',
-        (v) => { state.sortLayout = v; try { window.api.setStashSortLayout(v); } catch {} }));
-      body.appendChild(mkToggle(state.showMissing, 'Show missing / unread items',
-        'On: each tab lists the slots that read as empty or failed to register (not counted) - use it to check nothing you own was missed. Off: hides items you legitimately do not have.',
-        (v) => { state.showMissing = v; try { window.api.setStashShowMissing(v); } catch {} }));
-      // resolution calibration
-      const cal = el('div', 'nw-cal');
-      const calBtn = el('button', 'nw-cal-btn', state.calibrated ? 'Re-calibrate resolution' : 'Calibrate for my resolution');
-      calBtn.onclick = () => { try { window.api.stashCalibrateStart(); } catch {} };
-      cal.appendChild(calBtn);
-      const status = el('div', 'nw-cal-status', state.calibrated
-        ? '<span class="nw-cal-ok">Calibrated</span> - reads scale to your window. Open a special tab and press F7.'
-        : 'Not calibrated - assumes the game is at 1920x1080, windowed top-left. Calibrate once for any other size.');
-      cal.appendChild(status);
-      if (state.calibrated) {
-        const clr = el('button', 'nw-cal-clear', 'Clear calibration');
-        clr.onclick = () => { try { window.api.clearStashCalibration(); } catch {} state.calibrated = false; render(); };
-        cal.appendChild(clr);
-      }
-      body.appendChild(cal);
-      toggles.appendChild(body);
-    }
-    wrap.appendChild(toggles);
 
     if (state.notice) wrap.appendChild(el('div', 'nw-notice nw-' + state.notice.kind, esc(state.notice.msg)));
 
     const pending = state.busy && state.phase === 'detecting' ? state.pendingTab : null;
     if (!rows && !state.busy) {
       wrap.appendChild(el('div', 'nw-empty',
-        'Open a special stash tab in game, keep it fully visible, and press <b>F7</b> (or the Capture button).<br>'
-        + 'The tab is detected automatically and added here with its own total, plus a running grand total. '
-        + 'Flip to the next tab, press F7 again.<br>'
-        + '<span style="color:var(--tx-faint)">Currency & Abyss tabs supported now; more coming.</span>'));
+        `Open a special stash tab in game, keep it fully visible, and press <b>${esc(state.hotkey)}</b> (or Capture).<br>`
+        + 'It detects the tab, values it, and adds a row here plus a running grand total. Flip tabs and capture again.<br>'
+        + '<span style="color:var(--tx-faint)">Not at 1920&times;1080 fullscreen? Open <b>&#x2699; settings</b> and calibrate once.</span>'));
     } else {
       for (const row of state.rows) wrap.appendChild(rowCard(row));
       if (state.busy) wrap.appendChild(busyCard(pending));
       if (rows) {
-        const reset = el('button', 'nw-reset', 'Clear tally');
-        reset.onclick = () => { state.rows = []; state.expanded = {}; state.notice = null; render(); };
-        wrap.appendChild(reset);
+        const footer = el('div', 'nw-footer');
+        const clear = el('button', 'nw-reset', 'Clear tally');
+        clear.onclick = () => { state.rows = []; state.expanded = {}; state.notice = null; render(); };
+        footer.appendChild(clear);
+        if (anyEdits()) {
+          const re = el('button', 'nw-reset nw-reset-edits', 'Reset all edits');
+          re.title = 'Undo every manual count edit + row toggle across all tabs';
+          re.onclick = () => { for (const r of state.rows) for (const ln of r.result.lines) { ln.userCount = undefined; ln.excluded = false; } render(); };
+          footer.appendChild(re);
+        }
+        wrap.appendChild(footer);
       }
     }
     root.appendChild(wrap);
@@ -258,15 +336,18 @@
     if (window.api.onStashCaptured) window.api.onStashCaptured((res) => { state.busy = false; state.phase = 'idle'; state.pendingTab = null; applyResult(res); });
     if (window.api.onStashCalibrated) window.api.onStashCalibrated((res) => {
       state.busy = false; state.phase = 'idle'; state.pendingTab = null; state.calibrated = true;
+      const scale = res && typeof res.calScale === 'number' ? res.calScale : 1;
+      const small = scale < 0.92;
+      const smallMsg = small ? ` Your panel is ${Math.round(scale * 100)}% of reference size - below 1920×1080, so some counts may misread. Play at 1920×1080 or larger for reliable reads, and edit any that are off.` : '';
       if (res && res.ok && !res.mismatch) {
         applyResult(res);
-        state.notice = { kind: 'ok', msg: `Calibrated - detected ${TAB_LABEL[res.tab] || res.tab}, read ${res.readCount}/${res.slotCount} items. If a tab ever mismatches, re-calibrate.` };
+        state.notice = { kind: small ? 'warn' : 'ok', msg: `Calibration saved ✓ - detected ${TAB_LABEL[res.tab] || res.tab}, read ${res.readCount}/${res.slotCount} items.${smallMsg}` };
       } else {
-        state.notice = { kind: 'warn', msg: 'Calibration saved, but no tab was read. Open a special stash tab (fully visible), make sure your box covered the coloured bounding box, then re-calibrate or press F7.' };
+        state.notice = { kind: 'warn', msg: `Calibration saved ✓, but no tab was read. Open a special stash tab (fully visible), make sure your box covered the coloured bounding box, then re-calibrate or press ${state.hotkey}.${smallMsg}` };
       }
       render();
     });
   }
 
-  window.NetWorth = { render, capture };
+  window.NetWorth = { render, capture, renderSettings };
 })();

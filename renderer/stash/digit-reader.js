@@ -242,7 +242,7 @@
   }
 
   // Read one cell -> string, or "?" if unreadable.
-  function readCell(V, W, H, cx, cy, templates, P, scale) {
+  function readCellEx(V, W, H, cx, cy, templates, P, scale) {
     scale = scale && scale > 0 ? scale : 1;
     let sub;
     if (scale !== 1) {
@@ -250,12 +250,12 @@
       // back to reference size so the fixed 0-9 templates + reference P still apply.
       const sw = Math.round(P.stripWidth * scale), up = Math.round(P.up * scale), dn = Math.round(P.dn * scale);
       const raw = crop(V, W, H, cx - sw, cy - up, cx + sw, cy + dn);
-      if (!raw.w || !raw.h) return '?';
+      if (!raw.w || !raw.h) return { text: '?', conf: 0 };
       sub = resample(raw, Math.max(1, Math.round(raw.w / scale)), Math.max(1, Math.round(raw.h / scale)));
     } else {
       sub = crop(V, W, H, cx - P.stripWidth, cy - P.up, cx + P.stripWidth, cy + P.dn);
     }
-    if (!sub.w || !sub.h) return '?';
+    if (!sub.w || !sub.h) return { text: '?', conf: 0 };
     const bin = binarize(sub, P.floor);
 
     let cands = collect(bin, templates, P.iouThresh, P);
@@ -285,7 +285,7 @@
       } catch (e) { /* proceed with empty */ }
     }
 
-    if (!cands.length) return '?';
+    if (!cands.length) return { text: '?', conf: 0 };
 
     // greedy non-overlapping, highest IoU first
     cands.sort((a, b) => b.score - a.score);
@@ -317,7 +317,17 @@
       }
       filtered.push(c);
     }
-    return filtered.length ? filtered.map(c => c.ch).join('') : '?';
+    if (!filtered.length) return { text: '?', conf: 0 };
+    // confidence = mean IoU match score of the accepted glyphs (gap-filled ones default
+    // to the base threshold). Surfaced per-line in the UI so misreads are easy to spot.
+    const scores = filtered.map((c) => (typeof c.score === 'number' ? c.score : P.iouThresh));
+    const conf = scores.reduce((a, b) => a + b, 0) / scores.length;
+    return { text: filtered.map((c) => c.ch).join(''), conf };
+  }
+
+  // string-only wrapper: back-compat for callers that just want the count text.
+  function readCell(V, W, H, cx, cy, templates, P, scale) {
+    return readCellEx(V, W, H, cx, cy, templates, P, scale).text;
   }
 
   // collect candidates over all templates at a given IoU threshold.
@@ -433,7 +443,7 @@
 
   return {
     otsu, crop, binarize, components, iou, slideMatch, greyOpening,
-    extractTemplates, readCell, valueChannelFromRGBA, valueChannelDesatMax,
+    extractTemplates, readCell, readCellEx, valueChannelFromRGBA, valueChannelDesatMax,
     templatesFromJSON, DEFAULTS, DESAT_SAT,
   };
 });

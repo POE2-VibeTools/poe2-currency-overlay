@@ -197,8 +197,8 @@ const DEFAULT_CONFIG = {
   stashHotkey: 'F7', // view a special stash tab in game, press this: reads + values it into the Net Worth tally
   stashDupTabs: false, // Net Worth: re-capturing a tab type asks replace-which/add-new instead of just replacing
   stashSortLayout: false, // Net Worth: list a tab's items in stash reading order instead of by value
-  stashShowMissing: false, // Net Worth: show the "empty or unread (not counted)" flags line per tab
-  stashTogglesOpen: false, // Net Worth: whether the collapsible "Toggles" section is expanded
+  stashShowMissing: false, // Net Worth: show empty/unread slots as editable x0 lines
+  stashShowConfidence: false, // Net Worth: show the per-line OCR confidence %
   stashCalibration: null, // Net Worth: {x,y,w,h} panel box from one-time calibration; null = assume reference res
   itemQ20: true,       // search armour/weapons as if 20% quality
   itemFillRunes: true, // search as if empty rune sockets held Greater Iron Runes
@@ -1330,12 +1330,19 @@ async function doStashCapture(onDetected) {
     res.reads.forEach((r, i) => {
       const info = prices[r.apiId] || {};
       const name = info.name || r.apiId;
-      if (r.count == null) { flags.push({ apiId: r.apiId, name }); return; }
       const price = typeof info.price === 'number' ? info.price : null;
+      const icon = info.icon || null;
+      // slot = read order = stash reading order (top-to-bottom, left-to-right)
+      if (r.count == null) {
+        // empty / unread slot: a 0-count line the UI shows (editable) only when
+        // "Show missing" is on. flags kept for the read-count summary.
+        flags.push({ apiId: r.apiId, name });
+        lines.push({ apiId: r.apiId, name, icon, count: 0, price, valueEx: price != null ? 0 : null, slot: i, missing: true, conf: null });
+        return;
+      }
       const valueEx = price != null ? r.count * price : null;
       if (valueEx != null) total += valueEx;
-      // slot = read order = stash reading order (top-to-bottom, left-to-right)
-      lines.push({ apiId: r.apiId, name, icon: info.icon || null, count: r.count, price, valueEx, slot: i });
+      lines.push({ apiId: r.apiId, name, icon, count: r.count, price, valueEx, slot: i, conf: typeof r.conf === 'number' ? r.conf : null });
     });
     lines.sort((a, b) => (b.valueEx || 0) - (a.valueEx || 0));
     return {
@@ -1369,7 +1376,17 @@ ipcMain.on('stash-capture-start', () => captureAndBroadcast());
 ipcMain.handle('set-stash-dup', (_e, on) => { config.stashDupTabs = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-sort', (_e, on) => { config.stashSortLayout = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-missing', (_e, on) => { config.stashShowMissing = !!on; saveConfig(); return true; });
-ipcMain.handle('set-stash-toggles-open', (_e, on) => { config.stashTogglesOpen = !!on; saveConfig(); return true; });
+ipcMain.handle('set-stash-show-confidence', (_e, on) => { config.stashShowConfidence = !!on; saveConfig(); return true; });
+ipcMain.handle('set-stash-hotkey', (_e, accelerator) => {
+  if (!accelerator) return false;
+  const prev = config.stashHotkey;
+  try { if (prev) globalShortcut.unregister(prev); } catch {}
+  let ok = false;
+  try { ok = globalShortcut.register(accelerator, () => captureAndBroadcast()); } catch {}
+  if (!ok) { try { if (prev) globalShortcut.register(prev, () => captureAndBroadcast()); } catch {} return false; }
+  config.stashHotkey = accelerator; saveConfig();
+  return true;
+});
 
 // ---------- resolution calibration ----------
 // The user aligns a box to the stash panel's COLORED outer bounding frame (an obvious,
@@ -1478,10 +1495,13 @@ ipcMain.on('stash-calibrate-confirm', async (_e, frame) => {
     config.stashCalibration = frameToCalBox(frame);
     saveConfig();
     closeCalibWin();
+    // how big the calibrated panel is vs the reference - below ~1 the digits shrink
+    // and reads get unreliable (surfaced as a warning in the UI).
+    const calScale = config.stashCalibration.h / REF_BOX.h;
     // immediately test-scan the open tab so the user gets pass/fail feedback
     const res = await doStashCapture(() => {});
     const send = (ch, p) => { if (win && !win.isDestroyed()) win.webContents.send(ch, p); };
-    send('stash-calibrated', res);
+    send('stash-calibrated', Object.assign({ calScale }, res));
   } catch (err) { console.error('calibrate-confirm failed:', err.message); }
 });
 ipcMain.handle('clear-stash-calibration', () => { config.stashCalibration = null; saveConfig(); return true; });

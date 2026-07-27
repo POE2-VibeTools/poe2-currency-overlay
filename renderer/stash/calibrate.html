@@ -30,8 +30,12 @@
   #loupe canvas { display: block; }
   #bar { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 30;
     background: rgba(18,16,12,.94); border: 1px solid rgba(240,192,112,.35); border-radius: 12px;
-    padding: 14px 18px; display: flex; align-items: center; gap: 16px; max-width: 92vw;
+    padding: 12px 18px 14px; display: flex; flex-direction: column; gap: 11px; max-width: 92vw;
     box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+  .bar-note { text-align: center; font-size: 13px; color: #f0c070; background: rgba(240,192,112,.1);
+    border: 1px solid rgba(240,192,112,.3); border-radius: 8px; padding: 8px 12px; line-height: 1.4; }
+  .bar-note b { color: #ffe0a0; }
+  .bar-main { display: flex; align-items: center; gap: 16px; }
   #bar .msg { color: #e8dcc4; font-size: 13px; line-height: 1.45; max-width: 520px; }
   #bar .msg b { color: var(--am2); }
   #bar .coords { color: #9a8c70; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -76,9 +80,12 @@
     <p>Lay your box <b style="color:#e8dcc4">directly on top of the stash panel's coloured outer bounding box</b> (the glowing border). When your lines cover the coloured lines, it's aligned.</p>
   </div>
   <div id="bar">
-    <div class="msg">Drag the box <b>roughly over your stash panel</b>, then hit <b>Auto-snap</b> - each edge locks onto the coloured bounding line. Fine-tune by hand if needed (the magnifier highlights the exact pixel row/column). Then Confirm.</div>
-    <div class="coords" id="coords"></div>
-    <div class="btns"><button id="cancel">Cancel</button><button id="snap">Auto-snap to border</button><button id="ok">Confirm &amp; test</button></div>
+    <div class="bar-note">&#9888;&#65039; <b>For reliable reads, run the game at 1920&times;1080 or larger.</b> Smaller panels shrink the count digits and the scan starts missing them.</div>
+    <div class="bar-main">
+      <div class="msg">Drag the box <b>roughly over your stash panel</b>, then hit <b>Auto-snap</b> - each edge locks onto the coloured bounding line. Fine-tune by hand if needed (the magnifier highlights the exact pixel row/column). Then Confirm.</div>
+      <div class="coords" id="coords"></div>
+      <div class="btns"><button id="cancel">Cancel</button><button id="snap">Auto-snap to border</button><button id="ok">Confirm &amp; test</button></div>
+    </div>
   </div>
 <script src="calibrate.js"></script>
 </body>

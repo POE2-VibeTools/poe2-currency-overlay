@@ -1653,6 +1653,12 @@ async function initSettings() {
     if (ok) config.itemHotkeyTemp = acc;
     return ok;
   });
+  const stashHkInput = $('stash-hotkey-input');
+  if (stashHkInput) bindHotkeyInput(stashHkInput, () => config.stashHotkey || '', async (acc) => {
+    const ok = await window.api.setStashHotkey(acc);
+    if (ok) config.stashHotkey = acc;
+    return ok;
+  });
 
   const sel = $('league-select');
   sel.value = config.league || 'auto';
@@ -1723,6 +1729,7 @@ async function initSettings() {
     await window.api.setCurrencyIcons(curIcons.checked);
     if (window.ItemTab && window.ItemTab.refresh) window.ItemTab.refresh();
     if (window.Desecrate && window.Desecrate.refresh) window.Desecrate.refresh();
+    if (window.NetWorth && window.NetWorth.render) window.NetWorth.render();
   });
 
   const dysFont = $('dyslexic-font');
@@ -2218,6 +2225,13 @@ async function main() {
   const setSettingsSection = (sec) => {
     document.querySelectorAll('.set-nav').forEach((n) => n.classList.toggle('active', n.dataset.sec === sec));
     document.querySelectorAll('#settings .set-card').forEach((c) => c.classList.toggle('sec-on', c.id === 'sec-' + sec));
+    if (sec === 'networth' && window.NetWorth && window.NetWorth.renderSettings) window.NetWorth.renderSettings(document.getElementById('nw-set-root'));
+  };
+  // let the Net Worth tab jump straight into its settings section
+  window.openNetWorthSettings = () => {
+    $('settings').classList.remove('hidden');
+    const sc = document.querySelector('#settings .set-scroll'); if (sc) sc.scrollTop = 0;
+    setSettingsSection('networth');
   };
   $('btn-settings').addEventListener('click', () => {
     const opening = $('settings').classList.contains('hidden');

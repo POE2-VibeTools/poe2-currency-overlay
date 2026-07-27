@@ -63,9 +63,9 @@ parentPort.on('message', (msg) => {
     const reads = []; let readCount = 0;
     for (const s of map.STATIC_SLOTS) {
       const pos = TD.scalePos(s.cx, s.cy, refBox, box);
-      const raw = DR.readCell(V, W, H, pos.cx, pos.cy, DIGITS, P, scale);
+      const { text: raw, conf } = DR.readCellEx(V, W, H, pos.cx, pos.cy, DIGITS, P, scale);
       if (raw !== '?') readCount++;
-      reads.push({ apiId: s.apiId, count: raw === '?' ? null : parseInt(raw, 10) });
+      reads.push({ apiId: s.apiId, count: raw === '?' ? null : parseInt(raw, 10), conf: raw === '?' ? null : conf });
     }
     parentPort.postMessage({ ok: true, tab, score: det.score, readCount, slotCount: map.STATIC_SLOTS.length, reads });
   } catch (err) {

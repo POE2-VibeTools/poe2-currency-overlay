@@ -730,8 +730,8 @@ body.tut-active #spark-tip { z-index: 45; } /* the user's reward tooltip must ne
 #desecrate-root .cur-icon-inline { height: 1.25em; vertical-align: bottom; }
 /* (the hover peek renders in its own window - its .cur-icon-inline size lives in item/peek.html) */
 /* Currency-icon toggle in the General settings card: separate it from the data row above and drop its subtext onto its own line, indented under the label */
-#sec-general .switch.set-excl { margin-top: 12px; }
-#sec-general .switch.set-excl .set-sub { flex-basis: 100%; margin-left: 28px; margin-top: 2px; }
+#sec-general .switch.set-excl, #sec-networth .switch.set-excl { margin-top: 12px; }
+#sec-general .switch.set-excl .set-sub, #sec-networth .switch.set-excl .set-sub { flex-basis: 100%; margin-left: 28px; margin-top: 2px; }
 .row.best .rate-main { color: var(--green-hi); font-weight: 700; }
 .row .gap-col { font-size: 11px; text-align: right; color: var(--tx-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default; }
 .row .arb-col { font-size: 10px; text-align: right; color: #514b40; white-space: nowrap; cursor: default; }
@@ -1133,16 +1133,15 @@ footer {
 .hidden { display: none !important; }
 
 /* --- Net Worth panel --- */
-#networth-root { padding: 10px 12px 16px; overflow-y: auto; }
+#networth-root { padding: 10px 12px 16px; overflow-y: auto; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.nw { flex: 1; display: flex; flex-direction: column; }
 .nw-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .nw-grand-lab { color: var(--tx-dim); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
 .nw-grand-val { display: flex; align-items: baseline; gap: 10px; margin-top: 2px; }
-.nw-grand-val .nw-ex { color: var(--tx-gold); font-size: 22px; font-weight: 700; }
-.nw-grand-val .nw-div { color: var(--tx-dim); font-size: 14px; }
-.nw-capture { background: linear-gradient(180deg, var(--am-grad-a), var(--am-grad-b)); color: var(--am-on);
-  border: none; border-radius: 7px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-.nw-capture:hover:not(:disabled) { filter: brightness(1.08); }
-.nw-capture:disabled { opacity: .6; cursor: default; }
+.nw-grand-val { flex-wrap: wrap; }
+.nw-grand-val .nw-total-lab { color: var(--tx-faint); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; align-self: center; }
+.nw-grand-val .nw-ex { color: var(--tx-gold); font-size: 28px; font-weight: 800; letter-spacing: -.01em; }
+.nw-grand-val .nw-div { color: var(--tx-dim); font-size: 15px; }
 .nw-notice { border-radius: 6px; padding: 8px 10px; font-size: 12px; margin-bottom: 10px; }
 .nw-warn { background: rgba(224,160,76,.12); border: 1px solid rgba(224,160,76,.35); color: var(--am-hi); }
 .nw-err { background: rgba(208,138,128,.12); border: 1px solid rgba(208,138,128,.35); color: var(--red2); }
@@ -1162,7 +1161,55 @@ footer {
 .nw-cnt { color: var(--tx-dim); font-size: 12px; font-variant-numeric: tabular-nums; }
 .nw-val { color: var(--tx-gold); font-size: 12.5px; font-weight: 600; min-width: 78px; text-align: right; font-variant-numeric: tabular-nums; }
 .nw-noprice { color: var(--tx-faint); font-weight: 400; font-style: italic; }
-.nw-flags { color: var(--tx-faint); font-size: 11px; margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--bd-06); line-height: 1.4; }
+/* per-line include toggle + click-to-edit count + edited (blue) / off / missing states */
+.nw-line-inc { flex: 0 0 auto; cursor: pointer; accent-color: var(--am); width: 13px; height: 13px; }
+.nw-cnt { cursor: pointer; border-radius: 4px; padding: 1px 5px; }
+.nw-cnt:hover { background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px var(--bd-16); }
+.nw-cnt .nw-x { color: var(--tx-faint); margin-right: 1px; }
+.nw-cnt-edit { width: 64px; background: #14110b; border: 1px solid var(--am); color: var(--tx-hi);
+  border-radius: 4px; padding: 1px 5px; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; outline: none; }
+.nw-line-off { opacity: .42; }
+.nw-line-off .nw-val { text-decoration: line-through; }
+.nw-line-missing .nw-name { color: var(--tx-dim); font-style: italic; }
+.nw-conf { flex: 0 0 auto; font-size: 10px; font-variant-numeric: tabular-nums; min-width: 32px; text-align: right; }
+.nw-conf-ok { color: var(--tx-faint); }
+.nw-conf-mid { color: var(--am-hi); }
+.nw-conf-low { color: var(--red2); font-weight: 700; }
+/* --- Net Worth: hero total + compact controls, footer, per-line reset --- */
+.nw-header { align-items: center; }
+.nw-controls { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.nw-cap-btn { background: linear-gradient(180deg, var(--am-grad-a), var(--am-grad-b)); color: var(--am-on);
+  border: none; border-radius: 7px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.nw-cap-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.nw-cap-btn:disabled { opacity: .6; cursor: default; }
+.nw-cap-hint { font-size: 10px; color: var(--tx-faint); border: 1px solid var(--bd-12); border-radius: 4px; padding: 2px 5px; font-variant-numeric: tabular-nums; }
+.nw-gear { background: transparent; border: 1px solid var(--bd-12); color: var(--tx-dim); border-radius: 7px; width: 30px; height: 30px; font-size: 15px; cursor: pointer; line-height: 1; }
+.nw-gear:hover { color: var(--tx-body); border-color: var(--bd-16); }
+.nw-scanning { color: var(--am-hi); font-size: 11px; font-style: italic; }
+.nw-unit-ic { width: 14px; height: 14px; object-fit: contain; vertical-align: -2px; }
+.nw-footer { display: flex; gap: 8px; margin-top: auto; padding-top: 12px; }
+.nw-reset-edits { color: #6db3f2; border-color: rgba(109,179,242,.45); }
+.nw-reset-edits:hover { color: #8fc6f7; border-color: rgba(109,179,242,.7); }
+.nw-line-reset { background: transparent; border: none; color: var(--tx-faint); cursor: pointer; font-size: 14px; padding: 0 2px; flex: 0 0 auto; line-height: 1; }
+.nw-line-reset:hover { color: #6db3f2; }
+.nw-line-reset-off { visibility: hidden; pointer-events: none; }
+/* Settings -> Net Worth section */
+.nw-set-toggles { margin-bottom: 18px; }
+.nw-set-cal { border: 1px solid var(--bd-09); border-radius: 8px; padding: 12px 14px; background: rgba(255,255,255,.02); }
+.nw-set-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+.nw-set-cal-title { color: var(--tx-hi); font-size: 12.5px; font-weight: 600; }
+.nw-set-cal-badge { font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--tx-dim); border: 1px solid var(--bd-12); border-radius: 10px; padding: 2px 8px; white-space: nowrap; }
+.nw-set-cal-badge.on { color: #7ec97e; border-color: rgba(126,201,126,.45); }
+.nw-set-cal-desc { color: var(--tx-dim); font-size: 11.5px; line-height: 1.45; margin-bottom: 11px; }
+.nw-set-cal-btns { display: flex; gap: 8px; }
+.nw-set-btn { background: linear-gradient(180deg, var(--am-grad-a), var(--am-grad-b)); color: var(--am-on); border: none; border-radius: 6px; padding: 7px 15px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.nw-set-btn:hover { filter: brightness(1.08); }
+.nw-set-btn-ghost { background: transparent; color: var(--tx-dim); border: 1px solid var(--bd-12); }
+.nw-set-btn-ghost:hover { color: var(--tx-body); }
+.nw-line-edited .nw-cnt, .nw-line-edited .nw-val { color: #6db3f2 !important; font-weight: 700; }
+.nw-card-total.nw-edited .nw-ex, .nw-grand-val.nw-edited .nw-ex,
+.nw-card-total.nw-edited .nw-div, .nw-grand-val.nw-edited .nw-div,
+.nw-grand-val.nw-edited .nw-total-lab { color: #6db3f2 !important; }
 .nw-reset { background: transparent; color: var(--tx-dim); border: 1px solid var(--bd-12); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; }
 .nw-reset:hover { color: var(--tx-body); border-color: var(--bd-16); }
 
@@ -1179,26 +1226,7 @@ footer {
   border: 2px solid var(--bd-16); border-top-color: var(--am); border-radius: 50%; animation: nw-spin .7s linear infinite; }
 @keyframes nw-spin { to { transform: rotate(360deg); } }
 
-/* Net Worth: setting, per-row include/remove, duplicate modal */
-.nw-setting { display: flex; align-items: center; gap: 8px; color: var(--tx-dim); font-size: 12px; margin: 2px 0 12px; cursor: pointer; user-select: none; }
-.nw-setting input { cursor: pointer; accent-color: var(--am); }
-/* collapsible Toggles section */
-.nw-toggles { margin: 2px 0 12px; }
-.nw-toggles-head { display: flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--tx-dim);
-  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; padding: 4px 0; user-select: none; }
-.nw-toggles-head:hover { color: var(--tx-body); }
-.nw-toggles .nw-caret { display: inline-block; width: 9px; color: var(--tx-faint); }
-.nw-toggles-body { padding: 5px 0 0 14px; }
-.nw-toggles-body .nw-setting { margin: 0 0 8px; }
-.nw-toggles-body .nw-setting:last-child { margin-bottom: 2px; }
-.nw-cal { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--bd-08); }
-.nw-cal-btn { background: transparent; color: var(--am-hi); border: 1px solid rgba(224,160,76,.4); border-radius: 6px;
-  padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
-.nw-cal-btn:hover { background: rgba(224,160,76,.1); color: var(--am2, #f0c070); }
-.nw-cal-status { color: var(--tx-dim); font-size: 11px; line-height: 1.4; margin-top: 6px; }
-.nw-cal-status .nw-cal-ok { color: #7ec97e; font-weight: 600; }
-.nw-cal-clear { background: none; border: none; color: var(--tx-faint); font-size: 11px; cursor: pointer; text-decoration: underline; padding: 4px 0 0; }
-.nw-cal-clear:hover { color: var(--tx-dim); }
+/* Net Worth: per-row include/remove, duplicate modal, notices */
 .nw-ok { background: rgba(126,201,126,.12); border: 1px solid rgba(126,201,126,.35); color: #9ed99e; }
 .nw-mirror { display: inline-flex; align-items: center; gap: 2px; color: var(--tx-gold); font-size: 13px; font-weight: 600; }
 .nw-mirror-ic { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; }
