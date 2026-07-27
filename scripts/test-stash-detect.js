@@ -18,6 +18,7 @@ const TABS = {
   idol: require(path.join(R, 'idol-tab-map')),
   'ancient-augment': require(path.join(R, 'ancient-augment-tab-map')),
   delirium: require(path.join(R, 'delirium-tab-map')),
+  breach: require(path.join(R, 'breach-tab-map')),
 };
 const DIGITS = DR.templatesFromJSON(require(path.join(R, 'digit-templates.json')));
 const paramsFor = (m) => m && m.readParams ? Object.assign({}, DR.DEFAULTS, m.readParams) : DR.DEFAULTS;
