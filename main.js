@@ -1203,15 +1203,16 @@ async function doStashCapture(onDetected) {
     const divPrice = prices.divine && typeof prices.divine.price === 'number' ? prices.divine.price : null;
 
     const lines = []; const flags = []; let total = 0;
-    for (const r of res.reads) {
+    res.reads.forEach((r, i) => {
       const info = prices[r.apiId] || {};
       const name = info.name || r.apiId;
-      if (r.count == null) { flags.push({ apiId: r.apiId, name }); continue; }
+      if (r.count == null) { flags.push({ apiId: r.apiId, name }); return; }
       const price = typeof info.price === 'number' ? info.price : null;
       const valueEx = price != null ? r.count * price : null;
       if (valueEx != null) total += valueEx;
-      lines.push({ apiId: r.apiId, name, icon: info.icon || null, count: r.count, price, valueEx });
-    }
+      // slot = read order = stash reading order (top-to-bottom, left-to-right)
+      lines.push({ apiId: r.apiId, name, icon: info.icon || null, count: r.count, price, valueEx, slot: i });
+    });
     lines.sort((a, b) => (b.valueEx || 0) - (a.valueEx || 0));
     return {
       ok: true, tab: res.tab, w: W, h: H, offset: res.offset, readCount: res.readCount, slotCount: res.slotCount,

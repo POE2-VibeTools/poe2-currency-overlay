@@ -94,11 +94,30 @@ Cracked via 5 parallel agents on diverse metrics vs the Abyss ground truth (20 k
   top-left number corner, weights by foreground, min weighted-SSD over dx,dy∈[-4,4].)
 
 ## NEXT UP (priority order)
-1. **Runes** — Drew's "most annoying": **5 subtabs**, each its own grid. Treat each subtab as a
-   separate map (`runes-1`, `runes-soulcores`, …) registered in worker TABS; detection picks the
-   showing subtab. Decide tally UX (5 rows vs grouped "Runes"). All priced: category `runes`=142
-   (perfect runes ~900ex, `aldurs-legacy` 116k), `ultimatum`=30 soul cores, `idol`=17. Runes
-   subtab is a type×tier grid like essence.
+1. **Runes / Augment tab** — 5 subtabs: **Runes, Kalguuran Runes, Soul Cores, Idols, Ancient
+   Augments**. Each subtab = its own static map (`runes`, `runes-kalguuran`, …) registered in
+   worker TABS; detection picks the showing subtab by best read-fraction. Decide tally UX (5 rows
+   vs grouped). Priced from category `runes`=142 (`aldurs-legacy` 116k), `ultimatum`=soul cores,
+   `idol`=idols. **Icon-matching does NOT work on runes** (near-identical glyphs) — these are
+   FIXED grids, so position=identity like currency. Build each subtab by having Drew name the
+   layout once (structural: types×tiers), then bake coords from a live capture.
+   - **Subtab 1 "Runes" COMPLETE & confirmed (not yet wired/committed):** `renderer/stash/runes-tab-map.js`,
+     69 slots, all Drew-verified, validated 38/38 owned reads against a live capture + all apiIds
+     price. Blue basic runes = 15 types × 3 tier-cols (Lesser|Base|Greater; Perfect not in tab).
+     R6 left = 4 "Greater Rune of X" crystals (x44,107,171,232 = Leadership,Tithing,Alacrity,Nobility;
+     x296,359 = gap/no slots). R6 right + R7/R8 = pantheon named runes. THEN register in worker
+     TABS + add a TAB_LABEL.
+   - **Subtab 2 "Kalguuran Runes" mapped (not wired):** `runes-kalguuran-tab-map.js`, 58 slots,
+     all Drew-verified + all price. Dense irregular layout SOLVED by defining the fixed regular
+     grid (cells are static) + a numbered-overlay visual check (`dev/stash-matcher/overlay-render.js`),
+     NOT per-capture detection (too noisy). Blanks resolved by family single-missing elimination +
+     Drew buying the 4 cheap uniques so a recapture placed them (Aldur's Legacy fell out by
+     elimination). **BLOCKER before wiring: count-OCR misreads these icons** (7->"71", some "?") —
+     needs a tightened digit-read window; positions/identities are solid. Subtab 1 reads fine, so
+     it's icon-specific.
+   - **Subtabs 3-5 TODO:** Soul Cores, Idols, Ancient Augments — same fixed-grid + overlay approach.
+   - **Reusable tooling:** `dev/stash-matcher/overlay-render.js` (numbered overlay from a positions
+     JSON), `draft-overlay.js` (matcher draft). `dev/stash-matcher/kalguuran-layout.md` has the labels.
 2. **Ritual** — Drew's row-by-row labels are in the session transcript (search "R1 Left"/omens).
    apiIds all resolve (ritual omens + `head-of-the-king` + `an-audience-with-the-king` in fragments).
    Dense twin-column-group layout broke auto-detect → pin the fixed grid carefully before baking.

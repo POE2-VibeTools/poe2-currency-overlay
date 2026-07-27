@@ -12,8 +12,8 @@
   const fmtDiv = (n) => n == null ? null : (n >= 100 ? Math.round(n) : n.toFixed(1)).toLocaleString('en-US') + ' div';
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
-  const state = { rows: [], expanded: {}, nextId: 1, dup: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
-  const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence' };
+  const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
+  const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence', runes: 'Runes', 'runes-kalguuran': 'Kalguuran Runes', ritual: 'Ritual' };
 
   if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); render(); }).catch(() => {});
 
@@ -44,7 +44,7 @@
   // setting is on, in which case ask what to do when the type already exists.
   function applyResult(res) {
     if (!res || !res.ok) { state.notice = { kind: 'err', msg: `Capture failed: ${res && res.error || 'unknown error'}` }; return render(); }
-    if (res.mismatch) { state.notice = { kind: 'warn', msg: `Couldn't read a supported tab (${res.readCount || 0} slots). Open a Currency or Abyss tab in game, keep it fully visible, and capture again.` }; return render(); }
+    if (res.mismatch) { state.notice = { kind: 'warn', msg: `Couldn't recognize this tab (${res.readCount || 0} slots read). Supported: ${Object.values(TAB_LABEL).join(', ')}. Make sure a supported tab is open and fully visible, then capture again.` }; return render(); }
     state.notice = null;
     const existing = rowsOfType(res.tab);
     if (!existing.length) { addRow(res); return render(); }
@@ -103,7 +103,10 @@
     if (!open) return card;
 
     const list = el('div', 'nw-lines');
-    for (const ln of r.lines) {
+    const ordered = r.lines.slice().sort(state.sortLayout
+      ? (a, b) => (a.slot || 0) - (b.slot || 0)          // stash reading order
+      : (a, b) => (b.valueEx || 0) - (a.valueEx || 0));   // value, highest first
+    for (const ln of ordered) {
       if (!ln.count) continue;
       const line = el('div', 'nw-line');
       if (ln.icon) { const img = el('img', 'nw-ic'); img.src = ln.icon; img.onerror = () => img.remove(); line.appendChild(img); }
@@ -185,8 +188,17 @@
     dcb.onchange = () => { state.dup = dcb.checked; try { window.api.setStashDupTabs(state.dup); } catch {} render(); };
     setline.appendChild(dcb);
     setline.appendChild(el('span', null, 'Capture duplicate tabs as separate rows'));
-    setline.title = 'On: re-capturing a tab type you already have asks whether to replace an existing row or add a new one — for owning multiple of the same tab. Off: re-capturing just updates the one row.';
+    setline.title = 'On: re-capturing a tab type you already have asks whether to replace an existing row or add a new one - for owning multiple of the same tab. Off: re-capturing just updates the one row.';
     wrap.appendChild(setline);
+
+    // Net Worth setting: item sort order within each tab's list
+    const sortline = el('label', 'nw-setting');
+    const scb = el('input'); scb.type = 'checkbox'; scb.checked = state.sortLayout;
+    scb.onchange = () => { state.sortLayout = scb.checked; render(); };
+    sortline.appendChild(scb);
+    sortline.appendChild(el('span', null, 'Sort items by stash layout'));
+    sortline.title = 'On: list items in stash reading order (left to right, top to bottom). Off: list by value, highest first.';
+    wrap.appendChild(sortline);
 
     if (state.notice) wrap.appendChild(el('div', 'nw-notice nw-' + state.notice.kind, esc(state.notice.msg)));
 

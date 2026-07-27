@@ -9,14 +9,19 @@ const TABS = {
   currency: require('./currency-tab-map'),
   abyss: require('./abyss-tab-map'),
   essence: require('./essence-tab-map'),
+  runes: require('./runes-tab-map'),
+  'runes-kalguuran': require('./runes-kalguuran-tab-map'),
+  ritual: require('./ritual-tab-map'),
 };
 const TEMPLATES = require('./digit-templates.json');
 
 const T = DR.templatesFromJSON(TEMPLATES);
-const P = DR.DEFAULTS;
+// per-tab read params: DEFAULTS with any map.readParams override (e.g. Kalguuran
+// runes bleed art flush against the count -> tighter stripWidth).
+function paramsFor(m) { return m && m.readParams ? Object.assign({}, DR.DEFAULTS, m.readParams) : DR.DEFAULTS; }
 
 // count valid reads over a slot subset at a given offset
-function countAt(V, W, H, slots, dx, dy) {
+function countAt(V, W, H, slots, dx, dy, P) {
   let n = 0;
   for (const s of slots) if (DR.readCell(V, W, H, s.cx + dx, s.cy + dy, T, P) !== '?') n++;
   return n;
@@ -30,8 +35,9 @@ function anchorsOf(m) {
 // coarse (step 3) then fine (±2) search on anchors only -> ~15x fewer matches
 function searchOffset(m, V, W, H) {
   const anc = anchorsOf(m);
+  const P = paramsFor(m);
   const pick = (best, dx, dy) => {
-    const n = countAt(V, W, H, anc, dx, dy);
+    const n = countAt(V, W, H, anc, dx, dy, P);
     return (!best || n > best.n || (n === best.n && Math.abs(dx) + Math.abs(dy) < Math.abs(best.dx) + Math.abs(best.dy))) ? { dx, dy, n } : best;
   };
   let best = null;
@@ -52,7 +58,7 @@ parentPort.on('message', (msg) => {
     if (hint) {
       for (const id of Object.keys(TABS)) {
         const m = TABS[id];
-        const frac = countAt(V, W, H, m.STATIC_SLOTS, hint.dx, hint.dy) / m.STATIC_SLOTS.length;
+        const frac = countAt(V, W, H, m.STATIC_SLOTS, hint.dx, hint.dy, paramsFor(m)) / m.STATIC_SLOTS.length;
         if (!detected || frac > detected.frac) detected = { id, map: m, align: { dx: hint.dx, dy: hint.dy }, frac };
       }
       if (detected && detected.frac < 0.5) detected = null; // hint didn't fit; fall through to search
@@ -72,9 +78,10 @@ parentPort.on('message', (msg) => {
     }
     const { id: tab, map, align } = detected;
     parentPort.postMessage({ phase: 'detected', tab }); // let the UI pre-create the row
+    const RP = paramsFor(map);
     const reads = []; let readCount = 0;
     for (const s of map.STATIC_SLOTS) {
-      const raw = DR.readCell(V, W, H, s.cx + align.dx, s.cy + align.dy, T, P);
+      const raw = DR.readCell(V, W, H, s.cx + align.dx, s.cy + align.dy, T, RP);
       if (raw !== '?') readCount++;
       reads.push({ apiId: s.apiId, count: raw === '?' ? null : parseInt(raw, 10) });
     }
