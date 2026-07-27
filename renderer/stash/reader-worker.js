@@ -23,6 +23,7 @@ const TABS = {
   'ancient-augment': require('./ancient-augment-tab-map'),
   delirium: require('./delirium-tab-map'),
   breach: require('./breach-tab-map'),
+  expedition: require('./expedition-tab-map'),
 };
 const DIGITS = DR.templatesFromJSON(require('./digit-templates.json'));
 const MIN_SCORE = 0.3; // below this the panel isn't a recognized stash tab

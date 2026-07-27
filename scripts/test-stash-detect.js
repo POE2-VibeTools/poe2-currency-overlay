@@ -19,6 +19,7 @@ const TABS = {
   'ancient-augment': require(path.join(R, 'ancient-augment-tab-map')),
   delirium: require(path.join(R, 'delirium-tab-map')),
   breach: require(path.join(R, 'breach-tab-map')),
+  expedition: require(path.join(R, 'expedition-tab-map')),
 };
 const DIGITS = DR.templatesFromJSON(require(path.join(R, 'digit-templates.json')));
 const paramsFor = (m) => m && m.readParams ? Object.assign({}, DR.DEFAULTS, m.readParams) : DR.DEFAULTS;
@@ -33,7 +34,7 @@ async function priceMap() {
       for (const it of (j.Items || [])) if (map[it.ApiId] == null) map[it.ApiId] = { ex: it.CurrentPrice, name: it.Text }; } catch (e) {}
   }
   // GGG CX-feed fallback for items poe2scout doesn't index (mirrors main.js getStashPriceMap)
-  const CX_FALLBACK = { 'raven-s-reflection': { name: "Raven's Reflection" } };
+  const CX_FALLBACK = { 'raven-s-reflection': { name: "Raven's Reflection" }, 'shattered-triskelion': { name: 'Shattered Triskelion' }, 'the-triskelion-reforged': { name: 'The Triskelion Reforged' } };
   try {
     const cxFeed = require(path.join(__dirname, '..', 'cx-feed'));
     const cx = await cxFeed.getCxPairMap('Runes of Aldur');

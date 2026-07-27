@@ -1233,6 +1233,14 @@ const CX_FALLBACK = {
     name: "Raven's Reflection",
     icon: 'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9UYW5nYW1henVLZXkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/64ddcf20c8/TangamazuKey.png',
   },
+  'shattered-triskelion': {
+    name: 'Shattered Triskelion',
+    icon: 'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvUXVlc3RJdGVtcy9EYW1hZ2VkS2FsZ3V1cmFuVHJpc2tlbGxpb24iLCJ3IjoyLCJoIjoyLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/8dbe64dd12/DamagedKalguuranTriskellion.png',
+  },
+  'the-triskelion-reforged': {
+    name: 'The Triskelion Reforged',
+    icon: 'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvUXVlc3RJdGVtcy9LYWxndXVyYW5Ucmlza2VsbGlvbiIsInciOjIsImgiOjIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/911e9a6178/KalguuranTriskellion.png',
+  },
 };
 
 async function getStashPriceMap(force) {

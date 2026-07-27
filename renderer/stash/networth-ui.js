@@ -13,7 +13,7 @@
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
   const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, showMissing: false, togglesOpen: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
-  const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence', runes: 'Runes', 'runes-kalguuran': 'Kalguuran Runes', ritual: 'Ritual', soulcore: 'Soul Cores', idol: 'Idols', 'ancient-augment': 'Ancient Augments', delirium: 'Delirium', breach: 'Breach' };
+  const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence', runes: 'Runes', 'runes-kalguuran': 'Kalguuran Runes', ritual: 'Ritual', soulcore: 'Soul Cores', idol: 'Idols', 'ancient-augment': 'Ancient Augments', delirium: 'Delirium', breach: 'Breach', expedition: 'Expedition' };
 
   if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); state.showMissing = !!(c && c.stashShowMissing); state.togglesOpen = !!(c && c.stashTogglesOpen); render(); }).catch(() => {});
 
