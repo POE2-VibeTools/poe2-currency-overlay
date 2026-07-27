@@ -14,6 +14,7 @@ const TABS = {
   ritual: require('./ritual-tab-map'),
   soulcore: require('./soulcore-tab-map'),
   idol: require('./idol-tab-map'),
+  'ancient-augment': require('./ancient-augment-tab-map'),
 };
 const TEMPLATES = require('./digit-templates.json');
 

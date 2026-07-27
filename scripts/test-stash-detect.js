@@ -15,6 +15,7 @@ const TABS = {
   ritual: require('../renderer/stash/ritual-tab-map'),
   soulcore: require('../renderer/stash/soulcore-tab-map'),
   idol: require('../renderer/stash/idol-tab-map'),
+  'ancient-augment': require('../renderer/stash/ancient-augment-tab-map'),
 };
 const T = DR.templatesFromJSON(TEMPLATES);
 const paramsFor = (m) => m && m.readParams ? Object.assign({}, DR.DEFAULTS, m.readParams) : DR.DEFAULTS;
@@ -30,11 +31,14 @@ function searchOffset(m, V, W, H) {
   return fine;
 }
 async function priceMap() {
-  const cats = ['runes', 'currency', 'essences', 'fragments', 'ultimatum', 'idol', 'ritual', 'abyss'];
+  const B = `https://api.poe2scout.com/poe2/Leagues/${encodeURIComponent('Runes of Aldur')}`;
   const map = {};
+  // mirror the app: pull the FULL category list, then every category (bulk, all 17)
+  let cats = [];
+  try { const cd = await (await fetch(`${B}/Items/Categories`)).json(); cats = cd.CurrencyCategories.map((c) => c.ApiId); } catch (e) {}
   for (const c of cats) {
     try {
-      const j = await (await fetch(`https://api.poe2scout.com/poe2/Leagues/${encodeURIComponent('Runes of Aldur')}/Currencies/ByCategory?category=${c}&perPage=250`)).json();
+      const j = await (await fetch(`${B}/Currencies/ByCategory?category=${encodeURIComponent(c)}&perPage=250`)).json();
       for (const it of (j.Items || [])) if (map[it.ApiId] == null) map[it.ApiId] = { ex: it.CurrentPrice, name: it.Text };
     } catch (e) {}
   }
