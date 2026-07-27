@@ -155,7 +155,16 @@
   async function doCurrencyPrice() {
     state.searching = true; state.notice = null; state.currencyResult = null; render();
     try {
-      const it = await currencyPrice(state.item.currencyTag);
+      let it = await currencyPrice(state.item.currencyTag);
+      // poe2scout doesn't list every exchange item (Raven's Reflection and other
+      // CX-only fragments/keys). Fall back to GGG's currency-exchange feed, which
+      // prices them the same way the Net Worth stash valuation does.
+      if (!it && window.api.cxItemPrice) {
+        const cx = await window.api.cxItemPrice({ apiId: state.item.currencyTag, name: state.item.currencyName });
+        if (cx && !cx.error && cx.price != null) {
+          it = { apiId: cx.apiId, price: cx.price, text: cx.text || state.item.currencyName, icon: cx.icon, logs: null, source: 'cx' };
+        }
+      }
       state.currencyResult = it || null;
       if (!it) state.notice = 'No exchange price found for this item yet.';
       else pushCurrencyHistory(it); // currency lookups belong in Recent searches too
@@ -209,7 +218,9 @@
       card.appendChild(val);
       const spark = currencySpark(r.logs);
       if (spark) card.appendChild(spark);
-      card.appendChild(cel('div', 'cur-note', 'Exchange value from the currency market (poe2scout) — bulk items like this trade by exchange, not by whisper.'));
+      card.appendChild(cel('div', 'cur-note', r.source === 'cx'
+        ? 'Exchange value from GGG’s currency market (executed trades) — bulk items like this trade by exchange, not by whisper.'
+        : 'Exchange value from the currency market (poe2scout) — bulk items like this trade by exchange, not by whisper.'));
     } else {
       card.appendChild(cel('div', 'cur-note', cesc(state.notice || 'No exchange price found.')));
     }
@@ -772,7 +783,18 @@
       mods: allMods,
       // exchangeable non-gear currency gets a quick exchange-value lookup instead
       // of a whisper search (raw crafting orbs excluded - see CURRENCY_SKIP)
-      currencyTag: (() => { const t = parsed.info && parsed.info.tradeTag; return t && !CURRENCY_SKIP.has(t) ? t : null; })(),
+      currencyTag: (() => {
+        const t = parsed.info && parsed.info.tradeTag;
+        if (t && !CURRENCY_SKIP.has(t)) return t;
+        // CX-only currency/fragments (no poe2scout tradeTag) still get an
+        // exchange value via the currency-exchange feed - match by name.
+        if (!t && parsed.rarity !== 'Unique') {
+          const nm = (parsed.info && parsed.info.name) || baseType;
+          const cx = nm && CX_BY_NAME.get(String(nm).toLowerCase());
+          if (cx) return cx;
+        }
+        return null;
+      })(),
       currencyName: (parsed.info && parsed.info.name) || baseType || null,
       currencyIcon: (parsed.info && parsed.info.icon) || null,
       // whether the q20 / filled-rune assumptions even apply to this item, so the
@@ -1970,9 +1992,27 @@
     doSearch();
   }
 
+  // CX-only currency/fragments (Raven's Reflection, pinnacle keys, ...) carry no
+  // poe2scout tradeTag, so they'd fall through to a whisper search that finds
+  // nothing. Their EE2 name maps to a CX apiId here, which routes them to the
+  // exchange-value view (priced via the currency-exchange feed instead).
+  let CX_BY_NAME = new Map(); // lowercase display name -> CX apiId
   let initPromise = null;
   function ensureInit() {
-    if (!initPromise) initPromise = window.EE2.init('en');
+    if (!initPromise) {
+      initPromise = Promise.all([
+        window.EE2.init('en'),
+        Promise.resolve(window.api.getCxCatalog ? window.api.getCxCatalog() : null)
+          .then((cat) => {
+            if (cat && !cat.error) {
+              for (const [id, info] of Object.entries(cat)) {
+                if (info && info.text) CX_BY_NAME.set(info.text.toLowerCase(), id);
+              }
+            }
+          })
+          .catch(() => {}), // CX routing is a bonus; never block the parser on it
+      ]).then(() => undefined);
+    }
     return initPromise;
   }
 
