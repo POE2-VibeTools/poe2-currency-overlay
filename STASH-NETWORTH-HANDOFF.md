@@ -23,15 +23,30 @@ Delirium, Breach (Catalysts subtab only; Wombgifts skipped), Expedition.
   in Exalted via a direct or one-hop (chaos/divine) pair. Current entries: raven-s-reflection,
   shattered-triskelion, the-triskelion-reforged. Icons from the EE2 db (gen/image URLs). Extend the
   table as new gaps surface. (The item tab / Ctrl+F has its own parallel path: cx-catalog.json.)
-- **"Toggles" section** (networth-ui): collapsible; holds Capture-duplicates, Sort-by-layout, and
-  **Show missing** (gates the per-tab "empty or unread" flags line — OFF by default). All persist in
-  config (stashDupTabs/stashSortLayout/stashShowMissing/stashTogglesOpen), surviving sessions+updates.
+- **Resolution calibration + auto-snap** (DONE): a fullscreen overlay (calibrate.html/js +
+  calibrate-preload) lets the user frame the panel's coloured outer bounding box and **Auto-snap**
+  (edges lock to the nearest strong coloured line, closest-to-placement so tab-row dividers don't
+  win). main.js `FRAME_BOX`/`REF_BOX` + `frameToCalBox`/`snapFrameToBorder`; detection + reads scale
+  into it; digit templates normalise per-resolution (digit-reader `resample` + `readCell(...,scale)`).
+  Confirm test-scans + shows "Calibration saved ✓" and a small-panel warning. **Minimum ~1920×1080**:
+  below reference the digits shrink and reads degrade (≈60% at 0.83×) — a pixel-detail floor, not a
+  bug. Calibration shines at ≥reference (1440p/4K/ultrawide read ~100%). Clear/"Reset to default"
+  reverts to the 1920 assumption. Persists in config `stashCalibration`.
+- **Rows are interactive** (networth-ui): click a count to **edit** (line+totals turn blue; re-enter
+  scanned value to clear), per-line **include toggle**, per-line **reset (↺)**, **"Reset all edits"**.
+  Missing/unread slots render as editable **×0 lines** when Show-missing is on. Per-line **OCR
+  confidence %** (digit-reader `readCellEx`) via its own toggle. ex/div honour the global currency-
+  icons toggle. Grand total shows **(N 🪞)** when worth ≥1 Mirror.
+- **Settings → Net Worth section** (index.html `#sec-networth`, renderer.js wiring): capture-hotkey
+  rebind (`set-stash-hotkey`) + the 4 toggles + the calibration card. The Net Worth **tab** is just
+  the tally now (hero Total + ⚙ gear, no capture button — hotkey-only, default F7). Config:
+  stashDupTabs/stashSortLayout/stashShowMissing/stashShowConfidence/stashCalibration/stashHotkey.
 
 **Unverified position (still empty — awaiting a real one):** Breachlord Sac (breach big center slot,
-now 271,339 — derived from the Triskelion Reforged's verified 2x2 count offset +13,+11). The
-Triskelion Reforged position is now verified live (cx327).
+271,339 — derived from the Triskelion Reforged's verified 2x2 count offset +13,+11). Triskelion
+Reforged position verified live (cx327).
 
-**Deferred:** currency dynamic bottom rows; calibration UI (for non-1080 resolutions).
+**Deferred:** currency dynamic bottom rows.
 
 ## Architecture (current)
 - **`renderer/stash/tab-detect.js`** — template-match detector (pure JS, runs in worker).
@@ -102,13 +117,11 @@ The template already detects delirium/breach/expedition; they just need a read m
    (kill electron.exe first, NEVER the game `PathOfExile_x64Steam.exe`); never tell Drew to npm start.
 
 ## NEXT UP
-1. **All 12 tabs are mapped + committed.** Remaining polish: verify the two estimated empty-slot
-   positions (Breachlord Sac, The Triskelion Reforged) once Drew owns one of each.
-2. **Calibration UI** (resolution bridge) — a draggable box the user drops on the stash panel border
-   once → store `config.stashCalibration={x,y,w,h}`. Then detection + reading scale into it. Also
-   needs the digit templates rescaled by calBox/refBox for non-1080. Detection already supports it
-   (pass calBox); reading needs the digit-template scaling.
-3. **Currency dynamic bottom rows** (deferred) — 2 rows of arbitrary currency; runtime icon-match
+**Feature-complete for 2.4** — all 12 tabs, CX-feed pricing, calibration+auto-snap, interactive
+rows, confidence, Settings→Net Worth. Remaining is the release itself (see [[poe2-overlay-project]]
+release flow) + optional polish:
+1. Verify Breachlord Sac's estimated slot position once one is owned.
+2. **Currency dynamic bottom rows** (deferred) — 2 rows of arbitrary currency; runtime icon-match
    (`renderer/stash/icon-matcher.js`, proto `dev/stash-matcher/match-dynamic-rows.js`). Needs a
    fresh capture + confidence-flag + click-to-fill.
 
