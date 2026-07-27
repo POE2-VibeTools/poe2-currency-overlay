@@ -27,6 +27,8 @@ contextBridge.exposeInMainWorld('api', {
   submitFeedback: (payload) => ipcRenderer.invoke('submit-feedback', payload),
   fetchPrices: (force) => ipcRenderer.invoke('fetch-prices', force),
   fetchCatalog: () => ipcRenderer.invoke('fetch-catalog'),
+  getCxCatalog: () => ipcRenderer.invoke('get-cx-catalog'),
+  cxItemPrice: (args) => ipcRenderer.invoke('cx-item-price', args),
   listLeagues: () => ipcRenderer.invoke('list-leagues'),
   hide: (toGame) => ipcRenderer.send('hide-overlay', !!toGame),
   focusOverlay: () => ipcRenderer.send('focus-overlay'),

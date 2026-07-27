@@ -37,6 +37,10 @@ const trade2 = require('./trade2');
 // Currency pairs: GGG's public Currency Exchange CDN (executed trades, hourly).
 const cxFeed = require('./cx-feed');
 let cxState = { ok: false, at: 0, pairs: 0 };
+// apiId -> { text, icon, category } for CX-market items (fragments, keys, etc.).
+// Lets the item tab price CX-only items poe2scout doesn't index (Raven's
+// Reflection and friends) and resolve their display name/icon by apiId.
+const CX_CATALOG = require('./cx-catalog.json');
 
 // ---------- live-service feed switchover ----------
 // The repo's feed.json is the remote kill-switch: when its apiBase is set to a
@@ -547,6 +551,53 @@ async function fetchFullCatalog() {
     }
   });
   return { league, groups };
+}
+
+// ---------- CX-only pricing (currency-exchange feed, no poe2scout listing) ----------
+// Some currency/fragment items (e.g. Raven's Reflection, the Delirium pinnacle
+// key) trade only on GGG's Currency Exchange - poe2scout never lists them, so
+// the item tab's catalog lookup misses. Value them straight off the CX pair
+// map, mirroring the Net Worth stash valuation: a direct <id>|exalted pair when
+// one exists, else one hop through chaos or divine.
+let cxPairCache = new Map(); // league -> { at, map }
+async function getCxPairMapCached(league, force) {
+  const hit = cxPairCache.get(league);
+  if (!force && hit && Date.now() - hit.at < 5 * 60_000) return hit.map;
+  const map = await cxFeed.getCxPairMap(league);
+  cxPairCache.set(league, { at: Date.now(), map });
+  return map;
+}
+// units of b per 1 a from the crossed-volume pair map (see cx-feed.js)
+function cxPairVal(map, a, b) {
+  if (a === b) return 1;
+  const e = map[[a, b].sort().join('|')];
+  if (!e) return null;
+  const v = e[a] / e[b];
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+// Exalted value of one unit of `id`: direct, else one hop via divine or chaos.
+function cxValueEx(map, id) {
+  if (id === 'exalted') return 1;
+  const direct = cxPairVal(map, id, 'exalted');
+  if (direct != null) return direct;
+  for (const mid of ['divine', 'chaos']) {
+    const toMid = cxPairVal(map, id, mid);
+    const midEx = cxPairVal(map, mid, 'exalted');
+    if (toMid != null && midEx != null) return toMid * midEx;
+  }
+  return null;
+}
+// Resolve a display name (EE2 item name) to a CX apiId, once, case-insensitively.
+let cxNameIndex = null;
+function cxIdByName(name) {
+  if (!name) return null;
+  if (!cxNameIndex) {
+    cxNameIndex = new Map();
+    for (const [id, info] of Object.entries(CX_CATALOG)) {
+      if (info && info.text) cxNameIndex.set(info.text.toLowerCase(), id);
+    }
+  }
+  return cxNameIndex.get(String(name).toLowerCase()) || null;
 }
 
 // ---------- splash ----------
@@ -1081,6 +1132,28 @@ ipcMain.handle('fetch-catalog', async () => {
     return await fetchFullCatalog();
   } catch (err) {
     return { error: err.message };
+  }
+});
+
+// CX catalog (apiId -> {text, icon, category}) so the item tab can recognise
+// CX-only currency/fragments by name and route them to the exchange-value view.
+ipcMain.handle('get-cx-catalog', () => CX_CATALOG);
+
+// Exchange value (in Exalted) for a CX-market item poe2scout doesn't list.
+// Accepts an apiId directly or a display name to resolve. Returns null when the
+// item isn't a CX item or the feed can't price it.
+ipcMain.handle('cx-item-price', async (_e, { apiId, name, league } = {}) => {
+  try {
+    const id = apiId || cxIdByName(name);
+    if (!id) return null;
+    const lg = league || await resolveLeague();
+    const map = await getCxPairMapCached(lg);
+    const ex = cxValueEx(map, id);
+    if (ex == null) return null;
+    const info = CX_CATALOG[id] || {};
+    return { apiId: id, price: ex, text: info.text || name || id, icon: info.icon || null, source: 'cx' };
+  } catch (err) {
+    return { error: String(err && err.message || err) };
   }
 });
 
