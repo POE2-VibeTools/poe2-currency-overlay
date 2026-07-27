@@ -1661,10 +1661,17 @@ async function initSettings() {
   });
 
   // ---------- command hotkeys (Settings → Hotkeys) ----------
-  // Rows of {command, accelerator}; the whitelist comes from main (enforced
-  // there too) so renderer never invents commands.
+  // Rows of {command, accelerator}. Curated dropdown + a Custom… option for
+  // anything else (argument commands, new patch commands). The fences (must
+  // be a /command; deny-listed foot-guns rejected) are enforced in main;
+  // renderer mirrors them only for live feedback.
   let safeCommands = ['/hideout'];
+  let deniedCommands = [];
   const cmdRowsEl = $('cmd-hotkeys-rows');
+  const cmdOk = (c) => {
+    const v = String(c || '').trim();
+    return v.startsWith('/') && v.length > 1 && !/[\r\n]/.test(v) && !deniedCommands.includes(v.split(/\s+/)[0].toLowerCase());
+  };
   const saveCmdHotkeys = () => window.api.setCommandHotkeys(config.commandHotkeys || []);
   const renderCmdHotkeys = () => {
     if (!cmdRowsEl) return;
@@ -1679,21 +1686,51 @@ async function initSettings() {
     rows.forEach((row, i) => {
       const div = document.createElement('div');
       div.className = 'cmdhk-row';
+      const isCustom = !safeCommands.includes(row.command);
       const cmdSel = document.createElement('select');
       cmdSel.className = 'cmdhk-cmd';
       cmdSel.title = 'The chat command this key sends';
       for (const c of safeCommands) {
         const o = document.createElement('option');
         o.value = c; o.textContent = c;
-        if (c === row.command) o.selected = true;
+        if (!isCustom && c === row.command) o.selected = true;
         cmdSel.appendChild(o);
       }
+      const oCustom = document.createElement('option');
+      oCustom.value = '__custom__'; oCustom.textContent = 'Custom…';
+      if (isCustom) oCustom.selected = true;
+      cmdSel.appendChild(oCustom);
       cmdSel.addEventListener('change', async () => {
+        if (cmdSel.value === '__custom__') {
+          row.command = '/';
+          renderCmdHotkeys(); // row re-renders; the custom input focuses itself
+          return;
+        }
         row.command = cmdSel.value;
         logAction(`cmd-hotkey command: ${cmdSel.value}`);
         await saveCmdHotkeys();
+        renderCmdHotkeys();
       });
       div.appendChild(cmdSel);
+      if (isCustom) {
+        const custom = document.createElement('input');
+        custom.className = 'cmdhk-custom' + (cmdOk(row.command) ? '' : ' cmdhk-bad');
+        custom.placeholder = '/itemfilter Strict';
+        custom.title = 'Any single /command, with or without arguments. Destructive commands (/destroy) are blocked.';
+        custom.value = row.command === '/' ? '' : row.command;
+        custom.addEventListener('input', () => {
+          custom.classList.toggle('cmdhk-bad', !cmdOk(custom.value));
+        });
+        custom.addEventListener('change', async () => {
+          const v = custom.value.trim();
+          if (!cmdOk(v)) return; // stays red; not saved
+          row.command = v;
+          logAction(`cmd-hotkey custom: ${v}`);
+          await saveCmdHotkeys();
+        });
+        div.appendChild(custom);
+        if (row.command === '/') setTimeout(() => custom.focus(), 0);
+      }
       const field = document.createElement('div');
       field.className = 'kb-field';
       const input = document.createElement('input');
@@ -1720,7 +1757,10 @@ async function initSettings() {
     });
   };
   window.api.getSafeCommands().then((l) => {
-    if (Array.isArray(l) && l.length) safeCommands = l;
+    if (l && Array.isArray(l.commands) && l.commands.length) {
+      safeCommands = l.commands;
+      deniedCommands = Array.isArray(l.denied) ? l.denied : [];
+    }
     renderCmdHotkeys();
   }).catch(() => renderCmdHotkeys());
   const cmdAdd = $('cmd-hotkeys-add');

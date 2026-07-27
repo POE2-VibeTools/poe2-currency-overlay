@@ -1528,17 +1528,28 @@ function registerStashHotkey() {
 // One key = one manually-triggered chat command from a fixed whitelist - the
 // 1:1 press-to-action shape GGG's macro rules allow. Nothing here automates,
 // chains, or reacts; the player presses, the game gets exactly one command.
-// Standalone (no arguments) + non-destructive only. Deliberately excluded:
-// /destroy (destroys the cursor item), /clear_ignore_list (unrecoverable
-// social state), and everything needing an argument (/invite, /itemfilter...).
+// Curated dropdown list: standalone (no arguments) + non-destructive.
 const SAFE_COMMANDS = [
   '/hideout', '/guild', '/leave', '/exit', '/remaining', '/itemlevel',
   '/afk', '/dnd', '/reset_xp', '/played', '/age', '/deaths', '/kills',
   '/ladder', '/bug', '/nochat', '/clear',
 ];
+// Custom commands are allowed too (argument commands like "/itemfilter Strict",
+// new patch commands) with two fences: must be a single-line /command, and the
+// command itself can't be a foot-gun. The app isn't the rules police - any 1:1
+// press-to-command bind is GGG-legal - the fence exists so a mis-press can't
+// destroy items or wipe unrecoverable state.
+const DENY_COMMANDS = ['/destroy', '/clear_ignore_list'];
+function isAllowedCommand(cmd) {
+  if (typeof cmd !== 'string') return false;
+  const c = cmd.trim();
+  if (!c.startsWith('/') || c.length < 2 || c.length > 100 || /[\r\n]/.test(c)) return false;
+  return !DENY_COMMANDS.includes(c.split(/\s+/)[0].toLowerCase());
+}
 let cmdHotkeyBusy = false;
 async function sendChatCommand(cmd) {
-  if (!SAFE_COMMANDS.includes(cmd) || cmdHotkeyBusy) return;
+  if (!isAllowedCommand(cmd) || cmdHotkeyBusy) return;
+  cmd = cmd.trim();
   cmdHotkeyBusy = true;
   try {
     // Never type into whatever else holds focus (Discord, a browser): the game
@@ -1579,7 +1590,7 @@ async function sendChatCommand(cmd) {
 function registerCommandHotkeys() {
   if (!config || !Array.isArray(config.commandHotkeys)) return;
   for (const row of config.commandHotkeys) {
-    if (!row || !row.accelerator || !SAFE_COMMANDS.includes(row.command)) continue;
+    if (!row || !row.accelerator || !isAllowedCommand(row.command)) continue;
     try {
       const ok = globalShortcut.register(row.accelerator, () => sendChatCommand(row.command));
       if (!ok) console.error(`Command hotkey "${row.accelerator}" is taken by another app`);
@@ -1589,13 +1600,13 @@ function registerCommandHotkeys() {
   }
 }
 
-ipcMain.handle('get-safe-commands', () => SAFE_COMMANDS.slice());
+ipcMain.handle('get-safe-commands', () => ({ commands: SAFE_COMMANDS.slice(), denied: DENY_COMMANDS.slice() }));
 ipcMain.handle('set-command-hotkeys', (_e, rows) => {
-  // whitelist is enforced HERE, not in the renderer - rows with unknown
-  // commands are dropped, empty accelerators kept (row bound later)
+  // the fences are enforced HERE, not in the renderer - rows failing them
+  // are dropped, empty accelerators kept (row bound later)
   const clean = (Array.isArray(rows) ? rows : [])
-    .filter((r) => r && SAFE_COMMANDS.includes(r.command))
-    .map((r) => ({ command: r.command, accelerator: typeof r.accelerator === 'string' ? r.accelerator : '' }));
+    .filter((r) => r && isAllowedCommand(r.command))
+    .map((r) => ({ command: r.command.trim(), accelerator: typeof r.accelerator === 'string' ? r.accelerator : '' }));
   for (const r of config.commandHotkeys || []) {
     if (r && r.accelerator) { try { globalShortcut.unregister(r.accelerator); } catch {} }
   }
