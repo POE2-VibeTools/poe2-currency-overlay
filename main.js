@@ -1148,11 +1148,51 @@ ipcMain.handle('get-live-rates', () => Object.fromEntries(liveRates));
 // filter -> read each static slot via the baked digit templates -> price via the
 // live poe2scout catalog -> tab total. Empty/unreadable slots flag, never guess.
 let stashPriceCache = null; // { at, map: apiId -> {price, icon, name} }
+// A few special-tab items trade on the Currency Exchange but aren't in poe2scout's
+// catalog (e.g. Raven's Reflection = the Delirium pinnacle key). Price those off
+// GGG's official CX feed instead, in Exalted like the rest of the map. apiId ->
+// { name, icon }; icon is the official poecdn art from the vendored EE2 db (same
+// source the Ctrl+F item lookup uses). Extend as new gaps surface.
+const CX_FALLBACK = {
+  'raven-s-reflection': {
+    name: "Raven's Reflection",
+    icon: 'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9UYW5nYW1henVLZXkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/64ddcf20c8/TangamazuKey.png',
+  },
+};
+
 async function getStashPriceMap(force) {
   if (!force && stashPriceCache && Date.now() - stashPriceCache.at < 5 * 60_000) return stashPriceCache.map;
   const full = await fetchFullCatalog();
   const map = {};
   for (const g of full.groups) for (const it of g.items) if (!map[it.apiId]) map[it.apiId] = { price: it.price, icon: it.icon, name: it.text };
+  // Fill CX-only items poe2scout doesn't carry, valued in Exalted via a direct or
+  // one-hop (chaos/divine) pair from the same official feed the currency tab uses.
+  const needed = Object.keys(CX_FALLBACK).filter((id) => !(map[id] && typeof map[id].price === 'number'));
+  if (needed.length) {
+    try {
+      const league = await resolveLeague();
+      const cx = await cxFeed.getCxPairMap(league);
+      const rate = (a, b) => { // executed units of b per 1 a, or null
+        if (a === b) return 1;
+        const pd = cx[[a, b].sort().join('|')];
+        if (!pd || !(pd[a] > 0) || !(pd[b] > 0)) return null;
+        return pd[a] / pd[b];
+      };
+      const valueEx = (id) => {
+        const direct = rate(id, 'exalted');
+        if (direct != null) return direct;
+        for (const hop of ['chaos', 'divine']) {
+          const r1 = rate(id, hop), r2 = rate(hop, 'exalted');
+          if (r1 != null && r2 != null) return r1 * r2;
+        }
+        return null;
+      };
+      for (const id of needed) {
+        const px = valueEx(id);
+        if (px != null) map[id] = { price: px, icon: CX_FALLBACK[id].icon || null, name: CX_FALLBACK[id].name };
+      }
+    } catch { /* CX optional; the item just stays unpriced (flagged, never guessed) */ }
+  }
   stashPriceCache = { at: Date.now(), map };
   return map;
 }

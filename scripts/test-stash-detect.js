@@ -17,6 +17,7 @@ const TABS = {
   soulcore: require(path.join(R, 'soulcore-tab-map')),
   idol: require(path.join(R, 'idol-tab-map')),
   'ancient-augment': require(path.join(R, 'ancient-augment-tab-map')),
+  delirium: require(path.join(R, 'delirium-tab-map')),
 };
 const DIGITS = DR.templatesFromJSON(require(path.join(R, 'digit-templates.json')));
 const paramsFor = (m) => m && m.readParams ? Object.assign({}, DR.DEFAULTS, m.readParams) : DR.DEFAULTS;
@@ -30,6 +31,15 @@ async function priceMap() {
     try { const j = await (await fetch(`${B}/Currencies/ByCategory?category=${encodeURIComponent(c)}&perPage=250`)).json();
       for (const it of (j.Items || [])) if (map[it.ApiId] == null) map[it.ApiId] = { ex: it.CurrentPrice, name: it.Text }; } catch (e) {}
   }
+  // GGG CX-feed fallback for items poe2scout doesn't index (mirrors main.js getStashPriceMap)
+  const CX_FALLBACK = { 'raven-s-reflection': { name: "Raven's Reflection" } };
+  try {
+    const cxFeed = require(path.join(__dirname, '..', 'cx-feed'));
+    const cx = await cxFeed.getCxPairMap('Runes of Aldur');
+    const rate = (a, b) => { if (a === b) return 1; const pd = cx[[a, b].sort().join('|')]; return (!pd || !(pd[a] > 0) || !(pd[b] > 0)) ? null : pd[a] / pd[b]; };
+    const valueEx = (id) => { const d = rate(id, 'exalted'); if (d != null) return d; for (const h of ['chaos', 'divine']) { const r1 = rate(id, h), r2 = rate(h, 'exalted'); if (r1 != null && r2 != null) return r1 * r2; } return null; };
+    for (const [id, cfg] of Object.entries(CX_FALLBACK)) if (map[id] == null) { const px = valueEx(id); if (px != null) map[id] = { ex: px, name: cfg.name }; }
+  } catch (e) {}
   return map;
 }
 

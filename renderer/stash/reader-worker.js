@@ -21,6 +21,7 @@ const TABS = {
   soulcore: require('./soulcore-tab-map'),
   idol: require('./idol-tab-map'),
   'ancient-augment': require('./ancient-augment-tab-map'),
+  delirium: require('./delirium-tab-map'),
 };
 const DIGITS = DR.templatesFromJSON(require('./digit-templates.json'));
 const MIN_SCORE = 0.3; // below this the panel isn't a recognized stash tab
