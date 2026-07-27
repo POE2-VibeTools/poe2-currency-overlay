@@ -1187,6 +1187,8 @@ footer {
 .nw-gear:hover { color: var(--tx-body); border-color: var(--bd-16); }
 .nw-scanning { color: var(--am-hi); font-size: 11px; font-style: italic; }
 .nw-unit-ic { width: 14px; height: 14px; object-fit: contain; vertical-align: -2px; }
+/* the grand TOTAL reads big; nudge its ex/div icons up ~15% so they don't shrink beside the number */
+.nw-grand-val .nw-unit-ic { width: 16px; height: 16px; }
 .nw-footer { display: flex; gap: 8px; margin-top: auto; padding-top: 12px; }
 .nw-reset-edits { color: #6db3f2; border-color: rgba(109,179,242,.45); }
 .nw-reset-edits:hover { color: #8fc6f7; border-color: rgba(109,179,242,.7); }

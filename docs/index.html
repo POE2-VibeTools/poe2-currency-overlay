@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>POE2 Overlay - Prices, Price Check &amp; Desecrate EV</title>
-<meta name="description" content="Open-source overlay for Path of Exile 2: live currency exchange rates and arbitrage, an item price checker (fungible mods, pseudo resistances, sockets, catalyst quality), and a Desecrate EV calculator.">
+<title>POE2 Overlay - Prices, Price Check, Desecrate EV &amp; Net Worth</title>
+<meta name="description" content="Open-source overlay for Path of Exile 2: live currency exchange rates and arbitrage, an item price checker (fungible mods, pseudo resistances, sockets, catalyst quality), a Desecrate EV calculator, and a stash Net Worth calculator that reads your tabs by screenshot.">
 <link rel="icon" type="image/png" href="icon.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -78,7 +78,7 @@
   <div class="hero">
     <img src="icon.png" alt="POE2 Overlay logo">
     <h1>POE2 Overlay</h1>
-    <p class="tag">A Path of Exile 2 overlay for live currency exchange rates, item price checks against live trade listings, and a Desecrate EV calculator.</p>
+    <p class="tag">A Path of Exile 2 overlay for live currency exchange rates, item price checks against live trade listings, a Desecrate EV calculator, and a stash Net Worth calculator.</p>
 
     <a class="btn" href="https://github.com/POE2-VibeTools/poe2-currency-overlay/releases/latest/download/POE2-Currency-Overlay-Setup.exe">
       &#8595; Download for Windows
@@ -161,6 +161,26 @@
     <div class="shot-wrap">
       <img src="img/example-bucket.png" alt="Currency tab: buckets for four Chaotic Omens, each priced in Exalted, Chaos and Divine, with a green BEST row marking the cheapest payment and green arbitrage percentages.">
       <div class="cap">Buckets for four Omens - the green <b>BEST</b> row is the cheapest way to pay, and a green <b>arb %</b> flags a profitable loop.</div>
+    </div>
+  </section>
+
+  <!-- ============ NET WORTH ============ -->
+  <section class="feature">
+    <div class="copy">
+      <div class="kicker">Net Worth &middot; F7</div>
+      <h2>Total up a stash tab from a screenshot</h2>
+      <p>Open a special stash tab in game and press <b>F7</b>. The app screenshots it, reads the item counts <b>on your PC</b>, prices each one, and keeps a running <b>grand total</b> across every tab you add.</p>
+      <ul>
+        <li>Reads the special tabs: <b>Currency, Abyss, Ritual, Essence, all five Rune subtabs, Delirium, Breach and Expedition</b>.</li>
+        <li>Grand total in <b>Exalted and Divine</b>, with a <b>Mirror</b> count once you're rich enough for it to matter.</li>
+        <li>Toggle any <b>tab</b> or any <b>row</b> in or out of the total; drag tabs to reorder, or keep duplicates of a tab as separate rows.</li>
+        <li>Prices come from the same live data as the rest of the app - the screenshot never leaves your machine.</li>
+        <li>It's not perfect - some icons hide the number - so flip on the <b>confidence %</b> and <b>edit any count inline</b> when a read looks off.</li>
+      </ul>
+    </div>
+    <div class="shot-wrap">
+      <img src="img/networth.png" alt="Net Worth tab: a dozen special stash tabs each totalled in Exalted and Divine, a grand total of 2,248,851 Exalted / 5,137 Divine / 1 Mirror, per-tab checkboxes, and three duplicate Currency tabs kept as separate rows.">
+      <div class="cap">Every special tab tallied into one <b>grand total</b>, here past a <span class="gold">Mirror</span> - toggle any tab or row out and it updates live.</div>
     </div>
   </section>
 

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>POE2 Overlay - How it works &amp; FAQ</title>
-<meta name="description" content="How the POE2 Overlay works: the price checker's fungible mods, pseudo resistances, and Highly-similar vs Similar comps; the Desecrate EV calculator; and the currency exchange, arbitrage, and manual rates.">
+<meta name="description" content="How the POE2 Overlay works: the price checker's fungible mods, pseudo resistances, and Highly-similar vs Similar comps; the Desecrate EV calculator; the currency exchange, arbitrage, and manual rates; and the Net Worth stash calculator.">
 <link rel="icon" type="image/png" href="icon.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -94,10 +94,10 @@
 
   <div class="callout">
     <h2>New here? Run the tutorial first.</h2>
-    <p>The first time you open the overlay, a short guided tour walks you through all three tabs - building a currency bucket,
+    <p>The first time you open the overlay, a short guided tour walks you through the core tabs - building a currency bucket,
     then spotlighting the Price Check and Desecrate tabs on a demo item. Want a
     refresher, or just one tab? Open <b>&#9881; Settings &rarr; Help &amp; About &rarr; Replay tutorial</b> and pick a section any time. This FAQ covers
-    the same ground in depth - tap a question to expand it.</p>
+    the same ground in depth - including the Net Worth tab below - tap a question to expand it.</p>
   </div>
 
   <!-- =================== PRICE CHECK =================== -->
@@ -351,6 +351,73 @@
       <p>Ange charges gold <b>per unit</b> traded, not per value. Because Exalted is low-value, a loop that routes
       through it moves <b>thousands</b> of units and drains your gold. <b>Settings</b> has a checkbox to skip Exalted as
       an intermediate hop when building routes.</p>
+    </div>
+  </details>
+
+  <!-- =================== NET WORTH =================== -->
+  <h2 class="sect">Net Worth</h2>
+  <p class="sect-intro">Open a special stash tab in game and press <b>F7</b>. The app screenshots it, reads the item counts
+  on your PC, prices each one, and keeps a running <b>grand total</b> across every tab you add.</p>
+
+  <img class="shot" src="img/networth.png" alt="Net Worth tab: a dozen special stash tabs each totalled in Exalted and Divine, a grand total of 2,248,851 Exalted / 5,137 Divine / 1 Mirror, and three duplicate Currency tabs kept as separate rows.">
+  <div class="shot-cap">Every special tab tallied into one <b>grand total</b>, here past a <b>Mirror</b> - toggle any tab or row out and it updates.</div>
+
+  <details open>
+    <summary>What is the Net Worth tab?</summary>
+    <div class="body">
+      <p>It adds up what's in your <b>special stash tabs</b>. Open one in game, press your capture hotkey (default
+      <b>F7</b>), and the app takes a screenshot, reads the item counts from it, prices each item off the same live data
+      the rest of the app uses, and adds that tab to a running <b>grand total</b>. Capture your other special tabs and they
+      stack up into one number.</p>
+      <p>The total shows in <b>Exalted and Divine</b>, and once you cross a <b>Mirror of Kalandra</b> in value, a Mirror
+      count rides along in brackets.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Which stash tabs does it read?</summary>
+    <div class="body">
+      <p>The special tabs: <b>Currency, Abyss, Ritual, Essence, all five Rune subtabs</b> (Runes, Kalguuran Runes, Soul
+      Cores, Idols, Ancient Augments), <b>Delirium, Breach and Expedition</b>. Open the tab you want, make sure the whole
+      panel is on screen, and press the hotkey.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Toggling tabs and rows, and fixing a misread</summary>
+    <div class="body">
+      <p>Everything in the tally is yours to adjust:</p>
+      <ul>
+        <li><b>Toggle a whole tab</b> in or out of the grand total with its checkbox, or <b>a single row</b> within a tab;</li>
+        <li><b>Drag tabs to reorder</b> them, and turn on <b>duplicates</b> in settings to keep separate rows for two of the
+        same tab type (handy if you split, say, currency across multiple tabs);</li>
+        <li><b>Edit any count inline</b> - click the number and type the right one. The reader isn't perfect, and some item
+        icons sit right over the number and obscure it.</li>
+      </ul>
+      <p>Turn on <b>Show OCR confidence %</b> in settings to see how sure each read was - anything under ~80% is worth a
+      glance. There's also <b>Show missing / unread items</b>, which lists empty or unread slots as editable &times;0 lines
+      so you can fill in anything the scan missed.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>It's reading the wrong numbers / my resolution is different</summary>
+    <div class="body">
+      <p>The reader assumes the game is fullscreen at <b>1920&times;1080 or larger</b> - that's where the item counts have
+      enough pixels to read cleanly. On a smaller window or a different resolution, open <b>&#9881; Settings &rarr; Net Worth
+      &rarr; Calibrate for my resolution</b>: it walks you through framing the stash panel once, snaps to it, and remembers
+      the calibration. You only do it once per resolution.</p>
+      <p>Even calibrated, the odd count can misread - that's what inline editing and the confidence % are for.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Does capturing my stash send my screen anywhere?</summary>
+    <div class="body">
+      <p>No. The screenshot is taken and read <b>entirely on your PC</b> and is never saved, uploaded, or transmitted. To
+      price what it read, the app looks up the <b>item names and counts</b> the same way the rest of the app prices things -
+      it never sends the image, your account, or your session. Full details on the <a class="gh" href="privacy.html">Privacy</a>
+      page.</p>
     </div>
   </details>
 
