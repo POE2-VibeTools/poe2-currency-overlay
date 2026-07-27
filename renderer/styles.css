@@ -1181,6 +1181,15 @@ footer {
 /* Net Worth: setting, per-row include/remove, duplicate modal */
 .nw-setting { display: flex; align-items: center; gap: 8px; color: var(--tx-dim); font-size: 12px; margin: 2px 0 12px; cursor: pointer; user-select: none; }
 .nw-setting input { cursor: pointer; accent-color: var(--am); }
+/* collapsible Toggles section */
+.nw-toggles { margin: 2px 0 12px; }
+.nw-toggles-head { display: flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--tx-dim);
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; padding: 4px 0; user-select: none; }
+.nw-toggles-head:hover { color: var(--tx-body); }
+.nw-toggles .nw-caret { display: inline-block; width: 9px; color: var(--tx-faint); }
+.nw-toggles-body { padding: 5px 0 0 14px; }
+.nw-toggles-body .nw-setting { margin: 0 0 8px; }
+.nw-toggles-body .nw-setting:last-child { margin-bottom: 2px; }
 .nw-inc { flex: 0 0 auto; cursor: pointer; accent-color: var(--am); width: 15px; height: 15px; }
 .nw-card.nw-excluded { opacity: .5; }
 .nw-grip { flex: 0 0 auto; cursor: grab; color: var(--tx-faint); font-size: 13px; line-height: 1; letter-spacing: -2px; user-select: none; }

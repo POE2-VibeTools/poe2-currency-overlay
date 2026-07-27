@@ -42,6 +42,8 @@ contextBridge.exposeInMainWorld('api', {
   stashCaptureStart: () => ipcRenderer.send('stash-capture-start'),
   setStashDupTabs: (on) => ipcRenderer.invoke('set-stash-dup', on),
   setStashSortLayout: (on) => ipcRenderer.invoke('set-stash-sort', on),
+  setStashShowMissing: (on) => ipcRenderer.invoke('set-stash-show-missing', on),
+  setStashTogglesOpen: (on) => ipcRenderer.invoke('set-stash-toggles-open', on),
   onStashCapturing: (cb) => ipcRenderer.on('stash-capturing', () => cb()),
   onStashDetected: (cb) => ipcRenderer.on('stash-detected', (_e, tab) => cb(tab)),
   onStashCaptured: (cb) => ipcRenderer.on('stash-captured', (_e, res) => cb(res)),

@@ -12,10 +12,10 @@
   const fmtDiv = (n) => n == null ? null : (n >= 100 ? Math.round(n) : n.toFixed(1)).toLocaleString('en-US') + ' div';
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
-  const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
+  const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, showMissing: false, togglesOpen: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
   const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence', runes: 'Runes', 'runes-kalguuran': 'Kalguuran Runes', ritual: 'Ritual', soulcore: 'Soul Cores', idol: 'Idols', 'ancient-augment': 'Ancient Augments', delirium: 'Delirium', breach: 'Breach' };
 
-  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); render(); }).catch(() => {});
+  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); state.showMissing = !!(c && c.stashShowMissing); state.togglesOpen = !!(c && c.stashTogglesOpen); render(); }).catch(() => {});
 
   const rowsOfType = (tab) => state.rows.filter((r) => r.tab === tab);
   function labelFor(row) {
@@ -117,7 +117,7 @@
       list.appendChild(line);
     }
     card.appendChild(list);
-    if (r.flags && r.flags.length) {
+    if (state.showMissing && r.flags && r.flags.length) {
       const names = r.flags.map((f) => esc(f.name)).join(', ');
       card.appendChild(el('div', 'nw-flags', `${r.flags.length} slot${r.flags.length === 1 ? '' : 's'} empty or unread (not counted): ${names}`));
     }
@@ -182,23 +182,34 @@
     header.appendChild(btn);
     wrap.appendChild(header);
 
-    // Net Worth setting: allow duplicate same-type tabs as separate rows
-    const setline = el('label', 'nw-setting');
-    const dcb = el('input'); dcb.type = 'checkbox'; dcb.checked = state.dup;
-    dcb.onchange = () => { state.dup = dcb.checked; try { window.api.setStashDupTabs(state.dup); } catch {} render(); };
-    setline.appendChild(dcb);
-    setline.appendChild(el('span', null, 'Capture duplicate tabs as separate rows'));
-    setline.title = 'On: re-capturing a tab type you already have asks whether to replace an existing row or add a new one - for owning multiple of the same tab. Off: re-capturing just updates the one row.';
-    wrap.appendChild(setline);
-
-    // Net Worth setting: item sort order within each tab's list
-    const sortline = el('label', 'nw-setting');
-    const scb = el('input'); scb.type = 'checkbox'; scb.checked = state.sortLayout;
-    scb.onchange = () => { state.sortLayout = scb.checked; try { window.api.setStashSortLayout(state.sortLayout); } catch {} render(); };
-    sortline.appendChild(scb);
-    sortline.appendChild(el('span', null, 'Sort items by stash layout'));
-    sortline.title = 'On: list items in stash reading order (left to right, top to bottom). Off: list by value, highest first.';
-    wrap.appendChild(sortline);
+    // Collapsible "Toggles" section - keeps the settings from stacking up on the
+    // page. Open state + each toggle persist in config (survive sessions + updates).
+    const toggles = el('div', 'nw-toggles');
+    const thead = el('button', 'nw-toggles-head');
+    thead.innerHTML = `<span class="nw-caret">${state.togglesOpen ? '▾' : '▸'}</span>Toggles`;
+    thead.onclick = () => { state.togglesOpen = !state.togglesOpen; try { window.api.setStashTogglesOpen(state.togglesOpen); } catch {} render(); };
+    toggles.appendChild(thead);
+    if (state.togglesOpen) {
+      const body = el('div', 'nw-toggles-body');
+      const mkToggle = (checked, label, title, apply) => {
+        const lab = el('label', 'nw-setting');
+        const cb = el('input'); cb.type = 'checkbox'; cb.checked = checked;
+        cb.onchange = () => { apply(cb.checked); render(); };
+        lab.appendChild(cb); lab.appendChild(el('span', null, label)); lab.title = title;
+        return lab;
+      };
+      body.appendChild(mkToggle(state.dup, 'Capture duplicate tabs as separate rows',
+        'On: re-capturing a tab type you already have asks whether to replace an existing row or add a new one - for owning multiple of the same tab. Off: re-capturing just updates the one row.',
+        (v) => { state.dup = v; try { window.api.setStashDupTabs(v); } catch {} }));
+      body.appendChild(mkToggle(state.sortLayout, 'Sort items by stash layout',
+        'On: list items in stash reading order (left to right, top to bottom). Off: list by value, highest first.',
+        (v) => { state.sortLayout = v; try { window.api.setStashSortLayout(v); } catch {} }));
+      body.appendChild(mkToggle(state.showMissing, 'Show missing / unread items',
+        'On: each tab lists the slots that read as empty or failed to register (not counted) - use it to check nothing you own was missed. Off: hides items you legitimately do not have.',
+        (v) => { state.showMissing = v; try { window.api.setStashShowMissing(v); } catch {} }));
+      toggles.appendChild(body);
+    }
+    wrap.appendChild(toggles);
 
     if (state.notice) wrap.appendChild(el('div', 'nw-notice nw-' + state.notice.kind, esc(state.notice.msg)));
 
