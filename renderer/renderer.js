@@ -1868,6 +1868,7 @@ async function initSettings() {
     });
   };
   wireTabToggle('show-regex-tab', 'showRegexTab', 'regex');
+  wireTabToggle('show-grandex-tab', 'showGrandExTab', 'grandex');
   wireTabToggle('show-desecrate-tab', 'showDesecrateTab', 'desec');
 
   // Live-rate sliders (Tab-visible + Background). 4 stops: quiet/low/medium/high.

@@ -2117,20 +2117,23 @@
   // Optional-tab visibility (App Settings toggles). A hidden Desecrate tab still
   // opens via redesecrate? - its button shows WHILE it's the active tab and
   // vanishes again when you navigate away. A hidden Regex tab is simply gone.
-  const tabVis = { desec: true, regex: true };
+  const tabVis = { desec: true, regex: true, grandex: true };
   function applyTabVisibility(activeWhich) {
     const d = $('tab-desecrate');
     if (d) d.style.display = (tabVis.desec || activeWhich === 'desec') ? '' : 'none';
     const r = $('tab-regex');
     if (r) r.style.display = tabVis.regex ? '' : 'none';
+    const g = $('tab-grandex');
+    if (g) g.style.display = tabVis.grandex ? '' : 'none';
   }
   function setTabVisibility(tab, show) {
     tabVis[tab] = !!show;
     const active = document.querySelector('#tabs .tab.active');
     const which = active && active.id === 'tab-regex' ? 'regex'
+      : active && active.id === 'tab-grandex' ? 'grandex'
       : active && active.id === 'tab-desecrate' ? 'desec' : null;
-    // hiding the Regex tab while you're ON it would strand you on a ghost tab
-    if (tab === 'regex' && !show && which === 'regex') { setTab('currency'); return; }
+    // hiding a tab while you're ON it would strand you on a ghost tab
+    if (!show && ((tab === 'regex' && which === 'regex') || (tab === 'grandex' && which === 'grandex'))) { setTab('currency'); return; }
     applyTabVisibility(which);
   }
   window.setTabVisibility = setTabVisibility; // renderer.js settings toggles call this
@@ -2147,11 +2150,13 @@
     $('tab-desecrate').classList.toggle('active', which === 'desec');
     const nwTab = $('tab-networth'); if (nwTab) nwTab.classList.toggle('active', which === 'networth');
     const rxTab = $('tab-regex'); if (rxTab) rxTab.classList.toggle('active', which === 'regex');
+    const gxTab = $('tab-grandex'); if (gxTab) gxTab.classList.toggle('active', which === 'grandex');
     $('item-root').classList.toggle('hidden', which !== 'items');
     $('buckets').classList.toggle('hidden', which !== 'currency');
     $('desecrate-root').classList.toggle('hidden', which !== 'desec');
     const nwRoot = $('networth-root'); if (nwRoot) nwRoot.classList.toggle('hidden', which !== 'networth');
     const rxRoot = $('regex-root'); if (rxRoot) rxRoot.classList.toggle('hidden', which !== 'regex');
+    const gxRoot = $('grandex-root'); if (gxRoot) gxRoot.classList.toggle('hidden', which !== 'grandex');
     applyTabVisibility(which);
     document.querySelector('footer').classList.toggle('hidden', which !== 'currency');
     // #status is currency-feed state; keep it off the other tabs
@@ -2164,6 +2169,7 @@
     if (which === 'desec' && window.Desecrate) window.Desecrate.render();
     if (which === 'networth' && window.NetWorth) window.NetWorth.render();
     if (which === 'regex' && window.RegexTab) window.RegexTab.render();
+    if (which === 'grandex' && window.GrandEx) window.GrandEx.render();
   }
 
   // ---------- wiring ----------
@@ -2173,15 +2179,17 @@
     $('tab-desecrate').addEventListener('click', () => setTab('desec'));
     { const t = $('tab-networth'); if (t) t.addEventListener('click', () => setTab('networth')); }
     { const t = $('tab-regex'); if (t) t.addEventListener('click', () => setTab('regex')); }
+    { const t = $('tab-grandex'); if (t) t.addEventListener('click', () => setTab('grandex')); }
     // Reopen on whichever tab you left it on last (persisted in config.lastTab);
     // first-ever launch falls back to Currency. Also syncs tab state + reports it.
     window.api.getConfig().then((c) => {
       state.itemHotkey = c.itemHotkey;
       tabVis.desec = c.showDesecrateTab !== false;
       tabVis.regex = c.showRegexTab !== false;
-      let last = ['currency', 'items', 'desec', 'networth', 'regex'].includes(c.lastTab) ? c.lastTab : 'currency';
+      tabVis.grandex = c.showGrandExTab !== false;
+      let last = ['currency', 'items', 'desec', 'networth', 'regex', 'grandex'].includes(c.lastTab) ? c.lastTab : 'currency';
       // never reopen INTO a hidden tab
-      if ((last === 'desec' && !tabVis.desec) || (last === 'regex' && !tabVis.regex)) last = 'currency';
+      if ((last === 'desec' && !tabVis.desec) || (last === 'regex' && !tabVis.regex) || (last === 'grandex' && !tabVis.grandex)) last = 'currency';
       setTab(last);
       if (state.active) render();
     }).catch(() => setTab('currency'));

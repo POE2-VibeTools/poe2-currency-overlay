@@ -209,6 +209,7 @@ const DEFAULT_CONFIG = {
   desecHistory: [], // Desecrate tab: items evaluated for Omen of Light rerolling
   regexBuckets: [{ id: 'default', name: 'My Regex', entries: [] }], // Regex tab: saved regexes in named buckets ({id,label,pattern} entries)
   showRegexTab: true,     // App Settings: show the Regex tab in the tab bar
+  showGrandExTab: true,   // App Settings: show the Grand Expedition tab in the tab bar
   showDesecrateTab: true, // App Settings: show the Desecrate tab (hidden, it still opens via redesecrate? and hides on leave)
   itemRanges: {},  // learned per-stat roll bounds from fetched listings (slider bounds)
   garbagePool: [], // user-curated worthless-mod stat ids (starts empty by design)
@@ -1641,6 +1642,7 @@ ipcMain.handle('set-regex-buckets', (_e, buckets) => {
 // Regex / Desecrate tab visibility toggles (App Settings)
 ipcMain.handle('set-tab-shown', (_e, which, shown) => {
   if (which === 'regex') config.showRegexTab = !!shown;
+  else if (which === 'grandex') config.showGrandExTab = !!shown;
   else if (which === 'desec') config.showDesecrateTab = !!shown;
   else return false;
   saveConfig();

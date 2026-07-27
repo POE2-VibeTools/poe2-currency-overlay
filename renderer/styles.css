@@ -183,6 +183,7 @@ html, body {
 #settings:not(.hidden) ~ #desecrate-root,
 #settings:not(.hidden) ~ #networth-root,
 #settings:not(.hidden) ~ #regex-root,
+#settings:not(.hidden) ~ #grandex-root,
 #settings:not(.hidden) ~ #support-bar { display: none !important; }
 
 .set-top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 10px; flex-shrink: 0; }
@@ -1276,6 +1277,11 @@ footer {
 .cmdhk-row .cmdhk-del { opacity: 0; transition: opacity .12s ease; }
 .cmdhk-row:hover .cmdhk-del { opacity: 1; }
 .cmdhk-del:hover { color: #e08a7a; }
+
+/* ============ Grand Expedition tab ============ */
+#grandex-root { padding: 10px 12px 16px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+.gx-wrap { display: flex; flex-direction: column; gap: 10px; }
+.gx-placeholder { color: var(--tx-dim); font-size: 12.5px; padding: 14px; border: 1px dashed var(--bd-08); border-radius: 8px; text-align: center; }
 
 /* ============ Regex tab ============ */
 /* Binder leads (1-click copy rows, currency-bucket DNA); builder is a compose
