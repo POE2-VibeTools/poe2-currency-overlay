@@ -167,20 +167,27 @@ function compileQuery(item, opts = {}) {
     // MINIMUM at the item's own value - never lowered by the stat range % or
     // tier floor - but never cap the max: a fuller tablet is still a valid comp.
     // A max only ever appears when the user TYPED one (added mods).
-    // Option stats take {option: id} - they are an enum, not a magnitude.
-    const value = m.option != null ? { option: m.option }
-      : (effMin(m) != null ? { min: effMin(m) } : {});
-    if (m.option == null && m.searchMax != null) value.max = m.searchMax;
+    // Option/enum stats (a unique's "Legacy of #", "Allocates #"): GGG encodes the
+    // chosen option IN the stat id (explicit.stat_264262054|13), with an EMPTY
+    // value - the trade2 API has no value.option field, so sending one is silently
+    // ignored and the whole search returns nothing (this is what broke Mageblood's
+    // legacies). Pure enum stats carry no magnitude, so no min/max either.
+    const withOpt = (id) => (m.option != null ? `${id}|${m.option}` : id);
+    const value = {};
+    if (m.option == null) {
+      if (effMin(m) != null) value.min = effMin(m);
+      if (m.searchMax != null) value.max = m.searchMax;
+    }
     if (m.altIds && m.altIds.length) {
       // scope-fungible: the stat may live under another scope on listings
       // (explicit vs crafted/desecrated/...) - match whichever is present
       stats.push({
         type: 'count',
         value: { min: 1 },
-        filters: [m.id, ...m.altIds].map((id) => ({ id, value })),
+        filters: [m.id, ...m.altIds].map((id) => ({ id: withOpt(id), value })),
       });
     } else {
-      andFilters.push({ id: m.id, value });
+      andFilters.push({ id: withOpt(m.id), value });
     }
   }
   if (andFilters.length) stats.push({ type: 'and', filters: andFilters });
@@ -193,11 +200,14 @@ function compileQuery(item, opts = {}) {
     // at least ONE member is present - and meets whatever min you set (a blank
     // min = any amount of that stat counts, the classic fungible behavior)
     const filters = groups[gid].map((m) => {
+      // option/enum stats: choice rides in the id (id|value), no magnitude
+      const id = m.option != null ? `${m.id}|${m.option}` : m.id;
+      if (m.option != null) return { id };
       const val = {};
       const mn = effMin(m);
       if (mn != null) val.min = mn;
       if (m.searchMax != null) val.max = m.searchMax;
-      return Object.keys(val).length ? { id: m.id, value: val } : { id: m.id };
+      return Object.keys(val).length ? { id, value: val } : { id };
     });
     stats.push({ type: 'count', value: { min: 1 }, filters });
   }

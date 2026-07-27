@@ -415,6 +415,11 @@
       const tag = damageTag(ref, tradeId);
       const template = cleanBrackets((src.stat && src.stat.translation && src.stat.translation.string) || ref);
       const isGarbage = tradeId && state.garbage.includes(tradeId);
+      // OPTION/enum stats (a unique's "Legacy of #", "Allocates #"): the roll is a
+      // discrete variant id, not a magnitude. It picks WHICH mageblood/variant, so
+      // it's a distinguishing feature buyers search on - defaults ON on uniques.
+      const optionVal = (sc.stat && sc.stat.trade && sc.stat.trade.option && roll && roll.option != null)
+        ? roll.option : null;
       return {
         id: tradeId,
         altIds, // same stat in other scopes; searched as an OR alongside id
@@ -434,12 +439,11 @@
         max: roll ? roll.max : null,
         rangesKnown,                        // false = simple copy: bounds unknown, not fixed
         exact: isUses,                      // search min AND max at this value
-        // OPTION stats ("Allocates Zarokh's Gift") carry an enum id, not a
-        // magnitude - GGG wants {option: id}. Sending it as a minimum asked the
-        // trade site for "at least 9506 of this", which matches nothing and
-        // silently killed the whole search.
-        option: (sc.stat && sc.stat.trade && sc.stat.trade.option && roll && roll.option != null)
-          ? roll.option : null,
+        // OPTION stats ("Allocates Zarokh's Gift", "Legacy of #") carry an enum id,
+        // not a magnitude. GGG encodes the choice IN the stat id (stat_123|9506),
+        // not as a value - query.js appends it. Sending it as a minimum, OR as a
+        // {option: id} value field, matches nothing and silently kills the search.
+        option: optionVal,
         isUnique: parsed.rarity === 'Unique',
         better: sc.stat && sc.stat.better != null ? sc.stat.better : 1, // 1 high good, -1 low good, 0 n/a
         tier: info && info.tier != null ? info.tier : null,
@@ -448,16 +452,22 @@
         // ("Destroys all Augment Sockets...") which as presence filters poison searches,
         // Grants-Skill lines (probed live: the trade2 API's skill filters fail to match
         // listings that visibly have the skill - even exact level bounds return zero),
-        // uniques (the name pins the item; rolls are opt-in), armour's defence recipe
-        // lines and martial weapons' damage prefixes (the computed totals in
+        // uniques (the name pins the item; numeric rolls are opt-in, but variant
+        // OPTION stats stay ON - see below), armour's defence recipe lines and
+        // martial weapons' damage prefixes (the computed totals in
         // equipment_filters are what price the item)
-        mode: !tradeId || isGarbage || (roll == null && sc.type === 'rune') || sc.type === 'skill' || parsed.rarity === 'Unique'
+        mode: (!tradeId || isGarbage || (roll == null && sc.type === 'rune') || sc.type === 'skill'
           || (isArmourPiece && DEF_REFS.has(ref))
           || (isMartial && DPS_REFS.has(ref))
           // socketed runes / anvil augments: off by default - turn back on to find
           // items socketed exactly like yours
-          || sc.type === 'rune' || sc.type === 'added-rune'
+          || sc.type === 'rune' || sc.type === 'added-rune')
           ? 'off'
+          // uniques: numeric rolls default OFF (name pins the item), but a variant
+          // OPTION stat (which mageblood legacies, which allocated passive) IS the
+          // distinguishing feature - default it ON
+          : parsed.rarity === 'Unique'
+          ? (optionVal != null ? 'strict' : 'off')
           : (tag.damage && tag.form === 'flat' ? 'pseudo' : 'strict'),
         damage: tag.damage,
         form: tag.form,
