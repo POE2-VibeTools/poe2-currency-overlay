@@ -47,6 +47,9 @@
     <li><b>Google (script.google.com)</b> - only when you submit the in-app Bug or Feedback form.</li>
   </ul>
 
+  <h2>Reading your stash tabs (Net Worth)</h2>
+  <p>The <b>Net Worth</b> tab reads a special stash tab by taking a screenshot when you trigger a capture (its hotkey or the Capture button) and reading the item counts from it <b>on your PC</b>. The screenshot is processed locally and <b>never leaves your machine</b> - it is not saved, uploaded, or sent anywhere. To value what it read, it looks up prices from poe2scout and the public currency-exchange data the same way the rest of the app does: it sends item names and counts, never the screenshot, your account, or your session.</p>
+
   <h2>What we actually receive</h2>
   <p>The only data that reaches us is the <b>bug and feedback reports you choose to send</b>. A report contains:</p>
   <ul>
@@ -59,7 +62,7 @@
   <h2>About the Cloudflare Worker in the repo</h2>
   <p>The repository includes a Cloudflare Worker that acts as a currency-price edge cache, with Cloudflare's standard request logging enabled. The current app <b>does not connect to it</b> - it fetches poe2scout directly - so it is not logging anyone. If a future build routes through it, it would only ever see currency-price requests (your IP and which league you are viewing), never item, account, or stash data.</p>
 
-  <div class="big">In short: we do not run analytics or telemetry, track usage, phone home in the background, use machine or device IDs, or read your account, session, or stash. The only data we receive is the bug and feedback reports you choose to send.</div>
+  <div class="big">In short: we do not run analytics or telemetry, track usage, phone home in the background, use machine or device IDs, or read your account or session. The Net Worth tab reads your open stash tab from an on-screen screenshot processed on your PC only - the image never leaves your machine. The only data we receive is the bug and feedback reports you choose to send.</div>
 
   <footer><a class="gh" href="./">Download</a> &middot; <a class="gh" href="faq.html">FAQ</a> &middot; <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay/blob/master/PRIVACY.md">PRIVACY.md</a> &middot; <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay">Source</a></footer>
 </main>

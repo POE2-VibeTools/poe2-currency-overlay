@@ -1,6 +1,6 @@
 # Privacy & data
 
-_Last updated: 2026-07-25_
+_Last updated: 2026-07-27_
 
 The POE2 Currency Overlay runs on your PC. It has **no analytics, no telemetry, no usage tracking, no background phone-home, and no machine or device IDs**. It reaches the internet only for the things below.
 
@@ -10,6 +10,10 @@ The POE2 Currency Overlay runs on your PC. It has **no analytics, no telemetry, 
 - **Path of Exile official trade site (pathofexile.com)** - price checks and the currency exchange. These use your own pathofexile.com login, which is stored on your PC and used to talk to GGG directly. We never see your login, your searches, or your items.
 - **GitHub** - checking for app updates and fetching the currency feed file.
 - **Google (script.google.com)** - only when you submit the in-app Bug or Feedback form.
+
+## Reading your stash tabs (Net Worth)
+
+The **Net Worth** tab reads a special stash tab by taking a screenshot when you trigger a capture (its hotkey or the Capture button) and reading the item counts from it **on your PC**. The screenshot is processed locally and **never leaves your machine** - it is not saved, uploaded, or sent anywhere. To value what it read, it looks up prices from poe2scout and the public currency-exchange data the same way the rest of the app does: it sends item names and counts, never the screenshot, your account, or your session.
 
 ## What we actually receive
 
@@ -27,4 +31,4 @@ The repository includes a Cloudflare Worker (`backend/`) that acts as a currency
 
 ## In short
 
-We do not run analytics or telemetry, track usage, phone home in the background, use machine or device IDs, or read your account, session, or stash. The only data we receive is the bug and feedback reports you choose to send.
+We do not run analytics or telemetry, track usage, phone home in the background, use machine or device IDs, or read your account or session. The Net Worth tab reads your open stash tab from an on-screen screenshot processed on your PC only - the image never leaves your machine. The only data we receive is the bug and feedback reports you choose to send.
