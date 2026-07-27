@@ -6,6 +6,21 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.4.0',
+    date: '2026-07-27',
+    title: 'Stash Tab Auto-Calculator (Net Worth Tab)',
+    notes: [
+      "New Net Worth tab. Open a special stash tab in game, press F7, and it reads the counts and adds the tab to a running total. 1920x1080 or larger recommended.",
+      "Not at 1920x1080? Hit Calibrate in Net Worth settings, frame any currency tab's coloured border and calibrate (auto-snap works well). Done.",
+      "Supports: Currency, Abyss, Ritual, Essence, all 5 Rune subtabs (Runes, Kalguuran, Soul Cores, Idols, Ancient Augments), Delirium, Breach and Expedition.",
+      "Shows your total in Div, with a Mirror conversion for the richies.",
+      "Toggle any whole tab on or off, and any single row within a tab, to shape the total.",
+      "'Duplicates allowed' toggle in settings lets you register multiple copies of the same tab type, for those of you who split loot across duplicate tabs.",
+      "Parser got a number wrong? Edit it inline. It's not perfect (some icons obfuscate the number) but it's high accuracy, and I'm done grinding parser values. Flip on the confidence rating to spot the shaky ones: above 80% is usually good, but it can slip, and you can fix any value in one click.",
+      "Also improved pricing for currency items poe2scout doesn't list, like Raven's Reflection, on both the Net Worth and Currency tabs.",
+    ],
+  },
+  {
     version: '2.3.5',
     date: '2026-07-26',
     title: 'OpenDyslexic support, Linux (EXPERIMENTAL), Patch Notes Modal changes',
