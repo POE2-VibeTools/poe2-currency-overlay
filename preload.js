@@ -59,6 +59,8 @@ contextBridge.exposeInMainWorld('api', {
   poeLogin: () => ipcRenderer.invoke('poe-login'),
   setItemHistory: (history) => ipcRenderer.invoke('set-item-history', history),
   setDesecHistory: (history) => ipcRenderer.invoke('set-desec-history', history),
+  setRegexBuckets: (buckets) => ipcRenderer.invoke('set-regex-buckets', buckets),
+  setTabShown: (which, shown) => ipcRenderer.invoke('set-tab-shown', which, shown),
   setItemRanges: (ranges) => ipcRenderer.invoke('set-item-ranges', ranges),
   setGarbagePool: (ids) => ipcRenderer.invoke('set-garbage-pool', ids),
   setItemSearchOpts: (o) => ipcRenderer.invoke('set-item-search-opts', o),

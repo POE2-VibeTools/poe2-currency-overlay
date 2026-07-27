@@ -1743,6 +1743,22 @@ async function initSettings() {
     });
   }
 
+  // Optional-tab visibility (Regex / Desecrate). item-tab.js owns the tab bar,
+  // so the toggles hand the change to window.setTabVisibility.
+  const wireTabToggle = (elId, cfgKey, visKey) => {
+    const t = $(elId);
+    if (!t) return;
+    t.checked = config[cfgKey] !== false;
+    t.addEventListener('change', async () => {
+      config[cfgKey] = t.checked;
+      logAction(`${visKey} tab visible: ${t.checked}`);
+      await window.api.setTabShown(visKey, t.checked);
+      if (window.setTabVisibility) window.setTabVisibility(visKey, t.checked);
+    });
+  };
+  wireTabToggle('show-regex-tab', 'showRegexTab', 'regex');
+  wireTabToggle('show-desecrate-tab', 'showDesecrateTab', 'desec');
+
   // Live-rate sliders (Tab-visible + Background). 4 stops: quiet/low/medium/high.
   const RATE_KEYS = ['quiet', 'low', 'medium', 'high'];
   const RATE_LABEL = { quiet: 'Quiet', low: 'Low', medium: 'Medium', high: 'High' };

@@ -206,11 +206,14 @@ const DEFAULT_CONFIG = {
   itemStatRange: 15,   // Price Check "stat range +/-%" - remembered between sessions
   itemHistory: [], // cached item price-check searches (capped, newest first)
   desecHistory: [], // Desecrate tab: items evaluated for Omen of Light rerolling
+  regexBuckets: [{ id: 'default', name: 'My Regex', entries: [] }], // Regex tab: saved regexes in named buckets ({id,label,pattern} entries)
+  showRegexTab: true,     // App Settings: show the Regex tab in the tab bar
+  showDesecrateTab: true, // App Settings: show the Desecrate tab (hidden, it still opens via redesecrate? and hides on leave)
   itemRanges: {},  // learned per-stat roll bounds from fetched listings (slider bounds)
   garbagePool: [], // user-curated worthless-mod stat ids (starts empty by design)
   tutorialDone: false,
   lastSeenVersion: null, // last app version whose "what's new" popup was shown+dismissed
-  lastTab: 'currency',   // tab to reopen on (remembered across restarts): 'currency' | 'items' | 'desec'
+  lastTab: 'currency',   // tab to reopen on (remembered across restarts): 'currency' | 'items' | 'desec' | 'networth' | 'regex'
 
   // fresh installs start empty: the first-run tutorial builds the Exalted bucket
   // hands-on; skipping the tutorial seeds the standard bucket instead (renderer)
@@ -1533,6 +1536,19 @@ ipcMain.handle('set-item-history', (_e, history) => {
 });
 ipcMain.handle('set-desec-history', (_e, history) => {
   config.desecHistory = Array.isArray(history) ? history.slice(0, 100) : [];
+  saveConfig();
+  return true;
+});
+ipcMain.handle('set-regex-buckets', (_e, buckets) => {
+  config.regexBuckets = Array.isArray(buckets) ? buckets : [];
+  saveConfig();
+  return true;
+});
+// Regex / Desecrate tab visibility toggles (App Settings)
+ipcMain.handle('set-tab-shown', (_e, which, shown) => {
+  if (which === 'regex') config.showRegexTab = !!shown;
+  else if (which === 'desec') config.showDesecrateTab = !!shown;
+  else return false;
   saveConfig();
   return true;
 });

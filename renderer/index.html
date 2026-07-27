@@ -74,6 +74,8 @@
             </div>
             <label class="switch set-excl" title="Replace currency names/units with their icons next to prices on the Price Check and Desecrate tabs. Hover or screen readers still get the full name."><input type="checkbox" id="currency-icons" /><span class="sw-track"></span><span class="sw-lab">Show currency icons instead of names</span><span class="set-sub">Price Check &amp; Desecrate - hover still shows the name</span></label>
             <label class="switch set-excl" title="Render the whole app in OpenDyslexic, a typeface designed to be easier to read with dyslexia. Bundled with the app; off by default."><input type="checkbox" id="dyslexic-font" /><span class="sw-track"></span><span class="sw-lab">Dyslexia-friendly font</span><span class="set-sub">OpenDyslexic, applied app-wide</span></label>
+            <label class="switch set-excl" title="Show the Regex tab in the tab bar. Off hides it entirely until you turn it back on here."><input type="checkbox" id="show-regex-tab" /><span class="sw-track"></span><span class="sw-lab">Show Regex tab</span></label>
+            <label class="switch set-excl" title="Show the Desecrate tab in the tab bar. Off hides it - it still appears when you open an item's redesecrate? button, then hides again when you leave it."><input type="checkbox" id="show-desecrate-tab" /><span class="sw-track"></span><span class="sw-lab">Show Desecrate tab</span><span class="set-sub">hidden, it still opens via redesecrate? and hides when you leave</span></label>
           </section>
 
           <section class="set-card" id="sec-currency">
@@ -185,6 +187,7 @@
       <button id="tab-items" class="tab" title="Price-check items: hover one in game and press your price-check hotkey (default Ctrl+F)">Price Check</button>
       <button id="tab-desecrate" class="tab" title="Is this item worth Omen of Light + bone rerolling? Load an item from Price Check, or paste one here with Ctrl+V.">Desecrate</button>
       <button id="tab-networth" class="tab" title="Value your special stash tabs: open a tab in game, click Capture, and it reads the counts and totals what they're worth.">Net Worth</button>
+      <button id="tab-regex" class="tab" title="Build stash-search regex for waystones and tablets, and keep your saved regexes one click from the clipboard.">Regex</button>
     </nav>
 
     <div id="status" class="hidden"></div>
@@ -200,6 +203,8 @@
     <main id="desecrate-root" class="hidden"></main>
 
     <main id="networth-root" class="hidden"></main>
+
+    <main id="regex-root" class="hidden"></main>
 
     <div id="support-bar">
       <span id="btn-bug" class="support-bug" role="button" tabindex="0" title="Report a bug (attaches a short activity log)">
@@ -285,6 +290,9 @@
   <script src="item/item-ui.js"></script>
   <script src="item/desecrate.js"></script>
   <script src="stash/networth-ui.js"></script>
+  <script src="regex/regex-gen.js"></script>
+  <script src="regex/pools-data.js"></script>
+  <script src="regex/regex-tab.js"></script>
   <script src="item/item-tab.js"></script>
 </body>
 </html>
