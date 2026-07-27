@@ -15,6 +15,11 @@ Two-platform release: **Windows built locally**, **Linux AppImage built on GitHu
    npm run dist
    ```
    → `dist/POE2-Currency-Overlay-Setup.exe`, `dist/latest.yml`, `dist/POE2-Currency-Overlay-Setup.exe.blockmap`
+   - **VALIDATE THE PACKAGED BUILD BEFORE RELEASING** (the dev app running from source does NOT prove the package works - it has every file; the package only has `build.files`). Launch the packaged exe and confirm it opens with no "Cannot find module" crash:
+     ```
+     "dist/win-unpacked/POE2 Currency Overlay.exe"    # must open, not error-dialog
+     ```
+     Any new root-level `require('./x')` (json or js) added since the last release MUST be added to `build.files` in package.json, or the packaged app crashes on launch while dev works fine. (v2.4.0 shipped broken this way: `cx-catalog.json` was require'd but not in `build.files`.)
 5. **Linux AppImage (CI):**
    ```
    gh workflow run build-linux.yml --repo POE2-VibeTools/poe2-currency-overlay

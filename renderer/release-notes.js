@@ -6,6 +6,14 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.4.1',
+    date: '2026-07-27',
+    title: 'Hotfix - 2.4.0 launch crash',
+    notes: [
+      "Fixed a packaging bug that left a data file out of the 2.4.0 build, so it failed to launch with a 'Cannot find module' error. Sorry about that - if you grabbed 2.4.0, this update gets you running.",
+    ],
+  },
+  {
     version: '2.4.0',
     date: '2026-07-27',
     title: 'Stash Tab Auto-Calculator (Net Worth Tab)',
