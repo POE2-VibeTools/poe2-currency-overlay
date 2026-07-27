@@ -22,3 +22,4 @@ memory/
 
 # stash-reader test fixtures (full-res tab screenshots, ~3MB each) - local only
 screenshots/
+dev/stash-matcher/refs/

@@ -193,6 +193,7 @@ const DEFAULT_CONFIG = {
   stashHotkey: 'F7', // view a special stash tab in game, press this: reads + values it into the Net Worth tally
   stashDupTabs: false, // Net Worth: re-capturing a tab type asks replace-which/add-new instead of just replacing
   stashSortLayout: false, // Net Worth: list a tab's items in stash reading order instead of by value
+  stashCalibration: null, // Net Worth: {x,y,w,h} panel box from one-time calibration; null = assume reference res
   itemQ20: true,       // search armour/weapons as if 20% quality
   itemFillRunes: true, // search as if empty rune sockets held Greater Iron Runes
   itemSliders: true,   // show per-mod range sliders in Price Check
@@ -1159,7 +1160,6 @@ async function getStashPriceMap(force) {
 // Run the heavy stash OCR in a worker thread so the main event loop (hotkeys, IPC,
 // window toggle) stays responsive. `onDetected(tab)` fires as soon as the worker
 // knows which tab it is, before the full read finishes.
-let stashOffsetHint = null; // last good {dx,dy}; reused so repeat captures skip the scan
 function runReaderWorker(bitmap, W, H, onDetected) {
   return new Promise((resolve) => {
     let w;
@@ -1170,12 +1170,11 @@ function runReaderWorker(bitmap, W, H, onDetected) {
     const finish = (r) => { try { w.terminate(); } catch {} resolve(r); };
     w.on('message', (msg) => {
       if (msg && msg.phase === 'detected') { if (onDetected) onDetected(msg.tab); return; }
-      if (msg && msg.ok && msg.offset) stashOffsetHint = msg.offset; // cache alignment
       finish(msg); // final payload (done / mismatch / error)
     });
     w.on('error', (e) => finish({ ok: false, error: String(e && e.message || e) }));
     const ab = bitmap.buffer.slice(bitmap.byteOffset, bitmap.byteOffset + bitmap.byteLength);
-    w.postMessage({ bitmap: ab, W, H, hint: stashOffsetHint }, [ab]); // transfer the ~8MB frame, no copy
+    w.postMessage({ bitmap: ab, W, H, calBox: config.stashCalibration || null }, [ab]); // transfer the ~8MB frame, no copy
   });
 }
 
@@ -1216,7 +1215,7 @@ async function doStashCapture(onDetected) {
     });
     lines.sort((a, b) => (b.valueEx || 0) - (a.valueEx || 0));
     return {
-      ok: true, tab: res.tab, w: W, h: H, offset: res.offset, readCount: res.readCount, slotCount: res.slotCount,
+      ok: true, tab: res.tab, w: W, h: H, readCount: res.readCount, slotCount: res.slotCount,
       totalEx: total, divPrice, totalDiv: divPrice ? total / divPrice : null, lines, flags, mismatch: false,
     };
   } catch (err) {
