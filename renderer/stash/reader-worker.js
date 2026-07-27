@@ -12,6 +12,7 @@ const TABS = {
   runes: require('./runes-tab-map'),
   'runes-kalguuran': require('./runes-kalguuran-tab-map'),
   ritual: require('./ritual-tab-map'),
+  soulcore: require('./soulcore-tab-map'),
 };
 const TEMPLATES = require('./digit-templates.json');
 

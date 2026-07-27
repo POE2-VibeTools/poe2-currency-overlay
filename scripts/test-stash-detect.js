@@ -13,6 +13,7 @@ const TABS = {
   runes: require('../renderer/stash/runes-tab-map'),
   'runes-kalguuran': require('../renderer/stash/runes-kalguuran-tab-map'),
   ritual: require('../renderer/stash/ritual-tab-map'),
+  soulcore: require('../renderer/stash/soulcore-tab-map'),
 };
 const T = DR.templatesFromJSON(TEMPLATES);
 const paramsFor = (m) => m && m.readParams ? Object.assign({}, DR.DEFAULTS, m.readParams) : DR.DEFAULTS;
