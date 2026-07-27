@@ -27,8 +27,9 @@ Delirium, Breach (Catalysts subtab only; Wombgifts skipped), Expedition.
   **Show missing** (gates the per-tab "empty or unread" flags line — OFF by default). All persist in
   config (stashDupTabs/stashSortLayout/stashShowMissing/stashTogglesOpen), surviving sessions+updates.
 
-**Unverified positions (empty in the reference, estimated — fix when non-empty):** Breachlord Sac
-(breach big center slot ~270,342) and The Triskelion Reforged (expedition R2 right slot ~340,322).
+**Unverified position (still empty — awaiting a real one):** Breachlord Sac (breach big center slot,
+now 271,339 — derived from the Triskelion Reforged's verified 2x2 count offset +13,+11). The
+Triskelion Reforged position is now verified live (cx327).
 
 **Deferred:** currency dynamic bottom rows; calibration UI (for non-1080 resolutions).
 
