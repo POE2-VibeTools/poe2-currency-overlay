@@ -54,13 +54,16 @@ parentPort.on('message', (msg) => {
     }
     parentPort.postMessage({ phase: 'detected', tab }); // let the UI pre-create the row
 
-    // 2) read every slot at its reference position scaled into the live box
+    // 2) read every slot at its reference position scaled into the live box.
+    // scale = how much bigger the calibrated panel is than the reference (drives
+    // digit-template normalisation); 1 when uncalibrated / at reference resolution.
     const V = DR.valueChannelDesatMax(buf, W, H);
     const P = paramsFor(map);
+    const scale = box.h / refBox.h;
     const reads = []; let readCount = 0;
     for (const s of map.STATIC_SLOTS) {
       const pos = TD.scalePos(s.cx, s.cy, refBox, box);
-      const raw = DR.readCell(V, W, H, pos.cx, pos.cy, DIGITS, P);
+      const raw = DR.readCell(V, W, H, pos.cx, pos.cy, DIGITS, P, scale);
       if (raw !== '?') readCount++;
       reads.push({ apiId: s.apiId, count: raw === '?' ? null : parseInt(raw, 10) });
     }

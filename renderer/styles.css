@@ -181,6 +181,7 @@ html, body {
 #settings:not(.hidden) ~ footer,
 #settings:not(.hidden) ~ #item-root,
 #settings:not(.hidden) ~ #desecrate-root,
+#settings:not(.hidden) ~ #networth-root,
 #settings:not(.hidden) ~ #support-bar { display: none !important; }
 
 .set-top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 10px; flex-shrink: 0; }
@@ -1190,6 +1191,17 @@ footer {
 .nw-toggles-body { padding: 5px 0 0 14px; }
 .nw-toggles-body .nw-setting { margin: 0 0 8px; }
 .nw-toggles-body .nw-setting:last-child { margin-bottom: 2px; }
+.nw-cal { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--bd-08); }
+.nw-cal-btn { background: transparent; color: var(--am-hi); border: 1px solid rgba(224,160,76,.4); border-radius: 6px;
+  padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.nw-cal-btn:hover { background: rgba(224,160,76,.1); color: var(--am2, #f0c070); }
+.nw-cal-status { color: var(--tx-dim); font-size: 11px; line-height: 1.4; margin-top: 6px; }
+.nw-cal-status .nw-cal-ok { color: #7ec97e; font-weight: 600; }
+.nw-cal-clear { background: none; border: none; color: var(--tx-faint); font-size: 11px; cursor: pointer; text-decoration: underline; padding: 4px 0 0; }
+.nw-cal-clear:hover { color: var(--tx-dim); }
+.nw-ok { background: rgba(126,201,126,.12); border: 1px solid rgba(126,201,126,.35); color: #9ed99e; }
+.nw-mirror { display: inline-flex; align-items: center; gap: 2px; color: var(--tx-gold); font-size: 13px; font-weight: 600; }
+.nw-mirror-ic { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; }
 .nw-inc { flex: 0 0 auto; cursor: pointer; accent-color: var(--am); width: 15px; height: 15px; }
 .nw-card.nw-excluded { opacity: .5; }
 .nw-grip { flex: 0 0 auto; cursor: grab; color: var(--tx-faint); font-size: 13px; line-height: 1; letter-spacing: -2px; user-select: none; }

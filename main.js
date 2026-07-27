@@ -1324,6 +1324,7 @@ async function doStashCapture(onDetected) {
     let prices = {};
     try { prices = await getStashPriceMap(); } catch (err) { /* prices optional; counts still shown */ }
     const divPrice = prices.divine && typeof prices.divine.price === 'number' ? prices.divine.price : null;
+    const mirrorPrice = prices.mirror && typeof prices.mirror.price === 'number' ? prices.mirror.price : null;
 
     const lines = []; const flags = []; let total = 0;
     res.reads.forEach((r, i) => {
@@ -1339,7 +1340,7 @@ async function doStashCapture(onDetected) {
     lines.sort((a, b) => (b.valueEx || 0) - (a.valueEx || 0));
     return {
       ok: true, tab: res.tab, w: W, h: H, readCount: res.readCount, slotCount: res.slotCount,
-      totalEx: total, divPrice, totalDiv: divPrice ? total / divPrice : null, lines, flags, mismatch: false,
+      totalEx: total, divPrice, mirrorPrice, totalDiv: divPrice ? total / divPrice : null, lines, flags, mismatch: false,
     };
   } catch (err) {
     return { ok: false, error: String(err && err.message || err) };
@@ -1369,6 +1370,121 @@ ipcMain.handle('set-stash-dup', (_e, on) => { config.stashDupTabs = !!on; saveCo
 ipcMain.handle('set-stash-sort', (_e, on) => { config.stashSortLayout = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-missing', (_e, on) => { config.stashShowMissing = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-toggles-open', (_e, on) => { config.stashTogglesOpen = !!on; saveConfig(); return true; });
+
+// ---------- resolution calibration ----------
+// The user aligns a box to the stash panel's COLORED outer bounding frame (an obvious,
+// per-tab-coloured but fixed-size landmark). We convert that frame rect -> the internal
+// content box (REF_BOX) the reader/detector work in. Measured in the 1920x1080 reference:
+//   FRAME_BOX = the coloured border rect; REF_BOX = TT.box (the content region).
+// At reference resolution frame->calBox reproduces REF_BOX exactly.
+const REF_BOX = { x: 18, y: 168, w: 582, h: 606 };
+const FRAME_BOX = { x: 13, y: 171, w: 594, h: 594 };
+function frameToCalBox(f) {
+  const sx = f.w / FRAME_BOX.w, sy = f.h / FRAME_BOX.h;
+  return {
+    x: Math.round(f.x + (REF_BOX.x - FRAME_BOX.x) * sx),
+    y: Math.round(f.y + (REF_BOX.y - FRAME_BOX.y) * sy),
+    w: Math.round(REF_BOX.w * sx), h: Math.round(REF_BOX.h * sy),
+  };
+}
+function calBoxToFrame(c) {
+  const sx = c.w / REF_BOX.w, sy = c.h / REF_BOX.h;
+  return {
+    x: Math.round(c.x - (REF_BOX.x - FRAME_BOX.x) * sx),
+    y: Math.round(c.y - (REF_BOX.y - FRAME_BOX.y) * sy),
+    w: Math.round(FRAME_BOX.w * sx), h: Math.round(FRAME_BOX.h * sy),
+  };
+}
+
+let calibWin = null;
+let calibCap = null; // { buf, W, H } kept for auto-snap border detection
+function closeCalibWin() { try { if (calibWin && !calibWin.isDestroyed()) calibWin.close(); } catch {} calibWin = null; calibCap = null; }
+// Snap a rough frame rect (capture px) onto the panel's coloured border: for each edge,
+// find the strongest saturated-colour line within a search margin of where the user left it.
+function snapFrameToBorder(f) {
+  if (!calibCap) return f;
+  const { buf, W, H } = calibCap;
+  const isEdge = (x, y) => {
+    const i = (y * W + x) * 4; const bl = buf[i], g = buf[i + 1], r = buf[i + 2];
+    return (Math.max(r, g, bl) - Math.min(r, g, bl)) > 30 && Math.max(r, g, bl) > 55;
+  };
+  const m = Math.round(Math.max(10, f.w * 0.06)); // search margin around each edge
+  const y0 = Math.max(0, Math.round(f.y + f.h * 0.15)), y1 = Math.min(H - 1, Math.round(f.y + f.h * 0.85));
+  const x0 = Math.max(0, Math.round(f.x + f.w * 0.15)), x1 = Math.min(W - 1, Math.round(f.x + f.w * 0.85));
+  // Snap to the strong coloured line CLOSEST to where the user placed the edge - not the
+  // strongest in range. The panel border and the (brighter) tab-row dividers are both
+  // strong lines; picking nearest-to-placement lets the user's rough drop disambiguate.
+  const colCov = (x) => { let s = 0; for (let y = y0; y <= y1; y++) if (isEdge(x, y)) s++; return s / Math.max(1, y1 - y0); };
+  const rowCov = (y) => { let s = 0; for (let x = x0; x <= x1; x++) if (isEdge(x, y)) s++; return s / Math.max(1, x1 - x0); };
+  const nearestStrong = (cov, target, a, b) => {
+    let pick = null, pickD = Infinity, fbBest = -1, fb = null;
+    for (let v = Math.max(0, a); v <= b; v++) {
+      const c = cov(v);
+      if (c > fbBest) { fbBest = c; fb = v; }
+      if (c >= 0.55) { const d = Math.abs(v - target); if (d < pickD) { pickD = d; pick = v; } }
+    }
+    return pick != null ? pick : (fbBest > 0.3 ? fb : null);
+  };
+  const L = nearestStrong(colCov, f.x, f.x - m, f.x + m), R = nearestStrong(colCov, f.x + f.w, f.x + f.w - m, f.x + f.w + m);
+  const T = nearestStrong(rowCov, f.y, f.y - m, f.y + m), B = nearestStrong(rowCov, f.y + f.h, f.y + f.h - m, f.y + f.h + m);
+  const nx = L != null ? L : f.x, ny = T != null ? T : f.y;
+  return { x: nx, y: ny, w: (R != null ? R : f.x + f.w) - nx, h: (B != null ? B : f.y + f.h) - ny };
+}
+ipcMain.on('stash-calibrate-start', async () => {
+  try {
+    if (calibWin && !calibWin.isDestroyed()) { calibWin.focus(); return; }
+    const disp = screen.getPrimaryDisplay();
+    const capW = Math.round(disp.size.width * disp.scaleFactor);
+    const capH = Math.round(disp.size.height * disp.scaleFactor);
+    // grab the desktop without the overlay in it
+    const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
+    if (wasVisible) { win.setOpacity(0); await new Promise((r) => setTimeout(r, 70)); }
+    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: capW, height: capH } });
+    if (wasVisible) win.setOpacity(1);
+    const src = sources.find((s) => s.id.startsWith('screen')) || sources[0];
+    if (!src) return;
+    const sz = src.thumbnail.getSize();
+    calibCap = { buf: src.thumbnail.toBitmap(), W: sz.width, H: sz.height };
+    const dataUrl = src.thumbnail.toDataURL();
+    // seed the box at the previous frame, else FRAME_BOX scaled to this capture
+    let seed;
+    if (config.stashCalibration) seed = calBoxToFrame(config.stashCalibration);
+    else { const s = capW / 1920; seed = { x: Math.round(FRAME_BOX.x * s), y: Math.round(FRAME_BOX.y * s), w: Math.round(FRAME_BOX.w * s), h: Math.round(FRAME_BOX.h * s) }; }
+    calibWin = new BrowserWindow({
+      x: disp.bounds.x, y: disp.bounds.y, width: disp.size.width, height: disp.size.height,
+      frame: false, transparent: false, resizable: false, movable: false, skipTaskbar: true,
+      fullscreenable: true, backgroundColor: '#000000',
+      webPreferences: { preload: path.join(__dirname, 'renderer', 'stash', 'calibrate-preload.js'), contextIsolation: true, nodeIntegration: false },
+    });
+    calibWin.setAlwaysOnTop(true, 'screen-saver');
+    calibWin.on('closed', () => { calibWin = null; });
+    calibWin.loadFile(path.join(__dirname, 'renderer', 'stash', 'calibrate.html'));
+    calibWin.webContents.once('did-finish-load', () => {
+      try { calibWin.webContents.send('calib-init', { dataUrl, capW, capH, seedBox: seed }); } catch {}
+    });
+  } catch (err) { console.error('calibrate-start failed:', err.message); }
+});
+ipcMain.on('stash-calibrate-cancel', () => closeCalibWin());
+ipcMain.on('stash-calibrate-snap', (_e, frame) => {
+  try {
+    if (!calibWin || calibWin.isDestroyed() || !frame) return;
+    const snapped = snapFrameToBorder(frame);
+    calibWin.webContents.send('calib-snapped', snapped);
+  } catch (err) { console.error('calibrate-snap failed:', err.message); }
+});
+ipcMain.on('stash-calibrate-confirm', async (_e, frame) => {
+  try {
+    if (!frame || !(frame.w > 0) || !(frame.h > 0)) return closeCalibWin();
+    config.stashCalibration = frameToCalBox(frame);
+    saveConfig();
+    closeCalibWin();
+    // immediately test-scan the open tab so the user gets pass/fail feedback
+    const res = await doStashCapture(() => {});
+    const send = (ch, p) => { if (win && !win.isDestroyed()) win.webContents.send(ch, p); };
+    send('stash-calibrated', res);
+  } catch (err) { console.error('calibrate-confirm failed:', err.message); }
+});
+ipcMain.handle('clear-stash-calibration', () => { config.stashCalibration = null; saveConfig(); return true; });
 
 // Global capture hotkey: view a special tab in game, press it; the app detects the
 // tab, values it, and updates its row in the Net Worth tally. Works whether or not

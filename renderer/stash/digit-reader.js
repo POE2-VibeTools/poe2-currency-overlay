@@ -49,6 +49,28 @@
     return { data: out, w, h };
   }
 
+  // Bilinear resample of a value-channel {data,w,h} to (nw,nh). Used to normalise a
+  // calibrated (non-1080) cell crop back to reference scale so the fixed-size 0-9
+  // templates match regardless of the user's resolution.
+  function resample(sub, nw, nh) {
+    const { data, w, h } = sub;
+    if (nw === w && nh === h) return sub;
+    const out = new Uint8Array(nw * nh);
+    const sx = w / nw, sy = h / nh;
+    for (let y = 0; y < nh; y++) {
+      let fy = (y + 0.5) * sy - 0.5; let y0 = Math.floor(fy); const wy = fy - y0;
+      let y1 = y0 + 1; y0 = Math.max(0, Math.min(h - 1, y0)); y1 = Math.max(0, Math.min(h - 1, y1));
+      for (let x = 0; x < nw; x++) {
+        let fx = (x + 0.5) * sx - 0.5; let x0 = Math.floor(fx); const wx = fx - x0;
+        let x1 = x0 + 1; x0 = Math.max(0, Math.min(w - 1, x0)); x1 = Math.max(0, Math.min(w - 1, x1));
+        const a = data[y0 * w + x0], b = data[y0 * w + x1], c = data[y1 * w + x0], d = data[y1 * w + x1];
+        const top = a + (b - a) * wx, bot = c + (d - c) * wx;
+        out[y * nw + x] = Math.round(top + (bot - top) * wy);
+      }
+    }
+    return { data: out, w: nw, h: nh };
+  }
+
   function binarize(sub, floor) {
     const thr = Math.max(otsu(sub.data), floor);
     const b = new Uint8Array(sub.data.length);
@@ -220,8 +242,19 @@
   }
 
   // Read one cell -> string, or "?" if unreadable.
-  function readCell(V, W, H, cx, cy, templates, P) {
-    const sub = crop(V, W, H, cx - P.stripWidth, cy - P.up, cx + P.stripWidth, cy + P.dn);
+  function readCell(V, W, H, cx, cy, templates, P, scale) {
+    scale = scale && scale > 0 ? scale : 1;
+    let sub;
+    if (scale !== 1) {
+      // calibrated non-reference resolution: crop the scaled window, then resample
+      // back to reference size so the fixed 0-9 templates + reference P still apply.
+      const sw = Math.round(P.stripWidth * scale), up = Math.round(P.up * scale), dn = Math.round(P.dn * scale);
+      const raw = crop(V, W, H, cx - sw, cy - up, cx + sw, cy + dn);
+      if (!raw.w || !raw.h) return '?';
+      sub = resample(raw, Math.max(1, Math.round(raw.w / scale)), Math.max(1, Math.round(raw.h / scale)));
+    } else {
+      sub = crop(V, W, H, cx - P.stripWidth, cy - P.up, cx + P.stripWidth, cy + P.dn);
+    }
     if (!sub.w || !sub.h) return '?';
     const bin = binarize(sub, P.floor);
 

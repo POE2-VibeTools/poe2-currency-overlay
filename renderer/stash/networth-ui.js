@@ -12,10 +12,11 @@
   const fmtDiv = (n) => n == null ? null : (n >= 100 ? Math.round(n) : n.toFixed(1)).toLocaleString('en-US') + ' div';
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
-  const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, showMissing: false, togglesOpen: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
+  const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, showMissing: false, togglesOpen: false, calibrated: false, dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
   const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence', runes: 'Runes', 'runes-kalguuran': 'Kalguuran Runes', ritual: 'Ritual', soulcore: 'Soul Cores', idol: 'Idols', 'ancient-augment': 'Ancient Augments', delirium: 'Delirium', breach: 'Breach', expedition: 'Expedition' };
+  const MIRROR_ICON = 'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lEdXBsaWNhdGUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/26bc31680e/CurrencyDuplicate.png';
 
-  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); state.showMissing = !!(c && c.stashShowMissing); state.togglesOpen = !!(c && c.stashTogglesOpen); render(); }).catch(() => {});
+  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); state.showMissing = !!(c && c.stashShowMissing); state.togglesOpen = !!(c && c.stashTogglesOpen); state.calibrated = !!(c && c.stashCalibration); render(); }).catch(() => {});
 
   const rowsOfType = (tab) => state.rows.filter((r) => r.tab === tab);
   function labelFor(row) {
@@ -54,9 +55,9 @@
   }
 
   function grandTotals() {
-    let ex = 0, divPrice = null;
-    for (const r of state.rows) { if (!r.included) continue; ex += r.result.totalEx || 0; if (r.result.divPrice) divPrice = r.result.divPrice; }
-    return { ex, div: divPrice ? ex / divPrice : null };
+    let ex = 0, divPrice = null, mirrorPrice = null;
+    for (const r of state.rows) { if (!r.included) continue; ex += r.result.totalEx || 0; if (r.result.divPrice) divPrice = r.result.divPrice; if (r.result.mirrorPrice) mirrorPrice = r.result.mirrorPrice; }
+    return { ex, div: divPrice ? ex / divPrice : null, mirrors: mirrorPrice && ex >= mirrorPrice ? Math.floor(ex / mirrorPrice) : null };
   }
 
   function rowCard(row) {
@@ -175,6 +176,8 @@
     gline.appendChild(el('span', 'nw-total-lab', 'Total'));
     gline.appendChild(el('span', 'nw-ex', fmtEx(rows ? gt.ex : null)));
     if (gt.div != null) gline.appendChild(el('span', 'nw-div', fmtDiv(gt.div)));
+    if (rows && gt.mirrors != null) gline.appendChild(el('span', 'nw-mirror',
+      `(${gt.mirrors.toLocaleString('en-US')}<img class="nw-mirror-ic" src="${MIRROR_ICON}" alt="mirror">)`));
     totBox.appendChild(gline);
     header.appendChild(totBox);
     const btn = el('button', 'nw-capture', state.busy ? 'Capturing…' : 'Capture tab (F7)');
@@ -207,6 +210,21 @@
       body.appendChild(mkToggle(state.showMissing, 'Show missing / unread items',
         'On: each tab lists the slots that read as empty or failed to register (not counted) - use it to check nothing you own was missed. Off: hides items you legitimately do not have.',
         (v) => { state.showMissing = v; try { window.api.setStashShowMissing(v); } catch {} }));
+      // resolution calibration
+      const cal = el('div', 'nw-cal');
+      const calBtn = el('button', 'nw-cal-btn', state.calibrated ? 'Re-calibrate resolution' : 'Calibrate for my resolution');
+      calBtn.onclick = () => { try { window.api.stashCalibrateStart(); } catch {} };
+      cal.appendChild(calBtn);
+      const status = el('div', 'nw-cal-status', state.calibrated
+        ? '<span class="nw-cal-ok">Calibrated</span> - reads scale to your window. Open a special tab and press F7.'
+        : 'Not calibrated - assumes the game is at 1920x1080, windowed top-left. Calibrate once for any other size.');
+      cal.appendChild(status);
+      if (state.calibrated) {
+        const clr = el('button', 'nw-cal-clear', 'Clear calibration');
+        clr.onclick = () => { try { window.api.clearStashCalibration(); } catch {} state.calibrated = false; render(); };
+        cal.appendChild(clr);
+      }
+      body.appendChild(cal);
       toggles.appendChild(body);
     }
     wrap.appendChild(toggles);
@@ -238,6 +256,16 @@
     if (window.api.onStashCapturing) window.api.onStashCapturing(() => { state.busy = true; state.phase = 'scanning'; state.pendingTab = null; state.notice = null; render(); });
     if (window.api.onStashDetected) window.api.onStashDetected((tab) => { state.busy = true; state.phase = 'detecting'; state.pendingTab = tab; render(); });
     if (window.api.onStashCaptured) window.api.onStashCaptured((res) => { state.busy = false; state.phase = 'idle'; state.pendingTab = null; applyResult(res); });
+    if (window.api.onStashCalibrated) window.api.onStashCalibrated((res) => {
+      state.busy = false; state.phase = 'idle'; state.pendingTab = null; state.calibrated = true;
+      if (res && res.ok && !res.mismatch) {
+        applyResult(res);
+        state.notice = { kind: 'ok', msg: `Calibrated - detected ${TAB_LABEL[res.tab] || res.tab}, read ${res.readCount}/${res.slotCount} items. If a tab ever mismatches, re-calibrate.` };
+      } else {
+        state.notice = { kind: 'warn', msg: 'Calibration saved, but no tab was read. Open a special stash tab (fully visible), make sure your box covered the coloured bounding box, then re-calibrate or press F7.' };
+      }
+      render();
+    });
   }
 
   window.NetWorth = { render, capture };
