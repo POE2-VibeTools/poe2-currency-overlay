@@ -10,17 +10,25 @@ App screen-captures → detects which tab (template match) → OCRs each slot's 
 live poe2scout → adds a row to a running tally (per-tab + grand total). Flip tabs, F7 each;
 re-capturing a tab updates its row. Item-sort toggle (value / stash layout) persists in config.
 
-## STATUS (2026-07-26)
-**Committed on `master`.** 9 tabs fully working (detect + read + price):
-Currency, Abyss, Essence, Runes, Kalguuran Runes, Ritual, Soul Cores, Idols, Ancient Augments.
+## STATUS (2026-07-27)
+**Committed on `master`.** ALL 12 special tabs fully working (detect + read + price):
+Currency, Abyss, Essence, Runes, Kalguuran Runes, Ritual, Soul Cores, Idols, Ancient Augments,
+Delirium, Breach (Catalysts subtab only; Wombgifts skipped), Expedition.
 - **Detection = template match** (tab-detect.js) — fill/darkness independent, resolution-ready.
   Replaced the old read-fraction/offset-search (deleted). Sparse tabs (e.g. a 1-item AA) detect.
-- All 9 maps Drew-verified. Prices via the FULL 17-category catalog (theses=incursion, gaze=abyss,
+- All 12 maps Drew-verified. Prices via the FULL 17-category catalog (theses=incursion, gaze=abyss,
   emergent/carved=expedition, raven-touched-shard=ritual, etc.).
+- **CX-feed price fallback** (main.js `CX_FALLBACK` in getStashPriceMap): items poe2scout doesn't
+  index but that trade on GGG's Currency Exchange are priced off the official CX feed (cx-feed.js)
+  in Exalted via a direct or one-hop (chaos/divine) pair. Current entries: raven-s-reflection,
+  shattered-triskelion, the-triskelion-reforged. Icons from the EE2 db (gen/image URLs). Extend the
+  table as new gaps surface. (The item tab / Ctrl+F has its own parallel path: cx-catalog.json.)
+- **"Toggles" section** (networth-ui): collapsible; holds Capture-duplicates, Sort-by-layout, and
+  **Show missing** (gates the per-tab "empty or unread" flags line — OFF by default). All persist in
+  config (stashDupTabs/stashSortLayout/stashShowMissing/stashTogglesOpen), surviving sessions+updates.
 
-**NOT mapped yet (detect-only templates exist, no read map):** **Delirium, Breach, Expedition.**
-They correlate as tabs but have no `*-tab-map.js`, so the worker returns `mismatch{unsupported}`.
-Breach: catalysts only (skip wombgifts, per Drew).
+**Unverified positions (empty in the reference, estimated — fix when non-empty):** Breachlord Sac
+(breach big center slot ~270,342) and The Triskelion Reforged (expedition R2 right slot ~340,322).
 
 **Deferred:** currency dynamic bottom rows; calibration UI (for non-1080 resolutions).
 
@@ -93,8 +101,8 @@ The template already detects delirium/breach/expedition; they just need a read m
    (kill electron.exe first, NEVER the game `PathOfExile_x64Steam.exe`); never tell Drew to npm start.
 
 ## NEXT UP
-1. **Delirium** — map it (workflow above). Then **Breach** (catalysts only, skip wombgifts) and
-   **Expedition**. All three already detect; just need maps + wiring.
+1. **All 12 tabs are mapped + committed.** Remaining polish: verify the two estimated empty-slot
+   positions (Breachlord Sac, The Triskelion Reforged) once Drew owns one of each.
 2. **Calibration UI** (resolution bridge) — a draggable box the user drops on the stash panel border
    once → store `config.stashCalibration={x,y,w,h}`. Then detection + reading scale into it. Also
    needs the digit templates rescaled by calBox/refBox for non-1080. Detection already supports it
