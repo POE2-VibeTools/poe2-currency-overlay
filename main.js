@@ -27,6 +27,32 @@ if (app.isPackaged) {
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('ozone-platform', 'x11');
 }
+// appendSwitch above is NOT equivalent to the flag being on the real command line.
+// Field evidence (GNOME 50 / Mutter, Wayland session): without the CLI flag the GPU
+// process segfaults (exit_code=139) and EVERY globalShortcut registration fails with a
+// bogus "taken by another app"; with it, all four register cleanly. So re-exec once with
+// the flag on argv. The marker prevents a relaunch loop, and an AppImage must relaunch
+// via $APPIMAGE - process.execPath points inside a mount that disappears on exit.
+if (process.platform === 'linux'
+    && !process.argv.some((a) => a.startsWith('--ozone-platform'))
+    && !process.argv.includes('--poe2-ozone-relaunch')) {
+  const args = process.argv.slice(1).concat(['--ozone-platform=x11', '--poe2-ozone-relaunch']);
+  app.relaunch(process.env.APPIMAGE ? { execPath: process.env.APPIMAGE, args } : { args });
+  app.exit(0);
+}
+// Electron pops an OS-modal error dialog for an unhandled rejection. On Linux the
+// AppImage updater path throws asynchronously (field report: a GTK "JavaScript error"
+// at launch on a build that then updated fine), leaving a stranger blocked behind a
+// modal. Log it there instead. Windows keeps the dialog.
+if (process.platform === 'linux') {
+  process.on('unhandledRejection', (err) => {
+    try {
+      fs.appendFileSync(path.join(app.getPath('userData'), 'linux-errors.log'),
+        `${new Date().toISOString()} unhandledRejection ${(err && err.stack) || err}
+`);
+    } catch {}
+  });
+}
 
 const API_BASE = 'https://api.poe2scout.com';
 const USER_AGENT = 'POE2-Price-Overlay/1.0 (https://github.com/POE2-VibeTools/poe2-currency-overlay)';
@@ -686,6 +712,7 @@ function createWindow() {
     win.setOpacity(0);
     win.setIgnoreMouseEvents(true);
     win.showInactive();
+    if (process.platform !== 'win32') win.hide(); // X11: opacity 0 is not hidden, so this is why it appeared unbidden
   });
   win.webContents.once('did-finish-load', () => {
     const scale = (config && config.uiScale) || 100;
@@ -758,6 +785,7 @@ function hideOverlay(toGame) {
     const wasFocused = win.isFocused();
     win.setOpacity(0);
     win.setIgnoreMouseEvents(true);
+    if (process.platform !== 'win32') win.hide(); // window opacity needs a compositor honoring it; X11 ignores it" 
     logToggle('hideOverlay', `toGame=${!!toGame} wasFocused=${wasFocused}`);
     // Hand focus to the GAME - blur alone lets Windows pick the next window
     // (often the desktop), and the game then silently ignores the user's next
@@ -1320,9 +1348,15 @@ async function doStashCapture(onDetected) {
     const disp = screen.getPrimaryDisplay();
     const cw = Math.round(disp.size.width * disp.scaleFactor);
     const ch = Math.round(disp.size.height * disp.scaleFactor);
-    if (wasVisible) { win.setOpacity(0); await new Promise((r) => setTimeout(r, 70)); }
-    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: cw, height: ch } });
-    if (wasVisible) win.setOpacity(1);
+    if (wasVisible) { win.setOpacity(0); if (process.platform !== 'win32') win.hide(); await new Promise((r) => setTimeout(r, 70)); }
+    const grab = desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: cw, height: ch } });
+    // On GNOME the capture needs the desktop portal; under XWayland it returns no frame
+    // AND never rejects, so the panel sat on "Scanning..." forever. Windows is untouched.
+    const sources = process.platform === 'win32' ? await grab : await Promise.race([
+      grab,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('screen capture timed out (Linux needs the desktop portal)')), 8000)),
+    ]);
+    if (wasVisible) { win.setOpacity(1); if (process.platform !== 'win32') win.showInactive(); }
     const src = sources.find((s) => s.id.startsWith('screen')) || sources[0];
     if (!src) return { ok: false, error: 'no screen source' };
     const img = src.thumbnail;
@@ -1364,6 +1398,7 @@ async function doStashCapture(onDetected) {
     return { ok: false, error: String(err && err.message || err) };
   } finally {
     if (wasVisible && win && win.getOpacity() === 0) win.setOpacity(1); // never leave it hidden
+    if (wasVisible && win && !win.isDestroyed() && process.platform !== 'win32' && !win.isVisible()) win.showInactive();
   }
 }
 
@@ -1466,9 +1501,9 @@ ipcMain.on('stash-calibrate-start', async () => {
     const capH = Math.round(disp.size.height * disp.scaleFactor);
     // grab the desktop without the overlay in it
     const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
-    if (wasVisible) { win.setOpacity(0); await new Promise((r) => setTimeout(r, 70)); }
+    if (wasVisible) { win.setOpacity(0); if (process.platform !== 'win32') win.hide(); await new Promise((r) => setTimeout(r, 70)); }
     const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: capW, height: capH } });
-    if (wasVisible) win.setOpacity(1);
+    if (wasVisible) { win.setOpacity(1); if (process.platform !== 'win32') win.showInactive(); }
     const src = sources.find((s) => s.id.startsWith('screen')) || sources[0];
     if (!src) return;
     const sz = src.thumbnail.getSize();

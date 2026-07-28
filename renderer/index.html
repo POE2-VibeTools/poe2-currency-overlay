@@ -185,6 +185,7 @@
             <div class="cmdhk-head">
               <label title="Each hotkey sends exactly one chat command when pressed. Commands come from a fixed safe list - one key, one manual action, nothing GGG's rules disallow.">Bind a key to a chat command</label>
               <span class="set-sub">One press, one command - fires only while the game is focused, with the chat input closed.</span>
+              <span class="set-sub cmdhk-nofocus hidden">On this platform the app can't yet tell which window is focused, so a command is sent to whatever has your keyboard. Keep that in mind before binding one.</span>
             </div>
             <div id="cmd-hotkeys-rows" class="cmdhk-rows"></div>
             <button id="cmd-hotkeys-add" class="chip-add" title="Add a command hotkey">+ Add hotkey</button>

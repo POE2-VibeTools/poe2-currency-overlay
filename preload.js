@@ -63,6 +63,7 @@ contextBridge.exposeInMainWorld('api', {
   setTabShown: (which, shown) => ipcRenderer.invoke('set-tab-shown', which, shown),
   setTabOrder: (order) => ipcRenderer.invoke('set-tab-order', order),
   getSafeCommands: () => ipcRenderer.invoke('get-safe-commands'),
+  platform: process.platform, // renderer copy is read-only; used for platform caveats in Settings
   setGrandexHistory: (history) => ipcRenderer.invoke('set-grandex-history', history),
   setCommandHotkeys: (rows) => ipcRenderer.invoke('set-command-hotkeys', rows),
   setItemRanges: (ranges) => ipcRenderer.invoke('set-item-ranges', ranges),

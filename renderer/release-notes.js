@@ -6,6 +6,19 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.5.3',
+    date: '2026-07-28',
+    title: 'Linux fixes',
+    notes: [
+      'Linux only. Nothing changes on Windows - every fix in this build sits behind a platform check.',
+      'The app now relaunches itself with the X11 backend flag on the command line. Without it the GPU process crashed and no hotkey could register at all.',
+      'The hide button actually hides the overlay. It was only turning it transparent, which does nothing without a compositor honouring it.',
+      'The overlay no longer shows up at launch before you press the toggle.',
+      'Stash capture (F7) fails with an error after 8 seconds instead of sitting on "Scanning" forever. Capture on GNOME still needs the desktop portal - separate work.',
+      'Update errors are logged instead of blocking the app behind an error dialog.',
+    ],
+  },
+  {
     version: '2.5.2',
     date: '2026-07-28',
     title: 'Your feedback, shipped',

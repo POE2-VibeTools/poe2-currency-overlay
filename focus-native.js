@@ -168,8 +168,13 @@ function focus() {
 // Is the game the CURRENT foreground window? Cheap gate for synthesized
 // keystrokes: never type into whatever else (Discord, a browser) happens to
 // hold focus when a global hotkey fires.
+//
+// true = the game has focus, false = something else does, null = THIS PLATFORM
+// CANNOT TELL (no window detection outside Win32 yet). A hard false on Linux meant
+// command hotkeys could never fire there at all; callers treat null as "can't tell"
+// and go ahead, since the user pressed a hotkey they bound themselves.
 function foregroundIsGame() {
-  if (process.platform !== 'win32') return false;
+  if (process.platform !== 'win32') return null;
   const a = bind();
   if (!a) return false;
   try {

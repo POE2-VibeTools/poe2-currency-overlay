@@ -1799,6 +1799,12 @@ async function initSettings() {
     return v.startsWith('/') && v.length > 1 && !/[\r\n]/.test(v) && !deniedCommands.includes(v.split(/\s+/)[0].toLowerCase());
   };
   const saveCmdHotkeys = () => window.api.setCommandHotkeys(config.commandHotkeys || []);
+  // Focus detection is Win32-only so far: on other platforms the command lands in
+  // whatever window has the keyboard. Say so rather than let it surprise someone.
+  {
+    const note = document.querySelector('.cmdhk-nofocus');
+    if (note && window.api.platform && window.api.platform !== 'win32') note.classList.remove('hidden');
+  }
   const renderCmdHotkeys = () => {
     if (!cmdRowsEl) return;
     cmdRowsEl.innerHTML = '';
