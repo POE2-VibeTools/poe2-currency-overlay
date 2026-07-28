@@ -38,7 +38,20 @@
     stream.getVideoTracks().forEach((t) => t.addEventListener('ended', () => { stream = null; video = null; }));
   }
 
-  window.api.onStashNeedFrame(async (opts) => {
+  // Opening the stream is the slow part (it can wait on the portal dialog), so main
+  // calls this BEFORE it veils the overlay - a hidden window has its timers throttled,
+  // which would stall the wait for the first decoded frame.
+  window.__poe2EnsureStream = async function () {
+    try { await ensureStream(); return true; } catch { return false; }
+  };
+
+  // Called by main via webContents.executeJavaScript(code, /* userGesture */ true).
+  // That flag is the whole point: getDisplayMedia refuses to run without a user
+  // gesture, and our triggers are an IPC message and a global hotkey - neither of
+  // which carries one. Without it the call threw instantly and the only visible
+  // effect was the overlay veiling and unveiling ("the calibrate button just
+  // flickers the app").
+  window.__poe2CaptureFrame = async function (opts) {
     try {
       await ensureStream();
       if (!video || !(video.videoWidth > 0)) throw new Error('no video frame');
@@ -62,5 +75,7 @@
       // path rather than hanging
       window.api.sendStashFrame(null);
     }
-  });
+  };
+  // fallback path for any caller that still goes through IPC
+  window.api.onStashNeedFrame((opts) => { window.__poe2CaptureFrame(opts); });
 })();

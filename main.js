@@ -1391,9 +1391,24 @@ function requestRendererFrame(withDataUrl) {
     frameWaiters.push(settle);
     // generous: the FIRST call may be sitting on the user's "Share this screen" dialog
     setTimeout(() => { frameWaiters = frameWaiters.filter((f) => f !== settle); settle(null); }, 30000);
-    try { win.webContents.send('stash-need-frame', { withDataUrl: !!withDataUrl }); } catch { settle(null); }
+    // userGesture=true is required: getDisplayMedia is gated on user activation, which
+    // an IPC message or a global hotkey does not have.
+    const call = `window.__poe2CaptureFrame && window.__poe2CaptureFrame(${JSON.stringify({ withDataUrl: !!withDataUrl })})`;
+    win.webContents.executeJavaScript(call, true).catch(() => {
+      try { win.webContents.send('stash-need-frame', { withDataUrl: !!withDataUrl }); } catch { settle(null); }
+    });
   });
 }
+// Off Windows, open the screen-share stream while the overlay is still on screen:
+// once it's veiled the renderer is throttled, and the portal dialog would be waiting
+// behind a hidden window. No-op on Windows and once the stream is already up.
+async function primeCapture() {
+  if (process.platform === 'win32' || !win || win.isDestroyed()) return;
+  try {
+    await win.webContents.executeJavaScript('window.__poe2EnsureStream && window.__poe2EnsureStream()', true);
+  } catch { /* the capture itself reports failure */ }
+}
+
 async function grabScreen(cw, ch, withDataUrl) {
   if (process.platform === 'win32') {
     const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: cw, height: ch } });
@@ -1435,6 +1450,7 @@ async function doStashCapture(onDetected) {
   // (the screen capture is the composited desktop). Restored in finally.
   const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
   try {
+    await primeCapture(); // before the veil - see primeCapture
     const disp = screen.getPrimaryDisplay();
     const cw = Math.round(disp.size.width * disp.scaleFactor);
     const ch = Math.round(disp.size.height * disp.scaleFactor);
@@ -1578,6 +1594,7 @@ function snapFrameToBorder(f) {
 ipcMain.on('stash-calibrate-start', async () => {
   try {
     if (calibWin && !calibWin.isDestroyed()) { calibWin.focus(); return; }
+    await primeCapture(); // before the veil - see primeCapture
     const disp = screen.getPrimaryDisplay();
     const capW = Math.round(disp.size.width * disp.scaleFactor);
     const capH = Math.round(disp.size.height * disp.scaleFactor);
