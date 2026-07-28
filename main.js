@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, ipcMain, Tray, Menu, nativeImage, shell, Notification, protocol, desktopCapturer, screen } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, Tray, Menu, nativeImage, shell, Notification, protocol, desktopCapturer, screen, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const focusNative = require('./focus-native'); // lazy inside - koffi binds on first use
@@ -1044,8 +1044,16 @@ async function onItemHotkey(mode = 'pin', acc = null) {
       const sentinel = `__POE2OVERLAY_EMPTY_${Date.now()}`;
       clipboard.writeText(sentinel);
       cleared = true;
-      if (synthCopy()) text = await pollClip(12); // ~300ms, then stop waiting
-      logToggle('item-hotkey', text ? `copy OK len=${text.length}` : 'synth copy did not land - using existing clipboard');
+      // xdotool first: it drives XTEST with a correct keymap, which is exactly what
+      // libuiohook cannot do here. Then uiohook as a second chance for setups where
+      // xdotool isn't installed but the hook works. Either way, fall through to the
+      // clipboard the user filled themselves.
+      const viaTool = linuxFocus.sendCopy();
+      if (viaTool) text = await pollClip(20); // ~500ms: xdotool + the game's own write
+      if (!text && synthCopy()) text = await pollClip(12);
+      logToggle('item-hotkey', text
+        ? `copy OK via ${viaTool ? 'xdotool' : 'uiohook'} len=${text.length}`
+        : `copy did not land (xdotool ${viaTool ? 'present' : 'missing'}) - using existing clipboard`);
     }
     if (process.platform === 'win32') {
       clipboard.writeText(''); // so a successful copy is unambiguous
@@ -1356,6 +1364,46 @@ async function getStashPriceMap(force) {
   return map;
 }
 
+// ---------- one screen frame, however this platform can produce one ----------
+// Windows: desktopCapturer, unchanged.
+// Linux: desktopCapturer cannot deliver on a Wayland session. The portal capturer
+// needs a consent dialog nobody can reach behind a fullscreen game and never rejects
+// when it gets nothing (Electron 43 removed that timeout), and forcing the legacy X11
+// capturer returns a BLACK frame - both confirmed in the field. So the renderer
+// captures with getDisplayMedia instead: one portal prompt per app run, the stream is
+// kept alive, and each capture just grabs the current frame off it.
+let frameWaiters = [];
+ipcMain.on('stash-frame', (_e, payload) => {
+  const waiting = frameWaiters;
+  frameWaiters = [];
+  waiting.forEach((fn) => fn(payload || null));
+});
+function requestRendererFrame(withDataUrl) {
+  return new Promise((resolve) => {
+    if (!win || win.isDestroyed()) return resolve(null);
+    let done = false;
+    const settle = (payload) => { if (done) return; done = true; resolve(payload); };
+    frameWaiters.push(settle);
+    // generous: the FIRST call may be sitting on the user's "Share this screen" dialog
+    setTimeout(() => { frameWaiters = frameWaiters.filter((f) => f !== settle); settle(null); }, 30000);
+    try { win.webContents.send('stash-need-frame', { withDataUrl: !!withDataUrl }); } catch { settle(null); }
+  });
+}
+async function grabScreen(cw, ch, withDataUrl) {
+  if (process.platform === 'win32') {
+    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: cw, height: ch } });
+    const src = sources.find((s) => s.id.startsWith('screen')) || sources[0];
+    if (!src) return null;
+    const img = src.thumbnail;
+    const size = img.getSize();
+    return { bitmap: img.toBitmap(), W: size.width, H: size.height, dataUrl: withDataUrl ? img.toDataURL() : null };
+  }
+  const f = await requestRendererFrame(withDataUrl);
+  if (!f || !f.data || !f.w || !f.h) return null;
+  // the renderer already swapped RGBA->BGRA to match nativeImage.toBitmap()
+  return { bitmap: Buffer.from(f.data), W: f.w, H: f.h, dataUrl: f.dataUrl || null };
+}
+
 // Run the heavy stash OCR in a worker thread so the main event loop (hotkeys, IPC,
 // window toggle) stays responsive. `onDetected(tab)` fires as soon as the worker
 // knows which tab it is, before the full read finishes.
@@ -1386,20 +1434,12 @@ async function doStashCapture(onDetected) {
     const cw = Math.round(disp.size.width * disp.scaleFactor);
     const ch = Math.round(disp.size.height * disp.scaleFactor);
     if (wasVisible) { win.setOpacity(0); if (process.platform !== 'win32') win.hide(); await new Promise((r) => setTimeout(r, 70)); }
-    const grab = desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: cw, height: ch } });
-    // On GNOME the capture needs the desktop portal; under XWayland it returns no frame
-    // AND never rejects, so the panel sat on "Scanning..." forever. Windows is untouched.
-    const sources = process.platform === 'win32' ? await grab : await Promise.race([
-      grab,
-      new Promise((_, rej) => setTimeout(() => rej(new Error('screen capture timed out (Linux needs the desktop portal)')), 8000)),
-    ]);
+    const shot = await grabScreen(cw, ch, false);
     if (wasVisible) { win.setOpacity(1); if (process.platform !== 'win32') win.showInactive(); }
-    const src = sources.find((s) => s.id.startsWith('screen')) || sources[0];
-    if (!src) return { ok: false, error: 'no screen source' };
-    const img = src.thumbnail;
-    const { width: W, height: H } = img.getSize();
+    if (!shot) return { ok: false, error: 'no screen source' };
+    const { bitmap, W, H } = shot;
 
-    const res = await runReaderWorker(img.toBitmap(), W, H, onDetected);
+    const res = await runReaderWorker(bitmap, W, H, onDetected);
     if (!res || !res.ok) return res || { ok: false, error: 'reader failed' };
     if (res.mismatch) return { ok: true, mismatch: true, readCount: res.readCount, slotCount: res.slotCount };
 
@@ -1539,13 +1579,11 @@ ipcMain.on('stash-calibrate-start', async () => {
     // grab the desktop without the overlay in it
     const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
     if (wasVisible) { win.setOpacity(0); if (process.platform !== 'win32') win.hide(); await new Promise((r) => setTimeout(r, 70)); }
-    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: capW, height: capH } });
+    const shot = await grabScreen(capW, capH, true);
     if (wasVisible) { win.setOpacity(1); if (process.platform !== 'win32') win.showInactive(); }
-    const src = sources.find((s) => s.id.startsWith('screen')) || sources[0];
-    if (!src) return;
-    const sz = src.thumbnail.getSize();
-    calibCap = { buf: src.thumbnail.toBitmap(), W: sz.width, H: sz.height };
-    const dataUrl = src.thumbnail.toDataURL();
+    if (!shot || !shot.dataUrl) return;
+    calibCap = { buf: shot.bitmap, W: shot.W, H: shot.H };
+    const dataUrl = shot.dataUrl;
     // seed the box at the previous frame, else FRAME_BOX scaled to this capture
     let seed;
     if (config.stashCalibration) seed = calBoxToFrame(config.stashCalibration);
@@ -2064,6 +2102,17 @@ if (!gotLock) {
 
   app.whenReady().then(() => {
     protocol.handle('ee2', serveEe2Data);
+    // getDisplayMedia needs a handler or the request is denied outright. Only the
+    // non-Windows capture path uses it (see grabScreen); useSystemPicker hands the
+    // choice to the desktop's own portal dialog, which is what GNOME requires.
+    if (process.platform !== 'win32') {
+      try {
+        session.defaultSession.setDisplayMediaRequestHandler(
+          (_request, callback) => callback({ useSystemPicker: true }),
+          { useSystemPicker: true }
+        );
+      } catch (err) { console.error('display-media handler failed:', err && err.message); }
+    }
     // surface rate-limit queuing in the UI so a throttled search never looks hung
     trade2.setOnWait((policy, ms, banned) => {
       try { if (win) win.webContents.send('trade2-wait', { policy, ms, banned: !!banned }); } catch {}

@@ -64,6 +64,9 @@ contextBridge.exposeInMainWorld('api', {
   setTabOrder: (order) => ipcRenderer.invoke('set-tab-order', order),
   getSafeCommands: () => ipcRenderer.invoke('get-safe-commands'),
   platform: process.platform, // renderer copy is read-only; used for platform caveats in Settings
+  // Net Worth frames on platforms where main can't capture (see renderer/stash/linux-capture.js)
+  onStashNeedFrame: (cb) => ipcRenderer.on('stash-need-frame', (_e, opts) => cb(opts)),
+  sendStashFrame: (payload) => ipcRenderer.send('stash-frame', payload),
   setGrandexHistory: (history) => ipcRenderer.invoke('set-grandex-history', history),
   setCommandHotkeys: (rows) => ipcRenderer.invoke('set-command-hotkeys', rows),
   setItemRanges: (ranges) => ipcRenderer.invoke('set-item-ranges', ranges),

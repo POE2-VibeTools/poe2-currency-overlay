@@ -6,6 +6,17 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.5.6',
+    date: '2026-07-28',
+    title: 'Linux: price check in one press',
+    notes: [
+      'Linux only. Nothing changes on Windows - every fix in this build sits behind a platform check.',
+      'Price check works on one press again if you have xdotool installed. The app drives the game\'s copy through xdotool, which does reach it, unlike the input library the app uses everywhere else. Without xdotool it still falls back to whatever you copied yourself.',
+      'Fixed: hiding the overlay took three seconds. That was the new window-focus code shelling out and blocking everything while it waited.',
+      'Stash capture asks to share your screen once per launch, and reads frames from that. Screen capture on a Wayland desktop has to go through the system\'s own share dialog - the shortcut around it returned a black picture, which is why calibration showed a black screen.',
+    ],
+  },
+  {
     version: '2.5.5',
     date: '2026-07-28',
     title: 'Linux batch',
