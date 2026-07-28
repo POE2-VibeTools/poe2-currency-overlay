@@ -6,6 +6,18 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.5.2',
+    date: '2026-07-28',
+    title: 'Your feedback, shipped',
+    notes: [
+      'Skill gems price check properly now. Gem level and quality drive the search, and a gem copied while socketed discounts your gear\'s +levels, so a level 20 gem searches as 20 instead of 32.',
+      'Suggested floor shows the other currencies too. 0.7 div now also reads in exalted and chaos, so you don\'t need the exchange rate memorized.',
+      'Currency buckets collapse with the chevron in their header, and you can drag whole cards into the order you want. A collapsed bucket still shows its cheapest payment.',
+      'Fixed: clicking Search, or another filter box, straight out of a filter field took two clicks.',
+      'Fixed: long prices overlapped the item name in the results list.',
+    ],
+  },
+  {
     version: '2.5.1',
     date: '2026-07-27',
     title: 'Tutorial covers the new tabs',
