@@ -6,6 +6,16 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.5.8',
+    date: '2026-07-28',
+    title: 'Linux: screen capture',
+    notes: [
+      'Linux only. Nothing changes on Windows - every fix in this build sits behind a platform check.',
+      'Fixed: Calibrate just made the overlay flicker and did nothing. Screen capture on Linux goes through your desktop\'s share dialog, which browsers only allow off a real click - and ours was triggered by a hotkey and a button that hands off to the background, so it was refused instantly.',
+      'The share dialog now also opens while the overlay is still on screen, instead of behind a hidden window.',
+    ],
+  },
+  {
     version: '2.5.7',
     date: '2026-07-28',
     title: 'Linux: price check actually works',
