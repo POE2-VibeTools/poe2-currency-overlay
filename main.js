@@ -218,6 +218,11 @@ const DEFAULT_CONFIG = {
   itemHotkeyTemp: 'Control+Alt+F', // same check, but the overlay hides once the mouse visits it and leaves
   stashHotkey: 'F7', // view a currency tab in game, press this: reads + values it into the Net Worth tally
   gameWindowMatch: 'Path of Exile 2', // LINUX only: window title xdotool looks for (non-English clients)
+  // LINUX only, opt-in: let the price-check hotkey press Ctrl+C in the game for you via
+  // xdotool. Off by default because on GNOME Wayland, Xwayland routes XTEST through
+  // libei and the RemoteDesktop portal, so every press pops an "Allow Remote
+  // Interaction" dialog. Off = copy the item yourself, then press the hotkey.
+  linuxCopyViaXdotool: false,
   stashDupTabs: false, // Net Worth: re-capturing a tab type asks replace-which/add-new instead of just replacing
   stashSortLayout: false, // Net Worth: list a tab's items in stash reading order instead of by value
   stashShowMissing: false, // Net Worth: show empty/unread slots as editable x0 lines
@@ -1048,12 +1053,12 @@ async function onItemHotkey(mode = 'pin', acc = null) {
       // libuiohook cannot do here. Then uiohook as a second chance for setups where
       // xdotool isn't installed but the hook works. Either way, fall through to the
       // clipboard the user filled themselves.
-      const viaTool = linuxFocus.sendCopy();
+      const viaTool = config.linuxCopyViaXdotool ? linuxFocus.sendCopy() : false;
       if (viaTool) text = await pollClip(20); // ~500ms: xdotool + the game's own write
       if (!text && synthCopy()) text = await pollClip(12);
       logToggle('item-hotkey', text
         ? `copy OK via ${viaTool ? 'xdotool' : 'uiohook'} len=${text.length}`
-        : `copy did not land (xdotool ${viaTool ? 'present' : 'missing'}) - using existing clipboard`);
+        : `copy did not land (xdotool copy ${viaTool ? 'tried' : 'off/unavailable'}) - using existing clipboard`);
     }
     if (process.platform === 'win32') {
       clipboard.writeText(''); // so a successful copy is unambiguous
