@@ -6,6 +6,16 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.5.7',
+    date: '2026-07-28',
+    title: 'Linux: price check actually works',
+    notes: [
+      'Linux only. Nothing changes on Windows - every fix in this build sits behind a platform check.',
+      'Price check works. Every Linux build before this one shipped without the item parser: our packaging step for Linux skipped building it, so the whole Price Check and Desecrate side of the app failed on any item. Nothing to do with the game, the clipboard or the desktop - our build.',
+      'The hotkey pressing Ctrl+C in the game for you is now a setting, off by default. On GNOME Wayland it makes the desktop ask "Allow Remote Interaction" every single press. Leave it off and copy the item yourself, or set "linuxCopyViaXdotool" to true in the config file if you want one press and don\'t mind the prompt.',
+    ],
+  },
+  {
     version: '2.5.6',
     date: '2026-07-28',
     title: 'Linux: price check in one press',
