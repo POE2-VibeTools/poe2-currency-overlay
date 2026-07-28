@@ -557,7 +557,7 @@
     const go = el('button', 'gx-bar-btn', 'Read');
     go.onclick = () => {
       const names = decodeTag(state.tagInput);
-      if (!names) { state.notice = { kind: 'warn', msg: "Couldn't read that tag - expected e.g. 'GE CAI+SUL =11 FISH'." }; render(); return; }
+      if (!names) { state.notice = { kind: 'warn', msg: "Couldn't read that tag - expected e.g. 'GE CAI+SUL =9 CALL'." }; render(); return; }
       state.picked = new Set(names);
       state.tagInput = '';
       state.drawer = null;
