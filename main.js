@@ -2,6 +2,7 @@ const { app, BrowserWindow, globalShortcut, ipcMain, Tray, Menu, nativeImage, sh
 const path = require('path');
 const fs = require('fs');
 const focusNative = require('./focus-native'); // lazy inside - koffi binds on first use
+const linuxFocus = require('./linux-focus'); // the Linux half: xdotool when present, else "can't tell"
 // Stash net-worth reader runs in a worker (renderer/stash/reader-worker.js); main
 // only does screen capture + pricing. See memory stash-networth-feature.
 
@@ -216,6 +217,7 @@ const DEFAULT_CONFIG = {
   itemHotkey: 'Control+F', // hover an item in game, press this: copies + opens the Items tab; overlay STAYS
   itemHotkeyTemp: 'Control+Alt+F', // same check, but the overlay hides once the mouse visits it and leaves
   stashHotkey: 'F7', // view a currency tab in game, press this: reads + values it into the Net Worth tally
+  gameWindowMatch: 'Path of Exile 2', // LINUX only: window title xdotool looks for (non-English clients)
   stashDupTabs: false, // Net Worth: re-capturing a tab type asks replace-which/add-new instead of just replacing
   stashSortLayout: false, // Net Worth: list a tab's items in stash reading order instead of by value
   stashShowMissing: false, // Net Worth: show empty/unread slots as editable x0 lines
@@ -766,6 +768,12 @@ function showOverlay() {
   try {
     win.setAlwaysOnTop(true, 'screen-saver');
     win.setIgnoreMouseEvents(false);
+    // Esc is a renderer keydown, which needs keyboard focus - an X11 overlay shown
+    // inactive never gets it, so Esc did nothing until the window was clicked. Bind it
+    // globally for as long as the overlay is up, and hand it back on hide.
+    if (process.platform !== 'win32') {
+      try { globalShortcut.register('Escape', () => { if (overlayShown) hideOverlay(); }); } catch {}
+    }
     if (!win.isVisible()) win.showInactive(); // guarantee an OS-level show if Windows dropped it
     win.setOpacity(1);
     win.webContents.send('overlay-shown');
@@ -778,6 +786,7 @@ function hideOverlay(toGame) {
   overlayShown = false;
   try {
     const wasFocused = win.isFocused();
+    if (process.platform !== 'win32') { try { globalShortcut.unregister('Escape'); } catch {} }
     win.setOpacity(0);
     win.setIgnoreMouseEvents(true);
     if (process.platform !== 'win32') win.hide(); // window opacity needs a compositor honoring it; X11 ignores it" 
@@ -929,6 +938,12 @@ function focusGame() {
     logToggle('focusGame', `native ERROR ${(err && err.message) || err}`);
   }
   return new Promise((resolve) => {
+    if (process.platform === 'linux') {
+      // focus-native is Win32-only; on Linux xdotool raises the game when installed
+      const ok = linuxFocus.focusGame(config.gameWindowMatch);
+      logToggle('focusGame', `linux xdotool ${ok ? 'activated' : 'unavailable'}`);
+      return resolve();
+    }
     if (process.platform !== 'win32') return resolve(); // no powershell.exe, and focus-native is Win32-only
     try {
       const { exec } = require('child_process');
@@ -939,6 +954,14 @@ function focusGame() {
       );
     } catch { resolve(); }
   });
+}
+
+// true / false / null, whichever platform can answer. Win32 asks user32 in-process;
+// Linux asks xdotool if it is installed; anything else can't tell.
+function gameIsForeground() {
+  const win = focusNative.foregroundIsGame();
+  if (win !== null) return win;
+  return linuxFocus.foregroundIsGame(config.gameWindowMatch);
 }
 
 async function onItemHotkey(mode = 'pin', acc = null) {
@@ -1609,9 +1632,9 @@ async function sendChatCommand(cmd) {
   try {
     // Never type into whatever else holds focus (Discord, a browser): the game
     // must already be the foreground window, otherwise the press is a no-op.
-    // foregroundIsGame() is tri-state: true / false / null = this platform has no
-    // detection. `!null` is true, so a plain negation made every Linux press a no-op.
-    const fg = focusNative.foregroundIsGame();
+    // foregroundIsGame() is tri-state: true / false / null = nothing can tell here.
+    // `!null` is true, so a plain negation made every Linux press a no-op.
+    const fg = gameIsForeground();
     if (fg === false) {
       logToggle('cmd-hotkey', `${cmd}: game not foreground - ignored`);
       return;

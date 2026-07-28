@@ -36,6 +36,15 @@ module.exports = async function afterPack(context) {
     real,
     '#!/bin/sh\n'
     + '# Wrapper injected by scripts/linux-afterpack.js - see that file for why.\n'
+    + '# Chromium chooses its screen capturer from XDG_SESSION_TYPE/WAYLAND_DISPLAY, NOT\n'
+    + '# from the Ozone backend, so on a Wayland session it always builds the PipeWire\n'
+    + '# portal capturer - which needs a consent dialog nobody can reach behind a\n'
+    + '# fullscreen game, and which never errors when it gets nothing. Presenting an X11\n'
+    + '# session to our own process only should put it on the legacy X11 capturer, which\n'
+    + '# can grab the XWayland root the game also lives on.\n'
+    + 'unset WAYLAND_DISPLAY\n'
+    + 'XDG_SESSION_TYPE=x11\n'
+    + 'export XDG_SESSION_TYPE\n'
     + `exec "$(dirname "$(readlink -f "$0")")/${exe}.bin" --ozone-platform=x11 "$@"\n`,
     { mode: 0o755 }
   );

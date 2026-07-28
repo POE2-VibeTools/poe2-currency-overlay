@@ -6,6 +6,18 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.5.5',
+    date: '2026-07-28',
+    title: 'Linux batch',
+    notes: [
+      'Linux only. Nothing changes on Windows - every fix in this build sits behind a platform check.',
+      'Esc hides the overlay without having to click it first. It was a keypress handled inside the window, and the window never holds keyboard focus there.',
+      'If you have xdotool installed, the app can now see which window is active and raise the game itself. Command hotkeys use it, so /hideout stops firing into whatever window you happen to be in. Without xdotool nothing changes.',
+      'Stash capture (F7) gets a shot: the launcher now presents an X11 session to the app, which should put screen capture on the X11 path instead of the portal that can\'t show its dialog behind a fullscreen game. Untested - tell me if it comes back black.',
+      'Non-English client? Set "gameWindowMatch" in the config file to your window title.',
+    ],
+  },
+  {
     version: '2.5.4',
     date: '2026-07-28',
     title: 'Linux fixes, take two',
