@@ -1,4 +1,4 @@
-// Net Worth panel: capture special stash tabs (screen-OCR in main), value them via
+// Net Worth panel: capture currency tabs (screen-OCR in main), value them via
 // the live catalog, keep a running tally. Rows are tab INSTANCES: with the
 // "duplicate tabs" setting on, re-capturing a type asks replace-which / add-new,
 // so streamers can track multiple same-type tabs and include/exclude each.
@@ -121,7 +121,7 @@
     cal.appendChild(head);
     cal.appendChild(el('div', 'nw-set-cal-desc', state.calibrated
       ? 'Reads are scaled to your window. If a scan ever mismatches its tab, re-calibrate.'
-      : 'Assumes the game is fullscreen at 1920×1080. Any other size or a smaller window? Open a special tab, then calibrate once.'));
+      : 'Assumes the game is fullscreen at 1920×1080. Any other size or a smaller window? Open a currency tab, then calibrate once.'));
     const btns = el('div', 'nw-set-cal-btns');
     const calBtn = el('button', 'nw-set-btn', state.calibrated ? 'Re-calibrate' : 'Calibrate for my resolution');
     calBtn.onclick = () => { try { window.api.stashCalibrateStart(); } catch {} };
@@ -305,7 +305,7 @@
     const pending = state.busy && state.phase === 'detecting' ? state.pendingTab : null;
     if (!rows && !state.busy) {
       wrap.appendChild(el('div', 'nw-empty',
-        `Open a special stash tab in game, keep it fully visible, and press <b>${esc(state.hotkey)}</b> (or Capture).<br>`
+        `Open a currency tab in game, keep it fully visible, and press <b>${esc(state.hotkey)}</b> (or Capture).<br>`
         + 'It detects the tab, values it, and adds a row here plus a running grand total. Flip tabs and capture again.<br>'
         + '<span style="color:var(--tx-faint)">Not at 1920&times;1080 fullscreen? Open <b>&#x2699; settings</b> and calibrate once.</span>'));
     } else {
@@ -331,7 +331,14 @@
 
   // staged events from main drive live feedback (works even while hidden)
   if (window.api) {
-    if (window.api.onStashCapturing) window.api.onStashCapturing(() => { state.busy = true; state.phase = 'scanning'; state.pendingTab = null; state.notice = null; render(); });
+    // a capture always brings the tally into view - the tab can be hidden via
+    // App Settings, but its hotkey still works, and a capture nobody can see
+    // would look broken
+    if (window.api.onStashCapturing) window.api.onStashCapturing(() => {
+      state.busy = true; state.phase = 'scanning'; state.pendingTab = null; state.notice = null;
+      if (window.showNetWorthTab) window.showNetWorthTab();
+      render();
+    });
     if (window.api.onStashDetected) window.api.onStashDetected((tab) => { state.busy = true; state.phase = 'detecting'; state.pendingTab = tab; render(); });
     if (window.api.onStashCaptured) window.api.onStashCaptured((res) => { state.busy = false; state.phase = 'idle'; state.pendingTab = null; applyResult(res); });
     if (window.api.onStashCalibrated) window.api.onStashCalibrated((res) => {
@@ -343,7 +350,7 @@
         applyResult(res);
         state.notice = { kind: small ? 'warn' : 'ok', msg: `Calibration saved ✓ - detected ${TAB_LABEL[res.tab] || res.tab}, read ${res.readCount}/${res.slotCount} items.${smallMsg}` };
       } else {
-        state.notice = { kind: 'warn', msg: `Calibration saved ✓, but no tab was read. Open a special stash tab (fully visible), make sure your box covered the coloured bounding box, then re-calibrate or press ${state.hotkey}.${smallMsg}` };
+        state.notice = { kind: 'warn', msg: `Calibration saved ✓, but no tab was read. Open a currency tab (fully visible), make sure your box covered the coloured bounding box, then re-calibrate or press ${state.hotkey}.${smallMsg}` };
       }
       render();
     });

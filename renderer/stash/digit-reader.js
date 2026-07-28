@@ -1,5 +1,5 @@
 'use strict';
-// Port of iou_reader_final.py — game-glyph digit reader for PoE2 special stash tabs.
+// Port of iou_reader_final.py — game-glyph digit reader for PoE2 currency tabs.
 // Pure JS on typed arrays: Otsu -> 4-conn labeling -> IoU sliding-window match ->
 // greedy assembly -> gap-fill -> leading-"1" edge filter, with a grey-opening
 // tophat fallback for bright-on-bright cells.

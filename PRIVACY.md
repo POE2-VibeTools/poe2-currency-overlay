@@ -13,7 +13,7 @@ The POE2 Currency Overlay runs on your PC. It has **no analytics, no telemetry, 
 
 ## Reading your stash tabs (Net Worth)
 
-The **Net Worth** tab reads a special stash tab by taking a screenshot when you trigger a capture (its hotkey or the Capture button) and reading the item counts from it **on your PC**. The screenshot is processed locally and **never leaves your machine** - it is not saved, uploaded, or sent anywhere. To value what it read, it looks up prices from poe2scout and the public currency-exchange data the same way the rest of the app does: it sends item names and counts, never the screenshot, your account, or your session.
+The **Net Worth** tab reads a currency tab by taking a screenshot when you trigger a capture (its hotkey or the Capture button) and reading the item counts from it **on your PC**. The screenshot is processed locally and **never leaves your machine** - it is not saved, uploaded, or sent anywhere. To value what it read, it looks up prices from poe2scout and the public currency-exchange data the same way the rest of the app does: it sends item names and counts, never the screenshot, your account, or your session.
 
 ## What we actually receive
 

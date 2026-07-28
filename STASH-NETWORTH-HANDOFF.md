@@ -1,17 +1,17 @@
 # Stash Net-Worth Calculator — Handoff
 
-Feature #1 for ~2.4. Reads PoE2 **special stash tabs** off-screen and totals their value.
+Feature #1 for ~2.4. Reads PoE2 **currency tabs** off-screen and totals their value.
 Written for a fresh agent with zero prior context. Terse operational doc; "why" is in code
 comments. **Everything rides into 2.4 — no version bump, no release.**
 
 ## User flow
-F6 overlay → **Net Worth** tab. Open a special stash tab in-game, press **F7** (or Capture).
+F6 overlay → **Net Worth** tab. Open a currency tab in-game, press **F7** (or Capture).
 App screen-captures → detects which tab (template match) → OCRs each slot's count → prices via
 live poe2scout → adds a row to a running tally (per-tab + grand total). Flip tabs, F7 each;
 re-capturing a tab updates its row. Item-sort toggle (value / stash layout) persists in config.
 
 ## STATUS (2026-07-27)
-**Committed on `master`.** ALL 12 special tabs fully working (detect + read + price):
+**Committed on `master`.** ALL 12 currency tabs fully working (detect + read + price):
 Currency, Abyss, Essence, Runes, Kalguuran Runes, Ritual, Soul Cores, Idols, Ancient Augments,
 Delirium, Breach (Catalysts subtab only; Wombgifts skipped), Expedition.
 - **Detection = template match** (tab-detect.js) — fill/darkness independent, resolution-ready.

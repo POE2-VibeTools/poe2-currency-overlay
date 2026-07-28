@@ -2117,26 +2117,125 @@
   // Optional-tab visibility (App Settings toggles). A hidden Desecrate tab still
   // opens via redesecrate? - its button shows WHILE it's the active tab and
   // vanishes again when you navigate away. A hidden Regex tab is simply gone.
-  const tabVis = { desec: true, regex: true, grandex: true };
+  // Currency and Price Check are permanent; the rest carry a ✕ that hides them
+  // (same state as the App Settings toggles), and the whole bar is drag-
+  // reorderable. Order + visibility persist in config.
+  const TAB_META = [
+    { key: 'currency', id: 'tab-currency', closeable: false },
+    { key: 'items', id: 'tab-items', closeable: false },
+    { key: 'desec', id: 'tab-desecrate', closeable: true },
+    { key: 'networth', id: 'tab-networth', closeable: true },
+    { key: 'regex', id: 'tab-regex', closeable: true },
+    { key: 'grandex', id: 'tab-grandex', closeable: true },
+  ];
+  const metaOf = (key) => TAB_META.find((t) => t.key === key);
+  const tabVis = { desec: true, regex: true, grandex: true, networth: true };
+  let tabOrder = TAB_META.map((t) => t.key);
+
+  function activeKey() {
+    const a = document.querySelector('#tabs .tab.active');
+    if (!a) return null;
+    const m = TAB_META.find((t) => t.id === a.id);
+    return m ? m.key : null;
+  }
   function applyTabVisibility(activeWhich) {
-    const d = $('tab-desecrate');
-    if (d) d.style.display = (tabVis.desec || activeWhich === 'desec') ? '' : 'none';
-    const r = $('tab-regex');
-    if (r) r.style.display = tabVis.regex ? '' : 'none';
-    const g = $('tab-grandex');
-    if (g) g.style.display = tabVis.grandex ? '' : 'none';
+    for (const m of TAB_META) {
+      if (!m.closeable) continue;
+      const btn = $(m.id);
+      if (!btn) continue;
+      // Desecrate opens via the redesecrate? button and Net Worth via its
+      // capture hotkey even while hidden - so a hidden tab stays reachable
+      // WHILE it is the active view, then vanishes when you navigate away.
+      const keepForActive = (m.key === 'desec' || m.key === 'networth') && activeWhich === m.key;
+      btn.style.display = (tabVis[m.key] || keepForActive) ? '' : 'none';
+    }
   }
   function setTabVisibility(tab, show) {
     tabVis[tab] = !!show;
-    const active = document.querySelector('#tabs .tab.active');
-    const which = active && active.id === 'tab-regex' ? 'regex'
-      : active && active.id === 'tab-grandex' ? 'grandex'
-      : active && active.id === 'tab-desecrate' ? 'desec' : null;
-    // hiding a tab while you're ON it would strand you on a ghost tab
-    if (!show && ((tab === 'regex' && which === 'regex') || (tab === 'grandex' && which === 'grandex'))) { setTab('currency'); return; }
+    const which = activeKey();
+    // closing the tab you're standing on strands you - move to Currency first.
+    // desec/networth are exempt: they legitimately linger while active.
+    if (!show && which === tab && tab !== 'desec' && tab !== 'networth') { setTab('currency'); return; }
     applyTabVisibility(which);
   }
   window.setTabVisibility = setTabVisibility; // renderer.js settings toggles call this
+
+  // ---- bar order (drag to reorder) ----
+  function applyTabOrder() {
+    const nav = $('tabs');
+    if (!nav) return;
+    for (const key of tabOrder) {
+      const m = metaOf(key);
+      const btn = m && $(m.id);
+      if (btn) nav.appendChild(btn); // re-appending in sequence sorts the bar
+    }
+  }
+  function normalizeOrder(saved) {
+    const known = TAB_META.map((t) => t.key);
+    const out = (Array.isArray(saved) ? saved : []).filter((k) => known.includes(k));
+    for (const k of known) if (!out.includes(k)) out.push(k); // tabs added later land at the end
+    return out;
+  }
+  function moveTab(fromKey, targetKey, before) {
+    const arr = tabOrder.filter((k) => k !== fromKey);
+    const i = arr.indexOf(targetKey);
+    if (i < 0) arr.push(fromKey);
+    else arr.splice(before ? i : i + 1, 0, fromKey);
+    tabOrder = arr;
+    applyTabOrder();
+    try { window.api.setTabOrder(tabOrder); } catch {}
+    if (window.logAction) window.logAction(`tabs reordered: ${tabOrder.join(',')}`);
+  }
+  const clearDropMarks = () => document.querySelectorAll('#tabs .tab').forEach((b) => b.classList.remove('tab-drop-l', 'tab-drop-r'));
+
+  let dragKey = null;
+  function wireTabBar() {
+    for (const m of TAB_META) {
+      const btn = $(m.id);
+      if (!btn) continue;
+      btn.draggable = true;
+      btn.addEventListener('dragstart', (e) => {
+        dragKey = m.key;
+        btn.classList.add('tab-dragging');
+        try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', m.key); } catch {}
+      });
+      btn.addEventListener('dragend', () => { dragKey = null; btn.classList.remove('tab-dragging'); clearDropMarks(); });
+      btn.addEventListener('dragover', (e) => {
+        if (!dragKey || dragKey === m.key) return;
+        e.preventDefault();
+        const r = btn.getBoundingClientRect();
+        clearDropMarks();
+        btn.classList.add(e.clientX < r.left + r.width / 2 ? 'tab-drop-l' : 'tab-drop-r');
+      });
+      btn.addEventListener('dragleave', () => btn.classList.remove('tab-drop-l', 'tab-drop-r'));
+      btn.addEventListener('drop', (e) => {
+        if (!dragKey) return;
+        e.preventDefault();
+        const r = btn.getBoundingClientRect();
+        moveTab(dragKey, m.key, e.clientX < r.left + r.width / 2);
+        dragKey = null;
+        clearDropMarks();
+      });
+      if (m.closeable && !btn.querySelector('.tab-x')) {
+        const x = document.createElement('span');
+        x.className = 'tab-x';
+        x.textContent = '✕';
+        x.title = 'Hide this tab - turn it back on in Settings → App';
+        x.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setTabVisibility(m.key, false);
+          try { window.api.setTabShown(m.key, false); } catch {}
+          if (window.setTabToggleChecked) window.setTabToggleChecked(m.key, false);
+          if (window.logAction) window.logAction(`tab closed: ${m.key}`);
+        });
+        btn.appendChild(x);
+      }
+    }
+  }
+  // networth-ui calls this when a capture fires so the tally is visible even
+  // when the tab is hidden in App Settings
+  window.showNetWorthTab = () => setTab('networth');
 
   function setTab(which) {
     if (which === true) which = 'items'; // legacy boolean callers
@@ -2180,6 +2279,7 @@
     { const t = $('tab-networth'); if (t) t.addEventListener('click', () => setTab('networth')); }
     { const t = $('tab-regex'); if (t) t.addEventListener('click', () => setTab('regex')); }
     { const t = $('tab-grandex'); if (t) t.addEventListener('click', () => setTab('grandex')); }
+    wireTabBar(); // drag-to-reorder + the ✕ on closeable tabs
     // Reopen on whichever tab you left it on last (persisted in config.lastTab);
     // first-ever launch falls back to Currency. Also syncs tab state + reports it.
     window.api.getConfig().then((c) => {
@@ -2187,9 +2287,12 @@
       tabVis.desec = c.showDesecrateTab !== false;
       tabVis.regex = c.showRegexTab !== false;
       tabVis.grandex = c.showGrandExTab !== false;
+      tabVis.networth = c.showNetWorthTab !== false;
+      tabOrder = normalizeOrder(c.tabOrder);
+      applyTabOrder();
       let last = ['currency', 'items', 'desec', 'networth', 'regex', 'grandex'].includes(c.lastTab) ? c.lastTab : 'currency';
       // never reopen INTO a hidden tab
-      if ((last === 'desec' && !tabVis.desec) || (last === 'regex' && !tabVis.regex) || (last === 'grandex' && !tabVis.grandex)) last = 'currency';
+      if ((last === 'desec' && !tabVis.desec) || (last === 'regex' && !tabVis.regex) || (last === 'grandex' && !tabVis.grandex) || (last === 'networth' && !tabVis.networth)) last = 'currency';
       setTab(last);
       if (state.active) render();
     }).catch(() => setTab('currency'));

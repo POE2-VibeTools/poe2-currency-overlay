@@ -194,7 +194,7 @@ const DEFAULT_CONFIG = {
   // character right, closing stash/vendor windows. F carries no movement.
   itemHotkey: 'Control+F', // hover an item in game, press this: copies + opens the Items tab; overlay STAYS
   itemHotkeyTemp: 'Control+Alt+F', // same check, but the overlay hides once the mouse visits it and leaves
-  stashHotkey: 'F7', // view a special stash tab in game, press this: reads + values it into the Net Worth tally
+  stashHotkey: 'F7', // view a currency tab in game, press this: reads + values it into the Net Worth tally
   stashDupTabs: false, // Net Worth: re-capturing a tab type asks replace-which/add-new instead of just replacing
   stashSortLayout: false, // Net Worth: list a tab's items in stash reading order instead of by value
   stashShowMissing: false, // Net Worth: show empty/unread slots as editable x0 lines
@@ -208,14 +208,19 @@ const DEFAULT_CONFIG = {
   itemHistory: [], // cached item price-check searches (capped, newest first)
   desecHistory: [], // Desecrate tab: items evaluated for Omen of Light rerolling
   regexBuckets: [{ id: 'default', name: 'My Regex', entries: [] }], // Regex tab: saved regexes in named buckets ({id,label,pattern} entries)
+  grandexHistory: [], // Grand Expedition tab: saved runs [{ts, rumors:[names], score, verdict}] newest first
   showRegexTab: true,     // App Settings: show the Regex tab in the tab bar
   showGrandExTab: true,   // App Settings: show the Grand Expedition tab in the tab bar
+  showNetWorthTab: true,  // App Settings: show the Net Worth tab in the tab bar (capture hotkey works regardless)
   showDesecrateTab: true, // App Settings: show the Desecrate tab (hidden, it still opens via redesecrate? and hides on leave)
   itemRanges: {},  // learned per-stat roll bounds from fetched listings (slider bounds)
   garbagePool: [], // user-curated worthless-mod stat ids (starts empty by design)
   tutorialDone: false,
   lastSeenVersion: null, // last app version whose "what's new" popup was shown+dismissed
-  lastTab: 'currency',   // tab to reopen on (remembered across restarts): 'currency' | 'items' | 'desec' | 'networth' | 'regex'
+  lastTab: 'currency',   // tab to reopen on (remembered across restarts): 'currency' | 'items' | 'desec' | 'networth' | 'regex' | 'grandex'
+  // user's tab-bar order (drag to reorder). Unknown/missing keys fall back to
+  // the built-in order, so adding a tab in a future version can't break it.
+  tabOrder: ['currency', 'items', 'desec', 'networth', 'regex', 'grandex'],
 
   // fresh installs start empty: the first-run tutorial builds the Exalted bucket
   // hands-on; skipping the tutorial seeds the standard bucket instead (renderer)
@@ -1224,12 +1229,12 @@ ipcMain.handle('set-ui-scale', (_e, v) => {
 
 ipcMain.handle('get-live-rates', () => Object.fromEntries(liveRates));
 
-// ---------- stash net-worth: capture a fixed-layout special tab and value it ----------
+// ---------- stash net-worth: capture a fixed-layout currency tab and value it ----------
 // Screen capture (crisp; window/DirectX grabs are soft) -> desat-max flat-white
 // filter -> read each static slot via the baked digit templates -> price via the
 // live poe2scout catalog -> tab total. Empty/unreadable slots flag, never guess.
 let stashPriceCache = null; // { at, map: apiId -> {price, icon, name} }
-// A few special-tab items trade on the Currency Exchange but aren't in poe2scout's
+// A few currency-tab items trade on the Currency Exchange but aren't in poe2scout's
 // catalog (e.g. Raven's Reflection = the Delirium pinnacle key). Price those off
 // GGG's official CX feed instead, in Exalted like the rest of the map. apiId ->
 // { name, icon }; icon is the official poecdn art from the vendored EE2 db (same
@@ -1512,7 +1517,7 @@ ipcMain.on('stash-calibrate-confirm', async (_e, frame) => {
 });
 ipcMain.handle('clear-stash-calibration', () => { config.stashCalibration = null; saveConfig(); return true; });
 
-// Global capture hotkey: view a special tab in game, press it; the app detects the
+// Global capture hotkey: view a currency tab in game, press it; the app detects the
 // tab, values it, and updates its row in the Net Worth tally. Works whether or not
 // the overlay is showing.
 function registerStashHotkey() {
@@ -1639,10 +1644,21 @@ ipcMain.handle('set-regex-buckets', (_e, buckets) => {
   saveConfig();
   return true;
 });
-// Regex / Desecrate tab visibility toggles (App Settings)
+ipcMain.handle('set-grandex-history', (_e, history) => {
+  config.grandexHistory = Array.isArray(history) ? history.slice(0, 200) : [];
+  saveConfig();
+  return true;
+});
+ipcMain.handle('set-tab-order', (_e, order) => {
+  config.tabOrder = Array.isArray(order) ? order.filter((k) => typeof k === 'string') : [];
+  saveConfig();
+  return true;
+});
+// Optional-tab visibility toggles (App Settings, and the tab's own ✕)
 ipcMain.handle('set-tab-shown', (_e, which, shown) => {
   if (which === 'regex') config.showRegexTab = !!shown;
   else if (which === 'grandex') config.showGrandExTab = !!shown;
+  else if (which === 'networth') config.showNetWorthTab = !!shown;
   else if (which === 'desec') config.showDesecrateTab = !!shown;
   else return false;
   saveConfig();

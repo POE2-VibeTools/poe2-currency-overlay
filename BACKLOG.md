@@ -14,7 +14,7 @@ _Last shipped: **v2.3.5** — OpenDyslexic font toggle, experimental Linux (AppI
 
 ## 1. Currency-tab Calculator — target ~2.4
 
-Values every special currency tab type (all except the Map tab). Reads the tab off-screen and tells you the exact value of everything in it; flip through all your currency tabs and it totals what your whole stash is worth — currency tabs only, not market tabs.
+Values every currency tab type (all except the Map tab). Reads the tab off-screen and tells you the exact value of everything in it; flip through all your currency tabs and it totals what your whole stash is worth - currency tabs only, not market tabs.
 
 **Status:** Recognition + valuation proven offline. The digit reader hits 48/49 on the currency tab (the hardest one) and flags the rest rather than guessing; poe2scout pricing, icons, and FX are wired. Remaining work is the larger part: mapping each fixed slot to its currency (position-based, per tab), porting the Python prototype into the app, and building the live screen-capture + overlay UI (one-time calibration box-picker, per-cell flags, click-to-fill correction).
 

@@ -77,6 +77,7 @@
             <label class="switch set-excl" title="Render the whole app in OpenDyslexic, a typeface designed to be easier to read with dyslexia. Bundled with the app; off by default."><input type="checkbox" id="dyslexic-font" /><span class="sw-track"></span><span class="sw-lab">Dyslexia-friendly font</span><span class="set-sub">OpenDyslexic, applied app-wide</span></label>
             <label class="switch set-excl" title="Show the Regex tab in the tab bar. Off hides it entirely until you turn it back on here."><input type="checkbox" id="show-regex-tab" /><span class="sw-track"></span><span class="sw-lab">Show Regex tab</span></label>
             <label class="switch set-excl" title="Show the Grand Expedition tab in the tab bar. Off hides it entirely until you turn it back on here."><input type="checkbox" id="show-grandex-tab" /><span class="sw-track"></span><span class="sw-lab">Show Grand Expedition tab</span></label>
+            <label class="switch set-excl" title="Show the Net Worth tab in the tab bar. Off hides it entirely until you turn it back on here. The capture hotkey still works either way."><input type="checkbox" id="show-networth-tab" /><span class="sw-track"></span><span class="sw-lab">Show Net Worth tab</span></label>
             <label class="switch set-excl" title="Show the Desecrate tab in the tab bar. Off hides it - it still appears when you open an item's redesecrate? button, then hides again when you leave it."><input type="checkbox" id="show-desecrate-tab" /><span class="sw-track"></span><span class="sw-lab">Show Desecrate tab</span><span class="set-sub">hidden, it still opens via redesecrate? and hides when you leave</span></label>
           </section>
 
@@ -170,7 +171,7 @@
           <section class="set-card" id="sec-networth">
             <div class="set-card-lab">Net Worth</div>
             <div class="set-field">
-              <label title="Global key: open a special stash tab in game and press this to scan and value it into the tally.">Capture hotkey</label>
+              <label title="Global key: open a currency tab in game and press this to scan and value it into the tally.">Capture hotkey</label>
               <div class="kb-field"><input id="stash-hotkey-input" class="kb-input" readonly placeholder="click, then press keys" /><span class="kb-hint">click to rebind</span></div>
             </div>
             <div id="nw-set-root"></div>
@@ -198,7 +199,7 @@
       <button id="tab-currency" class="tab active" title="Currency prices, best-value payments and arbitrage">Currency</button>
       <button id="tab-items" class="tab" title="Price-check items: hover one in game and press your price-check hotkey (default Ctrl+F)">Price Check</button>
       <button id="tab-desecrate" class="tab" title="Is this item worth Omen of Light + bone rerolling? Load an item from Price Check, or paste one here with Ctrl+V.">Desecrate</button>
-      <button id="tab-networth" class="tab" title="Value your special stash tabs: open a tab in game, click Capture, and it reads the counts and totals what they're worth.">Net Worth</button>
+      <button id="tab-networth" class="tab" title="Value your currency tabs: open a tab in game, click Capture, and it reads the counts and totals what they're worth.">Net Worth</button>
       <button id="tab-regex" class="tab" title="Build stash-search regex for waystones and tablets, and keep your saved regexes one click from the clipboard.">Regex</button>
       <button id="tab-grandex" class="tab" title="Plan your Grand Expedition: track rumors, identify islands, and prep the run.">Grand Expedition</button>
     </nav>
@@ -308,6 +309,7 @@
   <script src="regex/regex-gen.js"></script>
   <script src="regex/pools-data.js"></script>
   <script src="regex/regex-tab.js"></script>
+  <script src="grandex/grandex-data.js"></script>
   <script src="grandex/grandex-tab.js"></script>
   <script src="item/item-tab.js"></script>
 </body>

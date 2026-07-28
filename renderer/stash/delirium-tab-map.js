@@ -13,7 +13,7 @@
 //               Ire/Guilt/Greed -> Diluted (+ Ancient Diluted); Disgust/Despair -> Liquid
 //               (+ Ancient Liquid); Fear/Suffering/Isolation -> Concentrated (+ Ancient
 //               Concentrated); Melancholy/Ferocity/Contempt -> Potent (+ Ancient Potent).
-// Short rows are centered (half-cell offset) per the standard special-tab layout.
+// Short rows are centered (half-cell offset) per the standard currency-tab layout.
 // The 3 recessed center slots are the Simulacrum assembly slots, not item cells (unmapped).
 // Ancient Potent Liquid Contempt (bottom-right corner) is the priciest item in the tab and
 // is currently empty for Drew -> mapped so it auto-counts when acquired; reads "?" (flagged)

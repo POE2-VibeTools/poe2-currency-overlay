@@ -1867,8 +1867,17 @@ async function initSettings() {
       if (window.setTabVisibility) window.setTabVisibility(visKey, t.checked);
     });
   };
+  // a tab's own ✕ hides it too - keep the matching Settings switch in sync
+  const TAB_TOGGLE_ID = { regex: 'show-regex-tab', grandex: 'show-grandex-tab', networth: 'show-networth-tab', desec: 'show-desecrate-tab' };
+  const TAB_TOGGLE_CFG = { regex: 'showRegexTab', grandex: 'showGrandExTab', networth: 'showNetWorthTab', desec: 'showDesecrateTab' };
+  window.setTabToggleChecked = (visKey, checked) => {
+    const t = $(TAB_TOGGLE_ID[visKey]);
+    if (t) t.checked = !!checked;
+    if (TAB_TOGGLE_CFG[visKey]) config[TAB_TOGGLE_CFG[visKey]] = !!checked;
+  };
   wireTabToggle('show-regex-tab', 'showRegexTab', 'regex');
   wireTabToggle('show-grandex-tab', 'showGrandExTab', 'grandex');
+  wireTabToggle('show-networth-tab', 'showNetWorthTab', 'networth');
   wireTabToggle('show-desecrate-tab', 'showDesecrateTab', 'desec');
 
   // Live-rate sliders (Tab-visible + Background). 4 stops: quiet/low/medium/high.
