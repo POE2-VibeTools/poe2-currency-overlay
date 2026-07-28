@@ -6,6 +6,18 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.5.0',
+    date: '2026-07-27',
+    title: 'Regex, Grand Expedition, Command Hotkeys + tab management',
+    notes: [
+      'Regex tab - waystone/tablet builder (real roll ranges, thresholds, exclusions), tablet subtype filter, seed-from-copied-item, saved regex buckets with 1-click copy, custom hand-written regexes',
+      'Command Hotkeys (Settings → Hotkeys) - safe chat commands on a keypress, 17-command list + custom /command with args, only fires with the game focused',
+      'Grand Expedition tab - rumor picker (type-to-pick + click), Aldur SPEND/SAVE verdict with normalized community scores (3-expedition minimum), logbook summary, copy-paste map-note tag that rebuilds the roster, prep guide with in-game tablet/waystone windows + trade links, rune chain tracker, run history',
+      'Tab management - drag-to-reorder, ✕ to hide (Desecrate/Net Worth/Regex/Grand Expedition; Currency + Price Check permanent), visibility toggles in Settings incl. new Net Worth toggle',
+      'Small stuff: Net Worth TOTAL icons sized up with icon mode; wording fixes ("currency tabs")',
+    ],
+  },
+  {
     version: '2.4.1',
     date: '2026-07-27',
     title: 'Hotfix - 2.4.0 launch crash',
