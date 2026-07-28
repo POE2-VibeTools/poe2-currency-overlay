@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>POE2 Overlay - Prices, Price Check, Desecrate EV &amp; Net Worth</title>
-<meta name="description" content="Open-source overlay for Path of Exile 2: live currency exchange rates and arbitrage, an item price checker (fungible mods, pseudo resistances, sockets, catalyst quality), a Desecrate EV calculator, and a stash Net Worth calculator that reads your tabs by screenshot.">
+<title>POE2 Overlay - Prices, Price Check, Net Worth, Regex &amp; Grand Expedition</title>
+<meta name="description" content="Open-source overlay for Path of Exile 2: live currency exchange rates and arbitrage, an item price checker, a Desecrate EV calculator, a stash Net Worth calculator, a waystone/tablet regex builder, a Grand Expedition planner, and command hotkeys.">
 <link rel="icon" type="image/png" href="icon.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -78,7 +78,7 @@
   <div class="hero">
     <img src="icon.png" alt="POE2 Overlay logo">
     <h1>POE2 Overlay</h1>
-    <p class="tag">A Path of Exile 2 overlay for live currency exchange rates, item price checks against live trade listings, a Desecrate EV calculator, and a stash Net Worth calculator.</p>
+    <p class="tag">A Path of Exile 2 overlay for live currency exchange rates, item price checks against live trade listings, a Desecrate EV calculator, a stash Net Worth calculator, a stash-search regex builder, and a Grand Expedition planner.</p>
 
     <a class="btn" href="https://github.com/POE2-VibeTools/poe2-currency-overlay/releases/latest/download/POE2-Currency-Overlay-Setup.exe">
       &#8595; Download for Windows
@@ -181,6 +181,61 @@
     <div class="shot-wrap">
       <img src="img/networth.png" alt="Net Worth tab: a dozen currency tabs each totalled in Exalted and Divine, a grand total of 2,248,851 Exalted / 5,137 Divine / 1 Mirror, per-tab checkboxes, and three duplicate Currency tabs kept as separate rows.">
       <div class="cap">Every currency tab tallied into one <b>grand total</b>, here past a <span class="gold">Mirror</span> - toggle any tab or row out and it updates live.</div>
+    </div>
+  </section>
+
+  <!-- ============ REGEX ============ -->
+  <section class="feature flip">
+    <div class="copy">
+      <div class="kicker">Regex &middot; waystones &amp; tablets</div>
+      <h2>Build stash-search regex without learning regex</h2>
+      <p>The in-game search box takes regex - writing it by hand is the hard part. Pick what you want instead:</p>
+      <ul>
+        <li>Pick mods for <b>waystones or tablets</b>, set a minimum (each mod shows its <b>real roll range</b>), add exclusions for the mods you hate - the regex builds itself.</li>
+        <li>Thresholds catch every qualifying roll: a "rarity 80+" pattern also matches <b>+100% and up</b>, where hand-written ones quietly miss.</li>
+        <li><b>Copy a waystone in game</b> and paste it on the tab - its mods pre-fill the builder.</li>
+        <li>Save regexes under <b>your own labels</b> into buckets: one click copies, ready to paste into the search box. Hand-written regex welcome too.</li>
+      </ul>
+    </div>
+    <div class="shot-wrap">
+      <img src="img/regex.png" alt="Regex tab: a Delirium tablet search being built from two Match-ANY-of groups with roll ranges and thresholds, the generated pattern forming live in the bottom bar with a character count and Copy button.">
+      <div class="cap">A Delirium tablet search: two <b>Match ANY of</b> groups with thresholds, the pattern forming live in the bar.</div>
+    </div>
+  </section>
+
+  <!-- ============ GRAND EXPEDITION ============ -->
+  <section class="feature">
+    <div class="copy">
+      <div class="kicker">Grand Expedition &middot; Runes of Aldur</div>
+      <h2>Spend the Aldurs, or save them?</h2>
+      <p>Tap the rumors you see in Uncharted Waters and the tab reads your logbook back to you - every island named, rated, and totalled into one call:</p>
+      <ul>
+        <li><b>SPEND / SAVE / YOUR CALL</b>, from community island ratings - only expedition slots count toward the score, and under 3 expeditions is a no regardless.</li>
+        <li>Type-to-pick: type a rumor, island or reward, press <b>Enter</b>, keep typing - the roster builds hands-on-keyboard.</li>
+        <li>A compact <b>map-note tag</b> forms live (<code>GE CAI+SUL =13 SPEND</code>) - paste it on your atlas as a note, and paste it back later to rebuild the roster.</li>
+        <li>The prep guide shows the <b>tablets and waystone as in-game item windows</b> - the mods to buy for, with trade-site links - plus a rune tier list and a chain tracker for the run itself.</li>
+      </ul>
+    </div>
+    <div class="shot-wrap">
+      <img src="img/grandex.png" alt="Grand Expedition tab: rumor cards grouped into Expeditions, Unique maps and Bosses with tier badges, a logbook summary with per-island scores, and the verdict bar reading YOUR CALL at score 10 with a zone meter and the map-note tag.">
+      <div class="cap">Five rumors picked, the logbook read back, and the verdict with its <b>score meter</b> and the <b>map-note tag</b> below.</div>
+    </div>
+  </section>
+
+  <!-- ============ HOTKEYS + TABS ============ -->
+  <section class="feature flip">
+    <div class="copy">
+      <div class="kicker">Command Hotkeys &middot; your layout</div>
+      <h2>One key, one command - and a tab bar you arrange</h2>
+      <p>Two quality-of-life additions that stay inside GGG's rules:</p>
+      <ul>
+        <li>Bind keys to chat commands - <b>/hideout</b>, /leave, /remaining and more, or type your own like <b>/itemfilter Strict</b>. One press sends one command, only while the game is focused. Destructive commands are blocked.</li>
+        <li><b>Drag the tabs</b> into whatever order you like, and hide the ones you don't use with their <b>&#x2715;</b> - Desecrate, Net Worth, Regex and Grand Expedition are all optional; turn them back on in Settings any time.</li>
+      </ul>
+    </div>
+    <div class="shot-wrap">
+      <img src="img/hotkeys.png" alt="Hotkeys settings: /exit bound to F8 and a /hideout row waiting for a key, each with a rebindable key field and an Add hotkey button.">
+      <div class="cap">One key, one command: <b>/exit</b> on F8, <b>/hideout</b> next - or pick Custom and type your own.</div>
     </div>
   </section>
 
