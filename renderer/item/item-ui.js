@@ -18,6 +18,10 @@
   // ("8888 exalted") - append the divine equivalent (shared helper in renderer.js)
   const divAside = (p) => (p && p.amount != null && window.divAsideHtml
     ? window.divAsideHtml(p.amount, p.currency) : '');
+  // the floor gets the full major-currency conversion, not just a divine aside -
+  // it's the number people act on, and a divine price alone isn't actionable
+  const floorAside = (p) => (p && p.amount != null && window.majorAsideHtml
+    ? window.majorAsideHtml(p.amount, p.currency) : divAside(p));
 
   // unit as icon (Settings > "Show currency icons instead of names") or the
   // plain escaped currency text, whichever the toggle calls for
@@ -168,6 +172,7 @@
       inp.title = mod.value != null
         ? `Search minimum (your roll: ${mod.value}). Type an exact number.`
         : 'No minimum - the stat just has to exist. Type a number to enforce one.';
+      inp.dataset.fk = `mod:${mod.id || i}:min`;
       inp.onchange = () => h.onValueChange && h.onValueChange(i, inp.value);
       seg.appendChild(stepWrap(inp, mod.value));
       // Every searchable row takes a max too, blank by default. Blank means no
@@ -181,6 +186,7 @@
         mx.value = mod.searchMax != null ? mod.searchMax : '';
         mx.placeholder = 'any';
         mx.title = 'Search maximum - blank means no upper limit.';
+        mx.dataset.fk = `mod:${mod.id || i}:max`;
         mx.onchange = () => h.onMaxChange(i, mx.value);
         seg.appendChild(stepWrap(mx, mod.value));
       }
@@ -292,6 +298,12 @@
     // upper limit, and none is ever lowered by the stat-range %.
     const ranges = [];
     if (item.itemLevel != null && h.onIlvl) ranges.push(['ilvl', state.ilvlMin, state.ilvlMax, h.onIlvl, "Item level range. The minimum defaults to this item's level."]);
+    // gems: level is the price driver, so it defaults to this gem's EXACT level
+    if (item.isGem && item.gemLevel != null && h.onGemLvl) {
+      ranges.push(['gem level', state.gemLvlMin, state.gemLvlMax, h.onGemLvl, item.gemLevelBonus > 0
+        ? `Gem level range. Your gear adds +${item.gemLevelBonus} levels, so the copy read level ${item.gemLevel + item.gemLevelBonus} - the search uses the gem's own level ${item.gemLevel}.`
+        : "Gem level range, defaulting to this gem's exact level. Gem prices step hard per level, so widen it deliberately."]);
+    }
     if (item.quality > 0 && h.onQual) ranges.push(['quality', state.qualMin, state.qualMax, h.onQual, "Quality range. The minimum defaults to this item's own quality."]);
     if (item.sockets > 0 && h.onSock) ranges.push(['sockets', state.sockMin, state.sockMax, h.onSock, "Augmentable socket range. The minimum defaults to this item's own count."]);
     let strip = null;
@@ -305,6 +317,7 @@
         a.type = 'text';
         a.placeholder = 'any';
         a.value = lo != null ? lo : '';
+        a.dataset.fk = `hc:${lab}:min`;
         a.onchange = () => fn('min', a.value);
         g.appendChild(a);
         g.appendChild(el('span', 'hc-dash', '&ndash;'));
@@ -312,6 +325,7 @@
         b.type = 'text';
         b.placeholder = 'any';
         b.value = hi != null ? hi : '';
+        b.dataset.fk = `hc:${lab}:max`;
         b.onchange = () => fn('max', b.value);
         g.appendChild(b);
         strip.appendChild(g);
@@ -550,6 +564,7 @@
     // "reduction" it always was - only the box shows the sign flipped.
     const low = el('input'); low.type = 'text'; low.value = -(state.opts.defaultLowerPct || 0);
     low.title = 'Mods search this % away from your roll: -15 = mins 15% below it (broader comps), positive = mins above it (strictly better).';
+    low.dataset.fk = 'opt:lowerpct';
     low.onchange = () => h.onOpt && h.onOpt('defaultLowerPct', Math.max(-100, Math.min(100, -(Number(low.value) || 0))));
     rgrp.appendChild(stepWrap(low, -15));
     rgrp.appendChild(el('span', 'sr-lab', '%'));
@@ -763,7 +778,7 @@
     const floorEl = el('div', 'suggested rh-floor');
     floorEl.appendChild(el('div', 'rh-floor-lab', 'Suggested floor'));
     const val = el('div', 'rh-floor-val');
-    if (sug) val.innerHTML = `${esc(String(sug.amount))} ${curUnitHtml(sug.currency, 'rh-floor-unit')}${divAside(sug)}`;
+    if (sug) val.innerHTML = `${esc(String(sug.amount))} ${curUnitHtml(sug.currency, 'rh-floor-unit')}${floorAside(sug)}`;
     else val.innerHTML = res.suggested ? esc(res.suggested) : '&mdash;';
     floorEl.appendChild(val);
     // sub-label + hover receipt: HOW this number was reached, comp by comp
@@ -1023,13 +1038,27 @@
     return wrap;
   }
 
+  // Rebuilding the panel throws away the focused field, so clicking from the min box
+  // straight into the max box lost the second click ("filters have changed" re-render
+  // ate it). Every field the user types into carries a stable data-fk key; the field
+  // that had focus - and its caret - is handed back after the rebuild.
   function render(root, state, handlers) {
     const h = handlers || {};
+    const act = document.activeElement;
+    const fk = act && act.dataset ? act.dataset.fk : null;
+    const caret = fk && act.selectionStart != null ? [act.selectionStart, act.selectionEnd] : null;
     root.innerHTML = '';
     const tab = el('div', 'item-tab');
     if (state.view === 'item' && state.item) tab.appendChild(itemPanel(state, h));
     else tab.appendChild(historyPanel(state, h));
     root.appendChild(tab);
+    if (fk) {
+      const back = root.querySelector(`[data-fk="${fk.replace(/"/g, '\\"')}"]`);
+      if (back) {
+        back.focus();
+        if (caret) { try { back.setSelectionRange(caret[0], caret[1]); } catch {} }
+      }
+    }
   }
 
   // --- floating context menu (mod actions) ---

@@ -89,7 +89,9 @@ function uniqueMin(mod, pct) {
 function typeFilters(item) {
   const filters = {};
   if (item.category) filters.category = { option: item.category };
-  if (item.rarity) filters.rarity = { option: item.rarity };
+  // "Gem" is not one of trade2's rarity options (normal/magic/rare/unique/
+  // uniquefoil/nonunique), so a gem sends its category and level instead
+  if (item.rarity && !item.isGem) filters.rarity = { option: item.rarity };
   return Object.keys(filters).length ? { type_filters: { filters } } : {};
 }
 
@@ -258,6 +260,13 @@ function compileQuery(item, opts = {}) {
   }
   // sockets are an equipment filter (rune_sockets), min/max like ilvl/quality
   if (sockRange) propFilters.rune_sockets = range(opts.sockMin, opts.sockMax);
+  // Gem level lives in misc_filters (verified against /api/trade2/data/filters:
+  // misc_filters carries gem_level and gem_sockets; quality stays in type_filters
+  // above). Without it a level 20 gem priced against level 1 comps - the whole
+  // reason gem checks read low.
+  if (opts.gemLvlMin != null || opts.gemLvlMax != null) {
+    miscFilters.gem_level = range(opts.gemLvlMin, opts.gemLvlMax);
+  }
   if (tf.type_filters || Object.keys(propFilters).length || Object.keys(mapFilters).length
       || Object.keys(miscFilters).length) {
     query.filters = { ...(tf.type_filters ? tf : {}) };

@@ -739,8 +739,27 @@ function updateMeta() {
 let renderToken = 0;
 
 function clearDropMarkers() {
-  document.querySelectorAll('.row.drop-before, .row.drop-after')
+  document.querySelectorAll('.row.drop-before, .row.drop-after, .bucket.drop-before, .bucket.drop-after')
     .forEach((r) => r.classList.remove('drop-before', 'drop-after'));
+}
+
+// bucket-card drag (header grab). Separate from dragState, which tracks the
+// payment-row drag inside a bucket - the two must never be confused.
+let bucketDrag = null;
+
+// Move a whole bucket card above or below another. config.buckets order IS the
+// display order, so this is a splice + persist.
+function moveBucket(fromId, targetId, after) {
+  if (!fromId || fromId === targetId) return;
+  const arr = (config.buckets || []).filter((b) => b.id !== fromId);
+  const moved = (config.buckets || []).find((b) => b.id === fromId);
+  const i = arr.findIndex((b) => b.id === targetId);
+  if (!moved || i < 0) return;
+  arr.splice(after ? i + 1 : i, 0, moved);
+  config.buckets = arr;
+  logAction(`bucket moved: ${moved.base.apiId}`);
+  persistBuckets();
+  render();
 }
 
 // Move a currency row within its bucket (never across buckets - the caller only
@@ -797,8 +816,40 @@ function render() {
     el.className = 'bucket';
     el.dataset.base = bucket.base.apiId;
 
+    const collapsed = !!bucket.collapsed;
+    if (collapsed) el.classList.add('collapsed');
     const head = document.createElement('div');
     head.className = 'bucket-head';
+    // drag the card by its header to reorder the buckets themselves (the grip
+    // inside a row reorders payments WITHIN a bucket - different drag, see below)
+    head.draggable = true;
+    head.addEventListener('dragstart', (e) => {
+      bucketDrag = bucket.id;
+      el.classList.add('dragging');
+      try {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', bucket.id);
+        e.dataTransfer.setDragImage(el, 24, 14);
+      } catch {}
+    });
+    head.addEventListener('dragend', () => { el.classList.remove('dragging'); clearDropMarkers(); bucketDrag = null; });
+    el.addEventListener('dragover', (e) => {
+      if (!bucketDrag || bucketDrag === bucket.id) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const r = el.getBoundingClientRect();
+      clearDropMarkers();
+      el.classList.add((e.clientY - r.top) > r.height / 2 ? 'drop-after' : 'drop-before');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drop-before', 'drop-after'));
+    el.addEventListener('drop', (e) => {
+      if (!bucketDrag || bucketDrag === bucket.id) return;
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      moveBucket(bucketDrag, bucket.id, (e.clientY - r.top) > r.height / 2);
+      clearDropMarkers();
+      bucketDrag = null;
+    });
     const bucketTip = () => {
       let h = `<div class="tip-head">${esc(base.text)}</div>`;
       h += `<div class="tip-sub">the currency you're buying</div>`;
@@ -807,8 +858,19 @@ function render() {
       h += `<div class="tip-step"><span>·</span><span>★ marks the cheapest way to buy 1 ${esc(base.text)} right now.</span></div>`;
       return h;
     };
-    // header: [icon] Name  buying  ->  [+ payment]  [x]
+    // header: [chevron] [icon] Name  buying  ->  [+ payment]  [x]
     // ("buying" carries margin-right:auto, pushing the buttons to the right)
+    const chev = document.createElement('button');
+    chev.className = 'bucket-chev';
+    chev.title = collapsed ? 'Expand this bucket' : 'Collapse this bucket';
+    chev.textContent = collapsed ? '▸' : '▾';
+    chev.addEventListener('click', () => {
+      bucket.collapsed = !collapsed;
+      logAction(`bucket ${bucket.base.apiId} ${bucket.collapsed ? 'collapsed' : 'expanded'}`);
+      persistBuckets();
+      render();
+    });
+    head.appendChild(chev);
     if (base.icon) {
       const img = document.createElement('img');
       img.src = base.icon;
@@ -853,7 +915,7 @@ function render() {
     // column-label strip: mirrors the .row grid so Trend/Price/Vol/Arb sit above
     // their cells - the columns become self-documenting instead of needing the
     // tour to name them. Only rendered when there are payment rows to label.
-    if (bucket.items.length) {
+    if (bucket.items.length && !collapsed) {
       const cols = document.createElement('div');
       cols.className = 'bucket-cols';
       cols.innerHTML =
@@ -890,7 +952,25 @@ function render() {
         ? evaluable.reduce((a, b) => (payCosts[a] <= payCosts[b] ? a : b))
         : null;
 
-    for (const ref of bucket.items) {
+    // Collapsed: the rows go away but the ANSWER stays - which payment is
+    // cheapest right now and what it costs. A collapsed bucket you can't read is
+    // just a hidden bucket.
+    if (collapsed) {
+      const sum = document.createElement('span');
+      sum.className = 'bucket-sum';
+      if (bestPay) {
+        const bi = itemInfo(bucket.items.find((r) => r.apiId === bestPay) || { apiId: bestPay });
+        sum.innerHTML = `★ ${esc(bi.text)} <span class="bucket-sum-cost">${fmt(payCosts[bestPay])} ex`
+          + `${base.apiId === 'divine' ? '' : window.divAsideHtml(payCosts[bestPay], 'exalted')}</span>`;
+        sum.title = `Cheapest way to buy 1 ${base.text} right now. Expand for the other payments.`;
+      } else {
+        const n = bucket.items.length;
+        sum.textContent = n ? `${n} payment${n === 1 ? '' : 's'}` : 'no payments yet';
+      }
+      head.insertBefore(sum, addBtn);
+    }
+
+    for (const ref of (collapsed ? [] : bucket.items)) {
       const it = itemInfo(ref);
       const isBest = bestPay && ref.apiId === bestPay;
       const row = document.createElement('div');
@@ -1606,6 +1686,52 @@ window.divAsideHtml = (amount, currency) => {
   return ` <span class="cur-div">(${esc(num)} ${icon || 'div'})</span>`;
 };
 window.divEquivalent = divEquivalent;
+
+// The suggested floor prints in whatever currency the comparables listed in, and
+// "0.7 div" tells you nothing unless you know the exchange by heart (user
+// feedback). So show the same money in the other majors beside it. Same rule as
+// divEquivalent: absolute PRICES only, never an exchange ratio.
+const ASIDE_MAJORS = ['exalted', 'divine', 'chaos'];
+const ASIDE_UNIT = { exalted: 'ex', divine: 'div', chaos: 'chaos' };
+const asideRate = (apiId) => (apiId === 'exalted' ? (window.currencyPriceOf('exalted') || 1) : window.currencyPriceOf(apiId));
+function asideQty(amountEx, apiId) {
+  const rate = asideRate(apiId);
+  if (!(rate > 0) || !(amountEx > 0)) return null;
+  const q = amountEx / rate;
+  if (q < 0.05) return null; // "0.008 div" is noise, not help
+  if (q >= 1000) return `${Math.round(q / 100) / 10}k`;
+  if (q >= 100) return String(Math.round(q));
+  if (q >= 10) return String(Math.round(q * 10) / 10);
+  return String(Math.round(q * 100) / 100);
+}
+// every major except the one the price is already quoted in
+function majorAsides(amount, currency) {
+  const cur = String(currency || '');
+  const src = cur === 'ex' ? 'exalted' : cur === 'div' ? 'divine' : cur;
+  const rate = asideRate(src);
+  if (!(rate > 0) || !(amount > 0)) return [];
+  const amountEx = amount * rate;
+  const out = [];
+  for (const m of ASIDE_MAJORS) {
+    if (m === src) continue;
+    const qty = asideQty(amountEx, m);
+    if (qty) out.push({ apiId: m, unit: ASIDE_UNIT[m], qty });
+  }
+  return out;
+}
+window.majorAsideText = (amount, currency) => {
+  const a = majorAsides(amount, currency);
+  return a.length ? ` (≈ ${a.map((x) => `${x.qty} ${x.unit}`).join(' · ')})` : '';
+};
+window.majorAsideHtml = (amount, currency) => {
+  const a = majorAsides(amount, currency);
+  if (!a.length) return '';
+  const parts = a.map((x) => {
+    const icon = window.currencyIconTag && window.currencyIconTag(x.apiId);
+    return `${esc(x.qty)} ${icon || esc(x.unit)}`;
+  });
+  return ` <span class="cur-aside">≈ ${parts.join(' · ')}</span>`;
+};
 
 // ---------- settings ----------
 async function initSettings() {

@@ -740,6 +740,60 @@
     // aside vs. ones turned off by hand. Sticky - never changes as modes toggle;
     // garbage-pool membership (live) is folded in alongside it at render time.
     const allMods = [...props, ...mods, ...unknowns];
+    // Skill/support gems: level and quality ARE the price (a level 20 is worth a
+    // multiple of a 19), so they get parsed off the property block and drive real
+    // trade filters. Read from the raw text rather than the base db, since a gem
+    // added in a new patch still has to price. The requirement line on a gem reads
+    // "Requires: Level 90", so the property "Level: 20 (Max)" is unambiguous here -
+    // gear's "Requirements: / Level: 78" never reaches this branch.
+    const rawTxt = String(parsed.rawText || '');
+    const gemClass = /^Item Class: (Skill|Support|Meta) Gems\s*$/m.exec(rawTxt);
+    const isGem = !!gemClass || /^Rarity: Gem\s*$/m.test(rawTxt);
+    // trade2's own gem categories (from /api/trade2/data/filters): gem.activegem =
+    // Skill Gem, gem.supportgem = Support Gem, gem.metagem = Meta Gem
+    const gemCategory = !isGem ? null
+      : gemClass && gemClass[1] === 'Support' ? 'gem.supportgem'
+        : gemClass && gemClass[1] === 'Meta' ? 'gem.metagem'
+          : 'gem.activegem';
+    // A gem copied while SOCKETED prints its EFFECTIVE level - base plus every
+    // +level your gear and passives grant ("Level: 32 (augmented)" on a level 20 gem
+    // with +12). Nobody can buy a level 32 Comet, so the search must use the gem's
+    // own level. The copy spells the split out:
+    //   Level: 32 (augmented)
+    //   20 Levels from Gem (Max)
+    //   +12 Levels from Global Modifiers (augmented)
+    // so "Levels from Gem" is authoritative when present; a stash copy has no
+    // breakdown and its plain "Level: 20 (Max)" is the gem's own level already.
+    const GEM_MAX_LEVEL = 20;
+    const gemLevelLine = isGem ? /^Level: (\d+)([^\n]*)$/m.exec(rawTxt) : null;
+    const gemLevelAugmented = !!(gemLevelLine && /augmented/i.test(gemLevelLine[2]));
+    const gemOwnLevel = isGem ? /^(\d+) Levels? from Gem/m.exec(rawTxt) : null;
+    const gemLevel = (() => {
+      if (gemOwnLevel) return Number(gemOwnLevel[1]);
+      if (!gemLevelLine) return null;
+      const n = Number(gemLevelLine[1]);
+      if (!Number.isFinite(n)) return null;
+      // no breakdown line but the level is boosted anyway: cap rather than search
+      // for a level that cannot exist on the market
+      return gemLevelAugmented ? Math.min(n, GEM_MAX_LEVEL) : n;
+    })();
+    // how much of the shown level came from gear (display only - never searched)
+    const gemLevelBonus = (() => {
+      if (!gemLevelLine || gemLevel == null) return 0;
+      const shown = Number(gemLevelLine[1]);
+      return Number.isFinite(shown) && shown > gemLevel ? shown - gemLevel : 0;
+    })();
+    // a gem searches by its own name as the base type ("Powered by Verisium")
+    const gemName = (() => {
+      if (!isGem) return null;
+      const m = /^Rarity: Gem\s*\n(.+)$/m.exec(rawTxt);
+      const n = m ? m[1].trim() : '';
+      return n || baseType || title || null;
+    })();
+    // A gem's lines are its skill's own stats at that level - every gem of the same
+    // name and level carries them, and trade2 indexes none of them. So they go in as
+    // display-only and the search rides on type + gem level + quality.
+    if (isGem) for (const _m of allMods) _m.mode = 'off';
     for (const _m of allMods) _m.initiallyOff = (_m.mode === 'off');
     // "Sockets: S S" line -> augmentable socket count, drawn as pips on the art
     const sockLine = /^Sockets: (.+)$/m.exec(String(parsed.rawText || ''));
@@ -754,9 +808,17 @@
       // return the wrong tablet type entirely. With the type pinned, uses
       // remaining only has to carry the count - the pseudo is then as safe as the
       // type-specific implicit.
-      type: categoryId === 'map.tablet' ? baseType : null,
+      type: categoryId === 'map.tablet' ? baseType : (isGem ? gemName : null),
       rarity: parsed.rarity || null,
       itemLevel: parsed.itemLevel || null,
+      // gem facts: level drives misc_filters.gem_level, and isGem switches the
+      // header to a gem-level range instead of an item-level one
+      isGem,
+      gemLevel,
+      // gemLevelBonus > 0 = the copy came off a socketed gem and this much of the
+      // level shown was your gear; the search uses gemLevel, never the sum
+      gemLevelAugmented,
+      gemLevelBonus,
       // item art from the EE2 base/unique db (null on a db miss - header shows no
       // icon then) + socket count for the pips overlay
       icon: (parsed.info && parsed.info.icon) || null,
@@ -779,7 +841,7 @@
         if (!mL && !mC) return null;
         return { lasts: mL ? mL[1] : null, consumes: mC ? `${mC[1]} of ${mC[2]}` : null };
       })(),
-      category: categoryId,
+      category: isGem ? gemCategory : categoryId,
       mods: allMods,
       // exchangeable non-gear currency gets a quick exchange-value lookup instead
       // of a whisper search (raw crafting orbs excluded - see CURRENCY_SKIP)
@@ -1306,6 +1368,12 @@
       state.qualMax = null;
       state.sockMin = state.item && state.item.sockets > 0 ? state.item.sockets : null;
       state.sockMax = null;
+      // Gem level defaults to EXACT (min = max = the gem's level), unlike item
+      // level. Gem prices step hard per level, so a "20+" search on a level 18 gem
+      // would price it off level 20 comps - the floor would be a fantasy.
+      const gl = state.item && state.item.gemLevel != null ? state.item.gemLevel : null;
+      state.gemLvlMin = gl;
+      state.gemLvlMax = gl;
     }
   }
 
@@ -1327,9 +1395,36 @@
     state.opts.misc = misc;
   }
 
+  // A text input's change event fires on BLUR, so clicking Search straight out of
+  // the gem-level (or ilvl / quality / mod-min) box rebuilt this whole panel between
+  // mousedown and mouseup: the button the click was headed for no longer existed, and
+  // the user had to click twice. So while a pointer is held down, a render is held
+  // back and applied the moment the click has been delivered.
+  let pointerHeld = false;
+  let renderHeld = false;
+  const releaseRender = () => {
+    pointerHeld = false;
+    if (renderHeld) { renderHeld = false; render(); }
+  };
+  // Only the blur case is held: a field is being edited and the pointer went down
+  // somewhere else. Dragging a slider (or clicking inside the field you're already
+  // in) still re-renders live, which is what keeps the slider and its number box in
+  // lockstep.
+  document.addEventListener('pointerdown', (e) => {
+    const a = document.activeElement;
+    const editing = !!(a && /^(?:INPUT|SELECT|TEXTAREA)$/.test(a.tagName));
+    pointerHeld = editing && a !== e.target && !a.contains(e.target);
+  }, true);
+  document.addEventListener('click', releaseRender); // bubble phase: after the target's own handler ran
+  document.addEventListener('pointercancel', releaseRender, true);
+  // a pointerup that never becomes a click (dragged off the target, released on
+  // dead space) must still let the held render through
+  document.addEventListener('pointerup', () => { setTimeout(releaseRender, 80); }, true);
+
   function render() {
     const root = $('item-root');
     if (!root) return;
+    if (pointerHeld) { renderHeld = true; return; }
     if (state.item && state.item.currencyTag) { renderCurrency(root); return; }
     if (state.item) { decorateSliderBounds(state.item.mods); syncIlvl(); }
     window.ItemUI.render(root, state, handlers);
@@ -1453,6 +1548,15 @@
       const n = s === '' ? null : parseInt(s, 10);
       const val = (n != null && Number.isFinite(n)) ? Math.max(0, Math.min(100, n)) : null;
       if (which === 'min') state.qualMin = val; else state.qualMax = val;
+      markStale();
+    },
+    // gem-level search range - same contract; both bounds re-default to the gem's
+    // own level (exact) per item
+    onGemLvl(which, raw) {
+      const s = String(raw == null ? '' : raw).trim();
+      const n = s === '' ? null : parseInt(s, 10);
+      const val = (n != null && Number.isFinite(n)) ? Math.max(1, Math.min(40, n)) : null;
+      if (which === 'min') state.gemLvlMin = val; else state.gemLvlMax = val;
       markStale();
     },
     // augmentable-socket search range - same contract; min re-defaults to the
@@ -1720,6 +1824,7 @@
           ...state.opts, ilvlMin: state.ilvlMin, ilvlMax: state.ilvlMax,
           qualMin: state.qualMin, qualMax: state.qualMax,
           sockMin: state.sockMin, sockMax: state.sockMax,
+          gemLvlMin: state.gemLvlMin, gemLvlMax: state.gemLvlMax,
           garbage: state.garbage, garbageEnabled: !!state.opts.garbageOnly,
         });
         return { query: c.query, sort: c.sort };

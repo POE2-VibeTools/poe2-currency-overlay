@@ -447,6 +447,10 @@
 .rh-floor-val { color: #a4d68e; font-size: 16px; font-weight: 700; line-height: 1.25; }
 .rh-floor-val .rh-floor-unit { font-size: 11px; font-weight: 500; color: #7fa871; }
 .rh-floor-val .cur-div { font-size: 10px; margin-left: 4px; }
+/* the same money in the other majors, on its own line so a 560px window doesn't
+   squeeze the floor into the histogram */
+.rh-floor-val .cur-aside { display: block; font-size: 10.5px; font-weight: 500; color: #7fa871; margin-top: 1px; white-space: nowrap; }
+.rh-floor-val .cur-aside .cur-icon-inline { vertical-align: -2px; }
 .rh-floor-sub { font-size: 9px; color: var(--tx-faint); }
 .rh-hist { flex: 1; min-width: 0; position: relative; }
 .rh-hist-plot { position: relative; }
@@ -518,7 +522,10 @@
 .res-group .rg-n { font-weight: 600; color: var(--tx-faint); letter-spacing: 0; }
 .res-group::after { content: ''; flex: 1; height: 1px; background: var(--bd-08); }
 .listing.has-whisper { cursor: pointer; }
-.listing .price { width: 92px; flex-shrink: 0; color: var(--tx-gold); font-weight: 700; font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* 92px is a FLOOR, not a cap: the cell also carries the bracketed conversion
+   ("3199 exalted (7.2 div)"), and a hard width made that overrun the name beside
+   it. Content-sized with a minimum keeps short prices aligned without overlap. */
+.listing .price { flex: 0 0 auto; min-width: 92px; color: var(--tx-gold); font-weight: 700; font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .listing .price .cur { color: #b89968; font-size: 10.5px; font-weight: 500; }
 .li-center { flex: 1; min-width: 0; }
 .li-nameline { display: flex; align-items: center; gap: 7px; }
