@@ -17,6 +17,14 @@ jobs:
           node-version: 20
       - name: Install deps
         run: npm ci
+      - name: Build the vendored parser bundle
+        # renderer/item-tab.bundle.js is a build artifact and is gitignored. Locally the
+        # npm `predist` hook builds it, but `npx electron-builder` below never fires npm
+        # lifecycle hooks - so every AppImage shipped before this line was MISSING the
+        # parser. window.EE2 came out undefined and the whole Price Check / Desecrate
+        # side of the app threw "Cannot read properties of undefined (reading 'init')"
+        # on any item. Never assume a hook ran; run it.
+        run: npm run build:item
       - name: Build AppImage
         # --publish never: on CI electron-builder otherwise auto-publishes (needs a
         # token). We only want the artifact; the release is assembled locally.
