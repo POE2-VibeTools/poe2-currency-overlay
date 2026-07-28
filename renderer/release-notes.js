@@ -6,6 +6,17 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.5.1',
+    date: '2026-07-27',
+    title: 'Tutorial covers the new tabs',
+    notes: [
+      'The tutorial now spotlights Net Worth, Regex and Grand Expedition, offered right after the Price Check + Desecrate run',
+      'Each of them has its own Replay chip in Settings → Help & About, so you can revisit one tab instead of the whole tour',
+      'Regex and Grand Expedition spotlight a demo build and a demo roster, so you see a real pattern and a real verdict instead of empty boxes. Your own picks come back when the tour ends',
+      'Command Hotkeys got a mention in the tutorial\'s Settings step',
+    ],
+  },
+  {
     version: '2.5.0',
     date: '2026-07-27',
     title: 'Regex, Grand Expedition, Command Hotkeys + tab management',
