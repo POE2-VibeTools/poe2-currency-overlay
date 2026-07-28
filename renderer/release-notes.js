@@ -6,12 +6,23 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.5.4',
+    date: '2026-07-28',
+    title: 'Linux fixes, take two',
+    notes: [
+      'Linux only. Nothing changes on Windows - every fix in this build sits behind a platform check.',
+      'The X11 backend flag is now baked into the packaged launcher itself, so you no longer need to pass --ozone-platform=x11 by hand. 2.5.3 claimed this and was wrong: the flag has to be on the real command line, and neither of the two ways the app tried to do that reached it.',
+      'The price-check hotkey falls back to your clipboard. If the app can\'t drive the game\'s copy (it can\'t on a GNOME Wayland session), press Ctrl+C in game yourself and then the hotkey, and it prices what you copied.',
+      'Command hotkeys like /hideout fire again. They were checking "is the game focused", which has no answer outside Windows, and treating no-answer as no.',
+    ],
+  },
+  {
     version: '2.5.3',
     date: '2026-07-28',
     title: 'Linux fixes',
     notes: [
       'Linux only. Nothing changes on Windows - every fix in this build sits behind a platform check.',
-      'The app now relaunches itself with the X11 backend flag on the command line. Without it the GPU process crashed and no hotkey could register at all.',
+      'Tried to force the X11 backend flag at launch, since without it the GPU process crashes and no hotkey can register. This attempt did NOT work - keep passing --ozone-platform=x11 yourself on 2.5.3.',
       'The hide button actually hides the overlay. It was only turning it transparent, which does nothing without a compositor honouring it.',
       'The overlay no longer shows up at launch before you press the toggle.',
       'Stash capture (F7) fails with an error after 8 seconds instead of sitting on "Scanning" forever. Capture on GNOME still needs the desktop portal - separate work.',

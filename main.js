@@ -30,16 +30,11 @@ if (process.platform === 'linux') {
 // appendSwitch above is NOT equivalent to the flag being on the real command line.
 // Field evidence (GNOME 50 / Mutter, Wayland session): without the CLI flag the GPU
 // process segfaults (exit_code=139) and EVERY globalShortcut registration fails with a
-// bogus "taken by another app"; with it, all four register cleanly. So re-exec once with
-// the flag on argv. The marker prevents a relaunch loop, and an AppImage must relaunch
-// via $APPIMAGE - process.execPath points inside a mount that disappears on exit.
-if (process.platform === 'linux'
-    && !process.argv.some((a) => a.startsWith('--ozone-platform'))
-    && !process.argv.includes('--poe2-ozone-relaunch')) {
-  const args = process.argv.slice(1).concat(['--ozone-platform=x11', '--poe2-ozone-relaunch']);
-  app.relaunch(process.env.APPIMAGE ? { execPath: process.env.APPIMAGE, args } : { args });
-  app.exit(0);
-}
+// bogus "taken by another app"; with it, all four register cleanly. A 2.5.3 attempt to
+// re-exec from here (app.relaunch + app.exit) never fired - the app requests a single-
+// instance lock further down, so the relaunched child races the dying parent for it.
+// The flag now comes from build.linux.executableArgs instead, which electron-builder
+// bakes into the AppImage's launcher, i.e. onto the real command line where it works.
 // Electron pops an OS-modal error dialog for an unhandled rejection. On Linux the
 // AppImage updater path throws asynchronously (field report: a GTK "JavaScript error"
 // at launch on a build that then updated fine), leaving a stranger blocked behind a
@@ -934,6 +929,7 @@ function focusGame() {
     logToggle('focusGame', `native ERROR ${(err && err.message) || err}`);
   }
   return new Promise((resolve) => {
+    if (process.platform !== 'win32') return resolve(); // no powershell.exe, and focus-native is Win32-only
     try {
       const { exec } = require('child_process');
       exec(
@@ -1011,19 +1007,37 @@ async function onItemHotkey(mode = 'pin', acc = null) {
       }
       return '';
     };
-    clipboard.writeText(''); // so a successful copy is unambiguous
-    cleared = true;
     let text = '';
-    if (synthCopy()) text = await pollClip(25);
-    if (!text) {
-      // nothing landed - the game may not actually hold keyboard focus even
-      // though it looks active. Force it forward and try once more.
-      logToggle('item-hotkey', 'copy empty; refocusing game for retry');
-      await focusGame();
-      await new Promise((r) => setTimeout(r, 150));
-      if (synthCopy(true)) text = await pollClip(20); // force: press both modifiers
+    // Off Windows the copy is ATTEMPTED, then falls back. Awakened PoE Trade / EE2
+    // synthesize on Linux too and it works on plenty of setups (they even carry a
+    // Proton-10-specific clipboard bug, which only exists if the copy lands) - but on
+    // a GNOME Wayland session libuiohook can't read the keyboard (XkbGetKeyboard
+    // fails), posts mistranslated keycodes, and nothing arrives. So: try briefly,
+    // then use whatever the user copied in game themselves.
+    // The clipboard is seeded with a SENTINEL rather than emptied, per APT's two
+    // Linux workarounds: KDE's "Prevent empty clipboard" blocks the empty write, and
+    // Proton 10+ won't rewrite the clipboard when the content hasn't changed.
+    if (process.platform !== 'win32') {
+      const sentinel = `__POE2OVERLAY_EMPTY_${Date.now()}`;
+      clipboard.writeText(sentinel);
+      cleared = true;
+      if (synthCopy()) text = await pollClip(12); // ~300ms, then stop waiting
+      logToggle('item-hotkey', text ? `copy OK len=${text.length}` : 'synth copy did not land - using existing clipboard');
     }
-    logToggle('item-hotkey', text ? `copy OK len=${text.length}` : 'copy FAILED after retry');
+    if (process.platform === 'win32') {
+      clipboard.writeText(''); // so a successful copy is unambiguous
+      cleared = true;
+      if (synthCopy()) text = await pollClip(25);
+      if (!text) {
+        // nothing landed - the game may not actually hold keyboard focus even
+        // though it looks active. Force it forward and try once more.
+        logToggle('item-hotkey', 'copy empty; refocusing game for retry');
+        await focusGame();
+        await new Promise((r) => setTimeout(r, 150));
+        if (synthCopy(true)) text = await pollClip(20); // force: press both modifiers
+      }
+      logToggle('item-hotkey', text ? `copy OK len=${text.length}` : 'copy FAILED after retry');
+    }
     if (!text) {
       if (cleared && before) clipboard.writeText(before); // put their clipboard back
       // manual-workflow fallback (Ctrl+Alt+C then hotkey) - but never text we
@@ -1595,10 +1609,14 @@ async function sendChatCommand(cmd) {
   try {
     // Never type into whatever else holds focus (Discord, a browser): the game
     // must already be the foreground window, otherwise the press is a no-op.
-    if (!focusNative.foregroundIsGame()) {
+    // foregroundIsGame() is tri-state: true / false / null = this platform has no
+    // detection. `!null` is true, so a plain negation made every Linux press a no-op.
+    const fg = focusNative.foregroundIsGame();
+    if (fg === false) {
       logToggle('cmd-hotkey', `${cmd}: game not foreground - ignored`);
       return;
     }
+    if (fg === null) logToggle('cmd-hotkey', `${cmd}: no focus detection on this platform - sending anyway`);
     const hook = loadHook();
     if (!hook) { logToggle('cmd-hotkey', 'uiohook unavailable'); return; }
     const { uIOhook, UiohookKey } = hook;

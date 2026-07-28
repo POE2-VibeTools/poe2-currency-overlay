@@ -1,6 +1,6 @@
 {
   "name": "poe2-price-overlay",
-  "version": "2.5.3",
+  "version": "2.5.4",
   "description": "Hotkey-toggled currency price overlay for Path of Exile 2 - live rates, arbitrage signals, 7d trends",
   "main": "main.js",
   "scripts": {
@@ -34,11 +34,15 @@
       "target": "nsis",
       "icon": "app.ico"
     },
+    "afterPack": "scripts/linux-afterpack.js",
     "linux": {
       "target": "AppImage",
       "icon": "docs/icon.png",
       "category": "Utility",
-      "artifactName": "POE2-Currency-Overlay.AppImage"
+      "artifactName": "POE2-Currency-Overlay.AppImage",
+      "executableArgs": [
+        "--ozone-platform=x11"
+      ]
     },
     "publish": [
       {
