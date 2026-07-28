@@ -615,5 +615,34 @@
     if (customHadFocus) keepCustomFocus();
   }
 
-  window.RegexTab = { render, seedFromText };
+  // ---- tutorial demo (transient) --------------------------------------------
+  // The spotlight needs a real build to point at, so seed the core waystone
+  // search and give the user's own selection back when the tour leaves. Only
+  // session state moves - saved buckets are never touched.
+  let tutBackup = null;
+  function tutDemo() {
+    if (!tutBackup) {
+      tutBackup = { cls: state.cls, tabletType: state.tabletType, sel: state.sel, picker: state.picker, drawerOpen: state.drawerOpen, saveLabel: state.saveLabel, customPattern: state.customPattern };
+    }
+    state.cls = 'waystone';
+    state.tabletType = null;
+    state.picker = null;
+    state.drawerOpen = false;
+    state.saveLabel = '';
+    state.sel = new Map([
+      ['Waystone (Tier #)', { mode: 'inc', min: 15, group: null }],
+      ['Item Rarity: +#%', { mode: 'inc', min: 80, group: null }],
+      ['Pack Size: +#%', { mode: 'inc', min: 30, group: null }],
+      ['Rare Monsters have # additional Modifiers', { mode: 'exc', min: null, group: null }],
+    ]);
+    render();
+  }
+  function tutDemoClear() {
+    if (!tutBackup) return;
+    Object.assign(state, tutBackup);
+    tutBackup = null;
+    render();
+  }
+
+  window.RegexTab = { render, seedFromText, tutDemo, tutDemoClear };
 })();

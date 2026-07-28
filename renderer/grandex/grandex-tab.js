@@ -617,5 +617,24 @@
     }
   }
 
-  window.GrandEx = { render };
+  // ---- tutorial demo (transient) --------------------------------------------
+  // A canned roster - three expeditions plus a unique map - so the spotlight can
+  // point at a real verdict, score meter and tag. Session state only; the user's
+  // own picks come back when the tour leaves, and saved history is untouched.
+  let tutBackup = null;
+  function tutDemo() {
+    if (!tutBackup) tutBackup = { picked: state.picked, drawer: state.drawer, query: state.query, tagInput: state.tagInput };
+    state.picked = new Set(['Cold As Ice', 'Sulphite!', 'Endless Cliffs', 'All That Glitters']);
+    state.drawer = null;
+    state.query = '';
+    render();
+  }
+  function tutDemoClear() {
+    if (!tutBackup) return;
+    Object.assign(state, tutBackup);
+    tutBackup = null;
+    render();
+  }
+
+  window.GrandEx = { render, tutDemo, tutDemoClear };
 })();

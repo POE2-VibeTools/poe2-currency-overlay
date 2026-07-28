@@ -543,12 +543,12 @@ details[open] > .settings-head::before { transform: rotate(90deg); }
 }
 #tut-dismiss span { font-size: 9.5px; color: #8a8578; cursor: pointer; }
 #tut-dismiss span:hover { color: #d8b06a; text-decoration: underline; }
-#tut-farewell, #tut-recommend, #tut-item-offer {
+#tut-farewell, #tut-recommend, #tut-item-offer, #tut-newtabs-offer {
   position: fixed; inset: 0; z-index: 50;
   background: rgba(8, 6, 4, 0.6);
   display: flex; align-items: center; justify-content: center;
 }
-#tut-recommend .tut-farewell-card, #tut-item-offer .tut-farewell-card { width: 270px; }
+#tut-recommend .tut-farewell-card, #tut-item-offer .tut-farewell-card, #tut-newtabs-offer .tut-farewell-card { width: 270px; }
 .tut-warn { color: #e0b34a; }
 /* modal internals: CSP (style-src 'self') strips inline style attributes, so
    these MUST be classes - style="..." in the templates silently does nothing */

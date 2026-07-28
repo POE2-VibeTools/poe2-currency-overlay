@@ -28,9 +28,13 @@ function tutPickerOpen() {
 }
 const TUT_BASE = 'exalted';
 
-// which section is running: 'currency' (the original tour, sandboxed), or the
-// item-tab sections 'pricecheck' / 'desecrate' (driven by a demo item, no API)
+// which section is running: 'currency' (the original tour, sandboxed), the
+// item-tab sections 'pricecheck' / 'desecrate' (driven by a demo item, no API),
+// or the 2.5 tabs - 'networth' / 'regex' / 'grandex', with 'newtabs' running all
+// three back to back (what the offer after the item tour starts)
 let tutSection = 'currency';
+const TUT_ITEM_SECTIONS = ['pricecheck', 'desecrate'];
+const TUT_TAB_SECTIONS = ['newtabs', 'networth', 'regex', 'grandex'];
 
 // a canned near-perfect desecrated ring so the Price Check + Desecrate spotlights
 // have real targets - a live redesecrate? button, real mod rows, a real route
@@ -55,6 +59,10 @@ const TUT_DEMO_ITEM = [
 function tutSteps() {
   if (tutSection === 'pricecheck') return pricecheckSteps().concat(desecrateSteps());
   if (tutSection === 'desecrate') return desecrateSteps();
+  if (tutSection === 'newtabs') return networthSteps().concat(regexSteps(), grandexSteps());
+  if (tutSection === 'networth') return networthSteps();
+  if (tutSection === 'regex') return regexSteps();
+  if (tutSection === 'grandex') return grandexSteps();
   return currencySteps();
 }
 
@@ -97,7 +105,7 @@ function currencySteps() {
     },
     {
       title: 'You\'re all set',
-      text: 'That\'s the core. <b>⚙ Settings</b> holds manual rates (laid out like Ange), your default currencies, and <b>Replay tutorial</b>. Reorder a bucket\'s payments by dragging the handle on the left, and remove one by dragging it out of the bucket or clicking its <b>✕</b>; add more with <b>+ payment</b>. Next, a quick look at the other two tabs - good hunting, exile.',
+      text: 'That\'s the core. <b>⚙ Settings</b> holds manual rates (laid out like Ange), your default currencies, <b>Hotkeys</b> - bind a key to a safe chat command like <b>/hideout</b> - and <b>Replay tutorial</b>. Reorder a bucket\'s payments by dragging the handle on the left, and remove one by dragging it out of the bucket or clicking its <b>✕</b>; add more with <b>+ payment</b>. Next, a quick look at the other two tabs - good hunting, exile.',
       target: () => document.getElementById('btn-settings'),
       inert: true
     }
@@ -195,6 +203,115 @@ function tutEnterDesecrate() {
   if (window.ItemTab) window.ItemTab.demoDesecrate();
   const tab = document.getElementById('tab-desecrate');
   if (tab) tab.click();
+}
+
+// ---------- the 2.5 tabs: Net Worth, Regex, Grand Expedition ----------
+// Short display-only spotlights. Each section's steps open their own tab, so a
+// chained run switches tabs as it goes and a Replay chip can jump straight in.
+// Regex and Grand Expedition seed a canned build/roster (transient state only,
+// nothing persisted) so the pattern bar and the verdict bar are real, and hand
+// the user's own back in endTutorial.
+const TUT_TAB_BTN = { networth: 'tab-networth', regex: 'tab-regex', grandex: 'tab-grandex' };
+let tutRevealed = []; // tabs the tour un-hid because it had nothing to point at
+
+function tutOpenTab(key) {
+  const btn = document.getElementById(TUT_TAB_BTN[key]);
+  if (!btn) return;
+  // a tab the user hid in Settings has no button to spotlight - reveal it for the
+  // tour only (their config is untouched) and re-hide it when the tour ends
+  if (btn.style.display === 'none') {
+    if (!tutRevealed.includes(key)) tutRevealed.push(key);
+    try { if (window.setTabVisibility) window.setTabVisibility(key, true); } catch {}
+  }
+  if (!btn.classList.contains('active')) btn.click();
+}
+
+function tutRestoreTabs() {
+  for (const key of tutRevealed) {
+    try { if (window.setTabVisibility) window.setTabVisibility(key, false); } catch {}
+  }
+  tutRevealed = [];
+}
+
+function tutRegexDemo() {
+  tutOpenTab('regex');
+  try { if (window.RegexTab && window.RegexTab.tutDemo) window.RegexTab.tutDemo(); } catch {}
+}
+function tutGrandExDemo() {
+  tutOpenTab('grandex');
+  try { if (window.GrandEx && window.GrandEx.tutDemo) window.GrandEx.tutDemo(); } catch {}
+}
+
+function networthSteps() {
+  const key = esc(config.stashHotkey || 'F7');
+  return [
+    {
+      onArrive: () => tutOpenTab('networth'),
+      title: 'Net Worth: capture a tab',
+      text: `Open a currency tab in game and press <b>${key}</b>. It reads the counts off the screen, prices them, and stacks a row here. The hotkey works even when this tab is hidden.`,
+      target: () => document.querySelector('#networth-root .nw-empty') || document.querySelector('#networth-root .nw-header'),
+      inert: true
+    },
+    {
+      onArrive: () => tutOpenTab('networth'),
+      title: 'The total, and fixing a misread',
+      text: 'Captured tabs add up to a running total in <b>Exalted</b> and <b>Divine</b>. Click any count to correct a misread; <b>⚙</b> holds calibration if you don\'t play at 1920x1080.',
+      target: () => document.querySelector('#networth-root .nw-grand') || document.querySelector('#networth-root .nw-header'),
+      inert: true
+    }
+  ];
+}
+
+function regexSteps() {
+  return [
+    {
+      onArrive: tutRegexDemo,
+      title: 'Regex: build a stash search',
+      text: 'Pick <b>Waystone</b> or <b>Tablet</b>, add the mods you want with a minimum roll, and list what you never want under <b>Excluded</b>. Holding an example? Paste it with <b>Ctrl+V</b> and it seeds itself.',
+      target: () => document.querySelector('#regex-root .rx-seg'),
+      inert: true
+    },
+    {
+      onArrive: tutRegexDemo,
+      title: 'Copy it, or keep it',
+      text: 'The finished pattern sits down here. <b>⧉ Copy</b> it into your stash search, or label it and <b>+ Save</b> to keep it under <b>🗂 Saved regexes</b> for a one-click copy later.',
+      target: () => document.querySelector('#regex-root .rx-bar'),
+      inert: true
+    }
+  ];
+}
+
+function grandexSteps() {
+  return [
+    {
+      onArrive: tutGrandExDemo,
+      title: 'Grand Expedition: worth the Aldurs?',
+      text: 'In Uncharted Waters, tap the rumors you can see, or type a name and press <b>Enter</b>. Only 3 show at a time; move an inventory item to rotate the rest into view.',
+      target: () => document.querySelector('#grandex-root .gx-search-wrap'),
+      inert: true
+    },
+    {
+      onArrive: tutGrandExDemo,
+      title: 'The verdict',
+      text: '<b>SPEND THE ALDURS</b>, <b>SAVE THE ALDURS</b> or <b>YOUR CALL</b>, scored from community island ratings, with the meter showing which zone you\'re in. Under 3 expeditions it\'s a save whatever the score.',
+      target: () => document.querySelector('#grandex-root .gx-bar-top') || document.querySelector('#grandex-root .gx-bar'),
+      inert: true
+    },
+    {
+      onArrive: tutGrandExDemo,
+      title: 'Take it with you',
+      text: 'Paste this tag into your map note. <b>🕘 History</b> reads it back later and rebuilds the roster from it.',
+      target: () => document.querySelector('#grandex-root .gx-bar-tagrow') || document.querySelector('#grandex-root .gx-bar'),
+      inert: true
+    },
+    {
+      onArrive: tutGrandExDemo,
+      title: 'Prep and the run',
+      text: '<b>⚒ Prep</b> is the shopping list: tablets, waystones, and the Atlas nodes to set before you sail. <b>⚗ Run guide</b> is the rune chain while you\'re in there.',
+      target: () => document.querySelector('#grandex-root .gx-tools'),
+      inert: true
+    }
+  ];
 }
 
 // ---------- guaranteed demo arbitrage (real UI, temporary injected rate) ----------
@@ -586,7 +703,7 @@ function tutTick() {
 
 async function startTutorial(section = 'currency') {
   if (tutActive) return;
-  tutSection = section === 'pricecheck' || section === 'desecrate' ? section : 'currency';
+  tutSection = TUT_ITEM_SECTIONS.includes(section) || TUT_TAB_SECTIONS.includes(section) ? section : 'currency';
   tutIdx = -1;
   if (tutSection === 'currency') {
     // the app now opens on Price Check, so the currency tour must bring the
@@ -606,6 +723,10 @@ async function startTutorial(section = 'currency') {
     // way we annotate a real, working setup instead of building one then wiping it.
     tutKeepSeed = !(config && config.tutorialDone) && !((config.buckets || []).length);
     try { applyRecommendedSetup(); } catch {}
+  } else if (TUT_TAB_SECTIONS.includes(tutSection)) {
+    // 2.5 tabs: no sandbox, nothing hits the API. Each section's first step opens
+    // its own tab (revealing a hidden one) and seeds its demo.
+    try { $('settings').classList.add('hidden'); } catch {}
   } else {
     // item sections: no currency sandbox, nothing hits the API. Price Check
     // opens on the real paste/landing screen (step 1); the demo item loads at
@@ -654,14 +775,22 @@ function endTutorial(mode) {
   if (tutSection !== 'currency') {
     const wasSection = tutSection;
     tutSection = 'currency';
-    try { if (window.ItemTab) window.ItemTab.demoClear(); } catch {}
-    try { const t = document.getElementById('tab-items'); if (t) t.click(); } catch {}
+    if (TUT_TAB_SECTIONS.includes(wasSection)) {
+      // hand the user's own build/roster back, then re-hide any tab we revealed
+      try { if (window.RegexTab && window.RegexTab.tutDemoClear) window.RegexTab.tutDemoClear(); } catch {}
+      try { if (window.GrandEx && window.GrandEx.tutDemoClear) window.GrandEx.tutDemoClear(); } catch {}
+      tutRestoreTabs();
+    } else {
+      try { if (window.ItemTab) window.ItemTab.demoClear(); } catch {}
+      try { const t = document.getElementById('tab-items'); if (t) t.click(); } catch {}
+    }
     if (mode === 'never' && config && !config.tutorialDone) {
       config.tutorialDone = true;
       window.api.setTutorialDone().catch(() => {});
     }
     if (mode === 'never') showTutFarewell();
-    void wasSection;
+    // finishing the chained item tour rolls on into an offer for the 2.5 tabs
+    if (mode === 'complete' && wasSection === 'pricecheck') showTutNewTabsOffer();
     return;
   }
 
@@ -737,6 +866,27 @@ function showTutItemTourOffer() {
   const close = () => m.remove();
   m.querySelector('#tut-item-yes').addEventListener('click', () => { close(); startTutorial('pricecheck'); });
   m.querySelector('#tut-item-no').addEventListener('click', close);
+  m.addEventListener('click', (e) => { if (e.target === m) close(); });
+}
+
+// Second gate, after the item tour: the three tabs added in 2.5. Same shape as
+// the offer above - declining leaves them on a clean overlay, and the Replay
+// chips in Settings cover each tab on its own.
+function showTutNewTabsOffer() {
+  const old = document.getElementById('tut-newtabs-offer');
+  if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'tut-newtabs-offer';
+  m.innerHTML =
+    '<div class="tut-farewell-card"><div id="tut-title">See the three newest tabs?</div>' +
+    '<div id="tut-text" class="tut-modal-text">A quick look at <b>Net Worth</b>, <b>Regex</b> and <b>Grand Expedition</b> - what each one is for and where its output lands. Under a minute, stop any time.</div>' +
+    '<div class="tut-modal-foot">' +
+    '<button class="tut-nav" id="tut-newtabs-no">No thanks</button>' +
+    '<button class="mini-btn" id="tut-newtabs-yes">Show me</button></div></div>';
+  document.body.appendChild(m);
+  const close = () => m.remove();
+  m.querySelector('#tut-newtabs-yes').addEventListener('click', () => { close(); startTutorial('newtabs'); });
+  m.querySelector('#tut-newtabs-no').addEventListener('click', close);
   m.addEventListener('click', (e) => { if (e.target === m) close(); });
 }
 
