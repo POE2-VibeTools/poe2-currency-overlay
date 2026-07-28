@@ -2,6 +2,17 @@
 
 Two-platform release: **Windows built locally**, **Linux AppImage built on GitHub Actions** (it CANNOT be built on Windows - electron-builder pulls a darwin `mksquashfs` and dies with ENOENT; no WSL distro / Docker here). Both assets go into ONE release, assembled locally with `gh`.
 
+## Ordering rule: the site publishes LAST
+
+GitHub Pages serves `/docs` from `master`, so **pushing docs/ IS publishing**. Never push site changes for a version until that version's release exists and the site's screenshots exist. Only `renderer/release-notes.js` must land before the build (it bakes into the app); `docs/` must land after the release. Sequence:
+
+1. Code frozen, notes in `release-notes.js` → commit, push, build both platforms, validate.
+2. Marketing material COMPLETE: screenshots taken against the frozen build, site sections written with images in `docs/img/` - staged locally, NOT pushed.
+3. `gh release create` (both platforms) + verify.
+4. THEN push the site commit. The site only ever points at a download and screenshots that exist.
+
+(2.5.0 prep violated this: site went live advertising an unreleased version with three broken image refs and had to be reverted.)
+
 ## Steps
 
 1. **Bump version** in `package.json` (`"version"`).
