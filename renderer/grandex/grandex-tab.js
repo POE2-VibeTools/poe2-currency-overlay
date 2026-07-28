@@ -19,11 +19,9 @@
     prepDone: new Set(), // ticked prep-checklist rows (session-scoped)
     history: [],         // [{ts, rumors, score, verdict}]
     drawer: null,        // null | 'prep' | 'run' | 'hist'
-    copiedTag: null,     // history index (or 'live') flashing copied state
     tagInput: '',
     notice: null,
   };
-  let copyTimer = null;
 
   if (window.api && window.api.getConfig) {
     window.api.getConfig().then((c) => {
@@ -72,16 +70,17 @@
     // but it does NOT override the 3-expedition floor.
     const bonus = picked.some((i) => i.rumor === 'Fallen Stars') ? ` ${doc.fallenStarsAuto || ''}` : '';
     // HARD GATE: fewer than 3 expeditions is a no regardless of score.
-    if (n < (doc.minRumors || 3)) {
-      return { kind: 'skip', score, picked, exped,
-        reason: `Only ${n} expedition${n === 1 ? '' : 's'}${tail} - under the ${doc.minRumors || 3}-expedition minimum, so no saga regardless of score.${bonus}` };
+    // Reasons are data, not editorial: the count vs the floor, the score vs
+    // the thresholds. The verdict word carries the judgment.
+    const spendAt = doc.spendScore || 12, saveUnder = doc.callScore || 9, floor = doc.minRumors || 3;
+    const facts = `${n} expedition${n === 1 ? '' : 's'}${tail} · spend at ${spendAt}+, save under ${saveUnder}`;
+    if (n < floor) {
+      return { kind: 'skip', score, picked, exped, spendAt, saveUnder,
+        reason: `${n} of ${floor} expeditions minimum${tail} - score doesn't matter below the floor.${bonus}` };
     }
-    // Verdicts stay conclusive - spend it or save it. Never "go fish": players
-    // already know how to rotate, and a roster with nothing left to rotate
-    // still deserves an answer on what it's got.
-    if (score >= (doc.spendScore || 12)) return { kind: 'spend', score, picked, exped, reason: `${n} expeditions, score ${score}${tail} - prime Aldur target.${bonus}` };
-    if (score >= (doc.callScore || 9)) return { kind: 'judgment', score, picked, exped, reason: `${n} expeditions, borderline at ${score}${tail} - worth it if you have sagas to spare.${bonus}` };
-    return { kind: 'skip', score, picked, exped, reason: `${n} expeditions but weak rolls (${score})${tail} - run it, just not on a saga.${bonus}` };
+    if (score >= spendAt) return { kind: 'spend', score, picked, exped, spendAt, saveUnder, reason: `${facts}.${bonus}` };
+    if (score >= saveUnder) return { kind: 'judgment', score, picked, exped, spendAt, saveUnder, reason: `${facts}.${bonus}` };
+    return { kind: 'skip', score, picked, exped, spendAt, saveUnder, reason: `${facts}.${bonus}` };
   }
 
   // ---- tag codec: "GE CAI+SUL =11 SPEND" - atlas-note sized, parseable back -
@@ -99,13 +98,13 @@
     return names.length ? names : null;
   }
 
-  function copy(text, flashId) {
+  // copies patch the clicked element in place - no re-render, no flicker
+  function copyFlash(text, btn, flashText, restoreText) {
     if (!text) return;
     try { window.api.writeClipboard(text); } catch {}
-    state.copiedTag = flashId;
-    if (copyTimer) clearTimeout(copyTimer);
-    copyTimer = setTimeout(() => { state.copiedTag = null; render(); }, 1200);
-    render();
+    if (!btn) return;
+    btn.textContent = flashText;
+    setTimeout(() => { try { btn.textContent = restoreText; } catch {} }, 1200);
   }
 
   // ========================= conclusion bar (sticky, bottom) ================
@@ -128,9 +127,23 @@
     words.appendChild(el('div', `gx-bar-word gx-v-${v.kind}`, esc(WORD)));
     words.appendChild(el('div', 'gx-bar-reason', esc(v.reason)));
     top.appendChild(words);
+    const scoreWrap = el('div', 'gx-scorebox');
     const score = el('div', 'gx-bar-score', `${v.score}`);
-    score.title = v.exped.map((i) => `${i.rumor} ${i.rating} = ${weightOf(i)}`).join('\n') || 'No expeditions picked';
-    top.appendChild(score);
+    score.title = (v.exped.map((i) => `${i.rumor} ${i.rating} = ${weightOf(i)}`).join('\n') || 'No expeditions picked')
+      + `\n\nSum of expedition ratings. Spend at ${v.spendAt}+, save under ${v.saveUnder}.`;
+    scoreWrap.appendChild(score);
+    // the meter answers "out of what": save | your call | spend zones with the
+    // needle at the current score. Scale tops out a bit past the spend line.
+    const scaleMax = Math.max(v.spendAt * 1.5, v.score + 1);
+    const pct = (x) => Math.min(100, Math.round(100 * x / scaleMax));
+    const meter = el('div', 'gx-meter');
+    meter.title = `save <${v.saveUnder} · your call ${v.saveUnder}-${v.spendAt} · spend ${v.spendAt}+`;
+    const zSave = el('div', 'gx-meter-zone gx-mz-save'); zSave.style.width = pct(v.saveUnder) + '%'; meter.appendChild(zSave);
+    const zCall = el('div', 'gx-meter-zone gx-mz-call'); zCall.style.left = pct(v.saveUnder) + '%'; zCall.style.width = (pct(v.spendAt) - pct(v.saveUnder)) + '%'; meter.appendChild(zCall);
+    const zSpend = el('div', 'gx-meter-zone gx-mz-spend'); zSpend.style.left = pct(v.spendAt) + '%'; zSpend.style.width = (100 - pct(v.spendAt)) + '%'; meter.appendChild(zSpend);
+    const needle = el('div', 'gx-meter-needle'); needle.style.left = pct(v.score) + '%'; meter.appendChild(needle);
+    scoreWrap.appendChild(meter);
+    top.appendChild(scoreWrap);
     bar.appendChild(top);
     // the tag row: the artifact, forming live
     const tag = tagFor([...state.picked], v.score, v.kind);
@@ -139,10 +152,10 @@
     tagBox.readOnly = true;
     tagBox.value = tag;
     tagBox.title = 'Your map-note tag - paste it on the atlas; the app reads it back later';
-    tagBox.onclick = () => { tagBox.select(); copy(tag, 'live'); };
+    tagBox.onclick = () => { tagBox.select(); copyFlash(tag, null); };
     row.appendChild(tagBox);
-    const cp = el('button', 'gx-bar-btn', state.copiedTag === 'live' ? '✓ Copied' : '⧉ Copy');
-    cp.onclick = () => copy(tag, 'live');
+    const cp = el('button', 'gx-bar-btn', '⧉ Copy');
+    cp.onclick = () => copyFlash(tag, cp, '✓ Copied', '⧉ Copy');
     row.appendChild(cp);
     const sv = el('button', 'gx-bar-btn', '+ Save');
     sv.title = 'Save this run to History';
@@ -562,8 +575,8 @@
       lab.title = tag;
       row.appendChild(lab);
       row.appendChild(el('span', 'gx-hist-score', esc(String(h.score))));
-      const cp = el('button', 'gx-mini', state.copiedTag === idx ? '✓' : '⧉'); cp.title = 'Copy this run\'s tag';
-      cp.onclick = () => copy(tag, idx);
+      const cp = el('button', 'gx-mini', '⧉'); cp.title = 'Copy this run\'s tag';
+      cp.onclick = () => copyFlash(tag, cp, '✓', '⧉');
       row.appendChild(cp);
       const re = el('button', 'gx-mini', '↻'); re.title = 'Load this rumor set into the picker';
       re.onclick = () => { state.picked = new Set(h.rumors); state.drawer = null; render(); };

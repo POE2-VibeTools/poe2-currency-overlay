@@ -175,14 +175,28 @@
   }
 
   // ---- assembly -------------------------------------------------------------
-  // includes: [{mod, min}] - each becomes ONE space-separated term (in-game
-  // search ANDs terms). excludes: [mod] - one "!a|b|c" term (! negates the
-  // whole alternation). Terms containing a space or | get quoted.
+  // includes: [{mod, min, group?}] - ungrouped mods each become ONE space-
+  // separated term (in-game search ANDs terms); mods sharing a group id merge
+  // into a single OR term (their patterns joined with | - safe because every
+  // member pattern parenthesizes its own internal alternations). excludes:
+  // [mod] - one "!a|b|c" term (! negates the whole alternation). Terms
+  // containing a space or | get quoted.
   function build(includes, excludes, pool) {
     const terms = [];
+    const quoteIf = (p) => /[ |]/.test(p) ? `"${p}"` : p;
+    const groups = new Map();
     for (const inc of includes) {
-      const p = modPattern(inc.mod, inc.min, pool);
-      terms.push(/[ |]/.test(p) ? `"${p}"` : p);
+      if (inc.group == null) {
+        terms.push(quoteIf(modPattern(inc.mod, inc.min, pool)));
+      } else {
+        if (!groups.has(inc.group)) groups.set(inc.group, []);
+        groups.get(inc.group).push(inc);
+      }
+    }
+    for (const members of groups.values()) {
+      if (!members.length) continue;
+      const alts = members.map((m) => modPattern(m.mod, m.min, pool)).join('|');
+      terms.push(quoteIf(alts));
     }
     if (excludes.length) {
       const alts = excludes.map((m) => uniqueFragment(m.text, pool)).join('|');
