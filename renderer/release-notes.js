@@ -6,6 +6,16 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.0',
+    date: '2026-07-29',
+    title: 'Русский · Português · Deutsch · Français · Español',
+    notes: [
+      'The app now runs in Russian, Brazilian Portuguese, German, French or Spanish, and price checks items copied from those clients.',
+      'Settings → App → Language. One setting covers the app and the item reader.',
+      'Currency and item names come from the game\'s own text, so they match what your stash says.',
+    ],
+  },
+  {
     version: '2.5.8',
     date: '2026-07-28',
     title: 'Linux: screen capture',
