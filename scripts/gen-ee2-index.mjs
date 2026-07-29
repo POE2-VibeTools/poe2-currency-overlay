@@ -23,9 +23,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fnv1a from "@sindresorhus/fnv1a";
 
+// which vendored language to (re)index: `node scripts/gen-ee2-index.mjs ru`
+const LANG = process.argv[2] || "en";
 const DATA_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
-  "..", "renderer", "vendor", "ee2", "data", "en",
+  "..", "renderer", "vendor", "ee2", "data", LANG,
 );
 
 const h32 = (s) => Number(fnv1a(s, { size: 32 }));
