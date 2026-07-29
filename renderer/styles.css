@@ -1635,3 +1635,12 @@ footer {
 .rx-block { display: block; width: 100%; margin-bottom: 8px; }
 .rx-custom-pattern { width: 100%; min-height: 54px; resize: vertical; margin-bottom: 8px; }
 
+
+/* Hold the first paint until the DOM is laid out and the language pass has run.
+   Without this, a reload (which is how a language change applies) shows one frame of
+   the raw document - every settings section stacked open, tutorial chips and release
+   notes included - before CSS and applyStatic() land. #root is revealed by i18n.js on
+   DOMContentLoaded, with a timer fallback so a script error can never leave the window
+   permanently blank. */
+#root { visibility: hidden; }
+#root.ui-ready { visibility: visible; }

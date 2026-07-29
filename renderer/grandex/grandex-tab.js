@@ -65,7 +65,7 @@
     const other = picked.filter((i) => i.type !== 'rumour');
     const score = Math.round(exped.reduce((a, i) => a + weightOf(i), 0) * 10) / 10;
     const n = exped.length;
-    const tail = other.length ? ` (+${other.length} non-expedition)` : '';
+    const tail = other.length ? t('grandex.verdict.reason_tail_nonexpedition', { otherCount: other.length }) : '';
     // Fallen Stars is worth running on its own merits (it guarantees a saga),
     // but it does NOT override the 3-expedition floor.
     const bonus = picked.some((i) => i.rumor === 'Fallen Stars') ? ` ${doc.fallenStarsAuto || ''}` : '';
@@ -73,14 +73,14 @@
     // Reasons are data, not editorial: the count vs the floor, the score vs
     // the thresholds. The verdict word carries the judgment.
     const spendAt = doc.spendScore || 12, saveUnder = doc.callScore || 9, floor = doc.minRumors || 3;
-    const facts = `${n} expedition${n === 1 ? '' : 's'}${tail} · spend at ${spendAt}+, save under ${saveUnder}`;
+    const facts = t('grandex.verdict.reason_spend_save', { n, plural: n === 1 ? '' : 's', tail, spendAt, saveUnder });
     if (n < floor) {
       return { kind: 'skip', score, picked, exped, spendAt, saveUnder,
-        reason: `${n} of ${floor} expeditions minimum${tail} - score doesn't matter below the floor.${bonus}` };
+        reason: `${t('grandex.verdict.reason_floor', { n, floor, tail })}${bonus}` };
     }
-    if (score >= spendAt) return { kind: 'spend', score, picked, exped, spendAt, saveUnder, reason: `${facts}.${bonus}` };
-    if (score >= saveUnder) return { kind: 'judgment', score, picked, exped, spendAt, saveUnder, reason: `${facts}.${bonus}` };
-    return { kind: 'skip', score, picked, exped, spendAt, saveUnder, reason: `${facts}.${bonus}` };
+    if (score >= spendAt) return { kind: 'spend', score, picked, exped, spendAt, saveUnder, reason: `${facts}${bonus}` };
+    if (score >= saveUnder) return { kind: 'judgment', score, picked, exped, spendAt, saveUnder, reason: `${facts}${bonus}` };
+    return { kind: 'skip', score, picked, exped, spendAt, saveUnder, reason: `${facts}${bonus}` };
   }
 
   // ---- tag codec: "GE CAI+SUL =11 SPEND" - atlas-note sized, parseable back -
@@ -116,11 +116,11 @@
     const v = verdict();
     const bar = el('div', `gx-bar${v.kind !== 'empty' ? ' gx-bar-' + v.kind : ''}`);
     if (v.kind === 'empty') {
-      bar.appendChild(el('div', 'gx-bar-empty', '<span class="gx-bar-arrow">↑</span> Tap the rumors you see in game - your verdict and map-note tag build here.'));
+      bar.appendChild(el('div', 'gx-bar-empty', t('grandex.bar.empty_prompt')));
       return bar;
     }
     const ICON = { spend: '✓', skip: '✕', judgment: '?' }[v.kind];
-    const WORD = { spend: 'SPEND THE ALDURS', skip: 'SAVE THE ALDURS', judgment: 'YOUR CALL' }[v.kind];
+    const WORD = { spend: t('grandex.verdict.spend'), skip: t('grandex.verdict.save'), judgment: t('grandex.verdict.call') }[v.kind];
     const top = el('div', 'gx-bar-top');
     top.appendChild(el('div', `gx-bar-badge gx-v-${v.kind}`, ICON));
     const words = el('div', 'gx-bar-words');
@@ -129,15 +129,15 @@
     top.appendChild(words);
     const scoreWrap = el('div', 'gx-scorebox');
     const score = el('div', 'gx-bar-score', `${v.score}`);
-    score.title = (v.exped.map((i) => `${i.rumor} ${i.rating} = ${weightOf(i)}`).join('\n') || 'No expeditions picked')
-      + `\n\nSum of expedition ratings. Spend at ${v.spendAt}+, save under ${v.saveUnder}.`;
+    score.title = (v.exped.map((i) => `${i.rumor} ${i.rating} = ${weightOf(i)}`).join('\n') || t('grandex.bar.score_tooltip_empty'))
+      + t('grandex.bar.score_tooltip_suffix', { spendAt: v.spendAt, saveUnder: v.saveUnder });
     scoreWrap.appendChild(score);
     // the meter answers "out of what": save | your call | spend zones with the
     // needle at the current score. Scale tops out a bit past the spend line.
     const scaleMax = Math.max(v.spendAt * 1.5, v.score + 1);
     const pct = (x) => Math.min(100, Math.round(100 * x / scaleMax));
     const meter = el('div', 'gx-meter');
-    meter.title = `save <${v.saveUnder} · your call ${v.saveUnder}-${v.spendAt} · spend ${v.spendAt}+`;
+    meter.title = t('grandex.bar.meter_tooltip', { saveUnder: v.saveUnder, spendAt: v.spendAt });
     const zSave = el('div', 'gx-meter-zone gx-mz-save'); zSave.style.width = pct(v.saveUnder) + '%'; meter.appendChild(zSave);
     const zCall = el('div', 'gx-meter-zone gx-mz-call'); zCall.style.left = pct(v.saveUnder) + '%'; zCall.style.width = (pct(v.spendAt) - pct(v.saveUnder)) + '%'; meter.appendChild(zCall);
     const zSpend = el('div', 'gx-meter-zone gx-mz-spend'); zSpend.style.left = pct(v.spendAt) + '%'; zSpend.style.width = (100 - pct(v.spendAt)) + '%'; meter.appendChild(zSpend);
@@ -151,23 +151,23 @@
     const tagBox = el('input', 'gx-bar-tag');
     tagBox.readOnly = true;
     tagBox.value = tag;
-    tagBox.title = 'Your map-note tag - paste it on the atlas; the app reads it back later';
+    tagBox.title = t('grandex.bar.tag_title');
     tagBox.onclick = () => { tagBox.select(); copyFlash(tag, null); };
     row.appendChild(tagBox);
-    const cp = el('button', 'gx-bar-btn', '⧉ Copy');
-    cp.onclick = () => copyFlash(tag, cp, '✓ Copied', '⧉ Copy');
+    const cp = el('button', 'gx-bar-btn', t('grandex.bar.copy_button'));
+    cp.onclick = () => copyFlash(tag, cp, t('grandex.bar.copy_flash'), t('grandex.bar.copy_button'));
     row.appendChild(cp);
-    const sv = el('button', 'gx-bar-btn', '+ Save');
-    sv.title = 'Save this run to History';
+    const sv = el('button', 'gx-bar-btn', t('grandex.bar.save_button'));
+    sv.title = t('grandex.bar.save_title');
     sv.onclick = () => {
       state.history.unshift({ ts: Date.now(), rumors: [...state.picked], score: v.score, verdict: v.kind });
       persist();
-      state.notice = { kind: 'ok', msg: 'Saved to History.' };
+      state.notice = { kind: 'ok', msg: t('grandex.notice.saved_to_history') };
       render();
     };
     row.appendChild(sv);
     const clr = el('button', 'gx-bar-btn gx-bar-clear', '✕');
-    clr.title = 'Clear picks';
+    clr.title = t('grandex.bar.clear_title');
     clr.onclick = () => { state.picked.clear(); render(); };
     row.appendChild(clr);
     bar.appendChild(row);
@@ -179,14 +179,14 @@
   // top, then every pick with its island, payoff and score contribution.
   // Expeditions carry the Aldur score; uniques/bosses are listed as content
   // you'll see but explicitly marked as adding no saga value.
-  const TYPE_LABEL = { rumour: 'Expeditions', unique: 'Unique maps', boss: 'Bosses' };
-  const TYPE_SHORT = { rumour: 'expedition', unique: 'unique map', boss: 'boss' };
+  const TYPE_LABEL = { rumour: t('grandex.grid.section_expeditions'), unique: t('grandex.grid.section_unique_maps'), boss: t('grandex.grid.section_bosses') };
+  const TYPE_SHORT = { rumour: t('grandex.summary.type_short_rumour'), unique: t('grandex.summary.type_short_unique'), boss: t('grandex.summary.type_short_boss') };
   function summaryCard() {
     const v = verdict();
     if (v.kind === 'empty') return null;
     const card = el('div', 'gx-sum');
     const head = el('div', 'gx-sum-head');
-    head.appendChild(el('span', 'gx-sum-title', 'Your logbook'));
+    head.appendChild(el('span', 'gx-sum-title', t('grandex.summary.title')));
     const counts = ['rumour', 'unique', 'boss']
       .map((t) => [t, v.picked.filter((i) => i.type === t).length])
       .filter(([, n]) => n)
@@ -199,18 +199,18 @@
       const sub = el('div', `gx-sum-sub gx-sum-${type}`);
       sub.appendChild(el('span', 'gx-sum-sub-lab', esc(TYPE_LABEL[type])));
       sub.appendChild(el('span', 'gx-sum-sub-note', type === 'rumour'
-        ? `score ${v.score}` : 'no Aldur value'));
+        ? t('grandex.summary.sub_note_score', { score: v.score }) : t('grandex.summary.sub_note_no_value')));
       card.appendChild(sub);
       for (const i of items) {
         const row = el('div', 'gx-sum-row');
         row.appendChild(el('span', `gx-sum-tier gx-t-${TIER(i.rating)}`, esc(i.rating)));
         const body = el('span', 'gx-sum-body');
-        body.appendChild(el('span', 'gx-sum-name', esc(i.rumor)));
-        body.appendChild(el('span', 'gx-sum-sub2', `${esc(i.map)} · ${esc(i.payoff)}`));
+        body.appendChild(el('span', 'gx-sum-name', esc(window.rumorName(i.rumor))));
+        body.appendChild(el('span', 'gx-sum-sub2', `${esc(window.rumorName(i.map))} · ${esc(i.payoff)}`));
         row.appendChild(body);
         row.appendChild(el('span', 'gx-sum-w', type === 'rumour' ? `+${weightOf(i)}` : '—'));
         const x = el('button', 'gx-mini', '✕');
-        x.title = 'Remove from the roster';
+        x.title = t('grandex.summary.remove_title');
         x.onclick = () => { state.picked.delete(i.rumor); render(); };
         row.appendChild(x);
         if (i.notes) row.title = i.notes;
@@ -228,8 +228,12 @@
   // the DOM rebuild destroys it - blur events on detached nodes are unreliable
   const searchHasFocus = () => !!(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('gx-search'));
   function rank(island, q) {
-    const name = island.rumor.toLowerCase();
-    const map = (island.map || '').toLowerCase();
+    // match BOTH spellings: the translated name they read in game, and the English one
+    // a guide or a friend's tag would use
+    const nameL = window.rumorName(island.rumor).toLowerCase();
+    const nameEn = island.rumor.toLowerCase();
+    const name = nameL === nameEn ? nameEn : `${nameL} ${nameEn}`;
+    const map = `${window.rumorName(island.map || '')} ${island.map || ''}`.toLowerCase();
     const payoff = (island.payoff || '').toLowerCase();
     if (name.startsWith(q)) return 0;
     if (name.split(/[\s,]+/).some((w) => w.startsWith(q))) return 1;
@@ -255,7 +259,7 @@
   function searchBox() {
     const wrap = el('div', 'gx-search-wrap');
     const inp = el('input', 'gx-search');
-    inp.placeholder = 'Type a rumor, island or reward - Enter adds it';
+    inp.placeholder = t('grandex.search.placeholder');
     inp.value = state.query;
     inp.oninput = () => { state.query = inp.value; state.focusIdx = 0; render(); };
     inp.onkeydown = (e) => {
@@ -278,8 +282,8 @@
     const m = matches();
     if (state.query.trim()) {
       wrap.appendChild(el('span', 'gx-search-hint', m.length
-        ? `${m.length} match${m.length === 1 ? '' : 'es'} · ↵ add · ↑↓ pick`
-        : 'no match'));
+        ? tn('grandex.search.hint_count', m.length, { count: m.length })
+        : t('grandex.search.hint_none')));
     }
     return wrap;
   }
@@ -295,7 +299,7 @@
     const best = q ? bestMatch() : null;
     // the three families add thematically different logbook content - they
     // read as visually distinct sections (amber / unique-orange / crimson)
-    const groups = [['rumour', 'Expeditions'], ['unique', 'Unique maps'], ['boss', 'Bosses']];
+    const groups = [['rumour', t('grandex.grid.section_expeditions')], ['unique', t('grandex.grid.section_unique_maps')], ['boss', t('grandex.grid.section_bosses')]];
     for (const [type, label] of groups) {
       // picked cards always stay visible so you can see/undo your roster
       const items = D().islands.filter((i) => i.type === type && (!matchSet || matchSet.has(i.rumor) || state.picked.has(i.rumor)));
@@ -311,8 +315,8 @@
         const card = el('button', `gx-isle gx-k-${type} gx-t-${TIER(i.rating)}${on ? ' on' : ''}${hot ? ' hot' : ''}`);
         card.appendChild(el('span', 'gx-isle-tier', esc(i.rating)));
         const body = el('span', 'gx-isle-body');
-        body.appendChild(el('span', 'gx-isle-name', esc(i.rumor)));
-        body.appendChild(el('span', 'gx-isle-sub', `${esc(i.map)} · ${esc(i.payoff)}`));
+        body.appendChild(el('span', 'gx-isle-name', esc(window.rumorName(i.rumor))));
+        body.appendChild(el('span', 'gx-isle-sub', `${esc(window.rumorName(i.map))} · ${esc(i.payoff)}`));
         card.appendChild(body);
         if (on) card.appendChild(el('span', 'gx-isle-check', '✓'));
         else if (hot) card.appendChild(el('span', 'gx-isle-enter', '↵'));
@@ -322,7 +326,7 @@
       }
       wrap.appendChild(g);
     }
-    const tip = el('div', 'gx-rotate-tip', '↻ 3 rumors show at a time - move any inventory item or toggle a Saga to rotate the window');
+    const tip = el('div', 'gx-rotate-tip', t('grandex.grid.rotate_tip'));
     tip.title = D().rotation || '';
     wrap.appendChild(tip);
     return wrap;
@@ -336,9 +340,9 @@
       b.onclick = () => { state.drawer = state.drawer === key ? null : key; render(); };
       return b;
     };
-    bar.appendChild(mk('prep', '⚒', 'Prep'));
-    bar.appendChild(mk('run', '⚗', 'Run guide'));
-    bar.appendChild(mk('hist', '🕘', `History${state.history.length ? ' (' + state.history.length + ')' : ''}`));
+    bar.appendChild(mk('prep', '⚒', t('grandex.toolbar.prep')));
+    bar.appendChild(mk('run', '⚗', t('grandex.toolbar.run_guide')));
+    bar.appendChild(mk('hist', '🕘', `${t('grandex.toolbar.history')}${state.history.length ? ' (' + state.history.length + ')' : ''}`));
     return bar;
   }
 
@@ -347,7 +351,7 @@
     const wrap = el('div', 'gx-drawer-veil');
     wrap.onclick = (e) => { if (e.target === wrap) { state.drawer = null; render(); } };
     const panel = el('div', 'gx-drawer');
-    const title = { prep: '⚒ Prep the farm', run: '⚗ Run it right', hist: '🕘 History' }[state.drawer];
+    const title = { prep: t('grandex.drawer_prep.title'), run: t('grandex.drawer_run.title'), hist: t('grandex.drawer_history.title') }[state.drawer];
     const head = el('div', 'gx-drawer-head');
     head.appendChild(el('span', 'gx-drawer-title', title));
     head.appendChild(el('span', 'rx-flex'));
@@ -409,7 +413,7 @@
       const foot = el('div', 'gx-buy-foot');
       for (const l of links) {
         const a = el('button', 'gx-buy-btn', `⇗ ${esc(l.label)}`);
-        a.title = 'Opens the trade site in your browser';
+        a.title = t('grandex.drawer_prep.buy_link_title');
         a.onclick = () => { try { window.api.openExternal(l.url); } catch { window.open(l.url); } };
         foot.appendChild(a);
       }
@@ -421,7 +425,7 @@
   function drawPrep(root) {
     const p = D().prep;
     const L = (p.tablets && p.tablets.links) || [];
-    const b1 = block(root, null, 'Tablets - what to buy');
+    const b1 = block(root, null, t('grandex.drawer_prep.heading_tablets'));
     // Every tablet you run is a RARE with 4 mods - the question is WHICH 4.
     // Three shopping tiers, one card each: same item, better rolls as you pay
     // up. Bright lines = the mods you're paying for; dimmed = filler.
@@ -433,7 +437,7 @@
         { text: '18% increased Experience gain in Map', fill: true },
         { text: '35% increased Gold found in Map', fill: true },
       ],
-      note: 'Any 2 of Rares / Effectiveness / Monster Rarity, filler for the rest. For non-Aldur saga maps.',
+      note: t('grandex.drawer_prep.tablet1_note'),
       links: L.slice(0, 1),
     });
     purchaseCard(b1, {
@@ -445,7 +449,7 @@
         { text: '12% increased Rarity of Items found in Map', fill: true },
         { text: '18% increased Experience gain in Map', fill: true },
       ],
-      note: 'Buy 3 for Aldur maps. "2 additional Modifiers" is the must-have, plus Effectiveness or Rares.',
+      note: t('grandex.drawer_prep.tablet2_note'),
       links: L.slice(1, 2),
     });
     purchaseCard(b1, {
@@ -457,20 +461,20 @@
         { text: 'Map has 35% increased number of Rare Monsters', want: true },
         { text: '12% increased Rarity of Items found in Map', fill: true },
       ],
-      note: 'The perfect buy - all three wanted mods on one tablet. Pay accordingly.',
+      note: t('grandex.drawer_prep.tablet3_note'),
       links: L.slice(2),
     });
-    const b2 = block(root, null, 'Waystone - what to run');
+    const b2 = block(root, null, t('grandex.drawer_prep.heading_waystone'));
     purchaseCard(b2, {
       icon: 'Waystone-T15.png', name: 'Waystone (Tier 15)', // Drew's in-game 0.5 icon, XV baked in
       lines: [
         { prop: true, html: 'Monster Effectiveness: <b>+70%</b>' },
         { prop: true, html: '8 Modifiers - the more the better' },
       ],
-      note: 'Highest Monster Effectiveness wins; Monster Rarity good, Rarity okay, Pack Size bad. T15 is enough. Budget: craft 70% effect 6-mods, then corrupt.',
+      note: t('grandex.drawer_prep.waystone_note'),
     });
     if (p.master) {
-      const b3 = block(root, null, 'Atlas Master');
+      const b3 = block(root, null, t('grandex.drawer_prep.heading_atlas_master'));
       const mc = el('div', 'gx-buy-card gx-master');
       mc.appendChild(el('div', 'gx-master-name', esc(p.master.name)));
       const chips = el('div', 'gx-node-chips');
@@ -480,7 +484,7 @@
       b3.appendChild(mc);
     }
     if ((p.reminders || []).length) {
-      const b4 = block(root, null, 'Before you start');
+      const b4 = block(root, null, t('grandex.drawer_prep.heading_before_start'));
       p.reminders.forEach((r, i) => {
         const done = state.prepDone.has(i);
         const rowEl = el('button', 'gx-check' + (done ? ' done' : ''), `<span class="gx-check-box">${done ? '✓' : ''}</span> ${esc(r)}`);
@@ -493,18 +497,18 @@
   // rune roster: the named tiers + generic filler entries so a chain can be
   // tracked accurately even for the unnamed B/C runes
   const RUNE_ROSTER = () => {
-    const t = D().runes.tiers || {};
+    const tiers = D().runes.tiers || {};
     const out = [];
-    for (const [tier, names] of Object.entries(t)) for (const n of names) out.push({ name: n, tier });
-    out.push({ name: 'Other purple', tier: 'B' });
-    out.push({ name: 'Other blue', tier: 'C' });
+    for (const [tier, names] of Object.entries(tiers)) for (const n of names) out.push({ name: n, tier });
+    out.push({ name: t('grandex.drawer_run.rune_other_purple'), tier: 'B' });
+    out.push({ name: t('grandex.drawer_run.rune_other_blue'), tier: 'C' });
     return out;
   };
   const RUNE_POWER = { SS: 6, S: 4, A: 3, B: 2, C: 1 };
 
   function drawRun(root) {
     // ---- the chain builder: tap runes as they enter your expedition chain ----
-    const cb = block(root, '⛓', 'Your rune chain');
+    const cb = block(root, '⛓', t('grandex.drawer_run.heading_rune_chain'));
     const roster = el('div', 'gx-runes');
     for (const r of RUNE_ROSTER()) {
       const count = state.chain.filter((n) => n === r.name).length;
@@ -516,7 +520,7 @@
       const chip = el('button', 'gx-rune' + (used ? ' used' : ''),
         `<span class="gx-rune-t ${esc(r.tier.toLowerCase())}">${esc(r.tier)}</span> ${esc(r.name)}`
         + (generic && count ? ` <span class="gx-rune-n">×${count}</span>` : ''));
-      chip.title = used ? 'Already in your chain (runes don\'t stack) - click to add again anyway' : 'Add to your chain';
+      chip.title = used ? t('grandex.drawer_run.chain_used_title') : t('grandex.drawer_run.chain_add_title');
       chip.onclick = () => { state.chain.push(r.name); render(); };
       roster.appendChild(chip);
     }
@@ -526,47 +530,47 @@
       state.chain.forEach((n, idx) => {
         const r = RUNE_ROSTER().find((x) => x.name === n) || { tier: 'B' };
         const c = el('button', 'gx-rune in', `<span class="gx-rune-check">✓</span> ${esc(n)}`);
-        c.title = 'Remove from chain';
+        c.title = t('grandex.drawer_run.chain_remove_title');
         c.onclick = () => { state.chain.splice(idx, 1); render(); };
         chainRow.appendChild(c);
       });
       cb.appendChild(chainRow);
       const power = state.chain.reduce((a, n) => a + (RUNE_POWER[(RUNE_ROSTER().find((x) => x.name === n) || {}).tier] || 2), 0);
       const uniq = new Set(state.chain).size;
-      const sum = el('div', 'gx-chain-sum', `${state.chain.length} rune${state.chain.length === 1 ? '' : 's'} in chain (${uniq} unique - runes don't stack) · rough power <b>${power}</b>`);
+      const sum = el('div', 'gx-chain-sum', t('grandex.drawer_run.chain_summary', { count: state.chain.length, plural: state.chain.length === 1 ? '' : 's', uniq, power }));
       cb.appendChild(sum);
-      const clr = el('button', 'gx-mini', '✕ clear chain');
+      const clr = el('button', 'gx-mini', t('grandex.drawer_run.chain_clear_button'));
       clr.onclick = () => { state.chain = []; render(); };
       cb.appendChild(clr);
     } else {
-      cb.appendChild(el('div', 'gx-line gx-dim', 'Tap runes above as they enter your chain - the tally and a rough power score build here.'));
+      cb.appendChild(el('div', 'gx-line gx-dim', t('grandex.drawer_run.chain_empty_state')));
     }
-    const n = block(root, '📜', 'Doctrine');
+    const n = block(root, '📜', t('grandex.drawer_run.heading_doctrine'));
     for (const note of D().runes.notes || []) n.appendChild(el('div', 'gx-line', '· ' + esc(note)));
     const pickedNotes = [...state.picked].map(byName).filter((i) => i && i.notes);
     if (pickedNotes.length) {
-      const pn = block(root, '🗺', 'Your picked islands');
+      const pn = block(root, '🗺', t('grandex.drawer_run.heading_picked_islands'));
       for (const i of pickedNotes) pn.appendChild(el('div', 'gx-line', `<b>${esc(i.rumor)}</b> (${esc(i.map)}): ${esc(i.notes)}`));
     }
   }
 
   function drawHist(root) {
     const read = el('div', 'gx-tag-row');
-    const inp = el('input', 'gx-tag gx-tag-in'); inp.placeholder = 'Paste a GE tag to rebuild its rumor set…'; inp.value = state.tagInput;
+    const inp = el('input', 'gx-tag gx-tag-in'); inp.placeholder = t('grandex.drawer_history.tag_input_placeholder'); inp.value = state.tagInput;
     inp.oninput = () => { state.tagInput = inp.value; };
-    const go = el('button', 'gx-bar-btn', 'Read');
+    const go = el('button', 'gx-bar-btn', t('grandex.drawer_history.tag_read_button'));
     go.onclick = () => {
       const names = decodeTag(state.tagInput);
-      if (!names) { state.notice = { kind: 'warn', msg: "Couldn't read that tag - expected e.g. 'GE CAI+SUL =9 CALL'." }; render(); return; }
+      if (!names) { state.notice = { kind: 'warn', msg: t('grandex.notice.tag_read_error') }; render(); return; }
       state.picked = new Set(names);
       state.tagInput = '';
       state.drawer = null;
-      state.notice = { kind: 'ok', msg: `Rebuilt ${names.length} rumor${names.length === 1 ? '' : 's'} from the tag.` };
+      state.notice = { kind: 'ok', msg: tn('grandex.notice.tag_read_success', names.length, { count: names.length }) };
       render();
     };
     read.appendChild(inp); read.appendChild(go);
     root.appendChild(read);
-    if (!state.history.length) { root.appendChild(el('div', 'gx-line gx-dim', 'No saved runs yet - use + Save in the verdict bar.')); return; }
+    if (!state.history.length) { root.appendChild(el('div', 'gx-line gx-dim', t('grandex.drawer_history.empty_state'))); return; }
     state.history.forEach((h, idx) => {
       const row = el('div', 'gx-hist');
       const tag = tagFor(h.rumors, h.score, h.verdict);
@@ -575,13 +579,13 @@
       lab.title = tag;
       row.appendChild(lab);
       row.appendChild(el('span', 'gx-hist-score', esc(String(h.score))));
-      const cp = el('button', 'gx-mini', '⧉'); cp.title = 'Copy this run\'s tag';
+      const cp = el('button', 'gx-mini', '⧉'); cp.title = t('grandex.drawer_history.copy_title');
       cp.onclick = () => copyFlash(tag, cp, '✓', '⧉');
       row.appendChild(cp);
-      const re = el('button', 'gx-mini', '↻'); re.title = 'Load this rumor set into the picker';
+      const re = el('button', 'gx-mini', '↻'); re.title = t('grandex.drawer_history.load_title');
       re.onclick = () => { state.picked = new Set(h.rumors); state.drawer = null; render(); };
       row.appendChild(re);
-      const del = el('button', 'gx-mini', '✕'); del.title = 'Delete';
+      const del = el('button', 'gx-mini', '✕'); del.title = t('grandex.drawer_history.delete_title');
       del.onclick = () => { state.history.splice(idx, 1); persist(); render(); };
       row.appendChild(del);
       root.appendChild(row);

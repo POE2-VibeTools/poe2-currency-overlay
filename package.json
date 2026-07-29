@@ -10,7 +10,9 @@
     "predist": "node scripts/build-item-tab.mjs",
     "dist": "electron-builder --win nsis",
     "test:stash": "electron scripts/test-stash-reader.js",
-    "test:value": "electron scripts/test-stash-value.js"
+    "test:value": "electron scripts/test-stash-value.js",
+    "i18n:check": "node scripts/i18n-verify.mjs && node scripts/i18n-check-translation.mjs",
+    "i18n:build": "node scripts/i18n-merge.mjs && node scripts/i18n-ground-labels.mjs --write && node scripts/i18n-pseudo.mjs"
   },
   "build": {
     "appId": "com.poe2vibetools.overlay",

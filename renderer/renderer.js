@@ -28,14 +28,14 @@ function fmt(v) {
 function timeAgo(ts) {
   if (!ts) return '';
   const s = Math.round((Date.now() - ts) / 1000);
-  if (s < 5) return 'just now';
-  if (s < 60) return `${s}s ago`;
+  if (s < 5) return t('currency.time.just_now');
+  if (s < 60) return t('currency.time.seconds_ago', { count: s });
   const m = Math.round(s / 60);
-  return `${m}m ago`;
+  return t('currency.time.minutes_ago', { count: m });
 }
 
 function shortName(text) {
-  return (text || '').replace(/^Omen of /, 'Omen: ');
+  return (text || '').replace(/^Omen of /, t('currency.row.omen_prefix'));
 }
 
 // escape API-derived strings before they enter innerHTML - a hijacked data
@@ -51,7 +51,7 @@ function itemInfo(ref) {
   const live = catalog[ref.apiId];
   return {
     apiId: ref.apiId,
-    text: (live && live.text) || ref.text || ref.apiId,
+    text: window.gameName((live && live.text) || ref.text || ref.apiId),
     icon: (live && live.icon) || ref.icon || '',
     price: live ? live.price : null,
     logs: (live && live.logs) || []
@@ -133,8 +133,8 @@ function makeSpark(series) {
 
 function fmtQty(q) {
   if (q == null) return '-';
-  if (q >= 1e6) return (q / 1e6).toFixed(1) + 'm';
-  if (q >= 1e3) return (q / 1e3).toFixed(1) + 'k';
+  if (q >= 1e6) return t('currency.fmt.million_suffix', { value: (q / 1e6).toFixed(1) });
+  if (q >= 1e3) return t('currency.fmt.thousand_suffix', { value: (q / 1e3).toFixed(1) });
   return String(q);
 }
 
@@ -142,11 +142,11 @@ function sparkTooltipHtml(series, itemText, baseText, baseIsExalt) {
   const delta = ((series.last.v - series.first.v) / series.first.v) * 100;
   const sign = delta >= 0 ? '+' : '';
   const cls = baseIsExalt ? 'tip-row' : 'tip-row c4';
-  const ba = abbr(baseText) || 'base';
+  const ba = abbr(baseText) || t('currency.tip.col_base_fallback');
 
   const header = baseIsExalt
-    ? `<div class="${cls} tip-cols"><span>day</span><span>ex</span><span>qty</span></div>`
-    : `<div class="${cls} tip-cols"><span>day</span><span>${esc(ba)}</span><span>ex</span><span>qty</span></div>`;
+    ? `<div class="${cls} tip-cols"><span>${t('currency.tip.col_day')}</span><span>${t('currency.tip.col_ex')}</span><span>${t('currency.tip.col_qty')}</span></div>`
+    : `<div class="${cls} tip-cols"><span>${t('currency.tip.col_day')}</span><span>${esc(ba)}</span><span>${t('currency.tip.col_ex')}</span><span>${t('currency.tip.col_qty')}</span></div>`;
 
   const rows = series.valid
     .map((p, i) => {
@@ -162,12 +162,12 @@ function sparkTooltipHtml(series, itemText, baseText, baseIsExalt) {
   const scoutUrl = 'https://poe2scout.com/economy/currency?search=' + encodeURIComponent(itemText);
   return (
     `<div class="tip-head">${esc(itemText)}</div>` +
-    `<div class="tip-sub">priced in ${esc(baseText)}</div>` +
-    `<div class="tip-sum"><span>${series.valid.length}d <b class="${delta >= 0 ? 'up' : 'down'}">${sign}${delta.toFixed(1)}%</b></span>` +
-    `<span>low ${fmt(series.min)}</span><span>high ${fmt(series.max)}</span></div>` +
+    `<div class="tip-sub">${t('currency.tip.priced_in', { base: esc(baseText) })}</div>` +
+    `<div class="tip-sum"><span>${t('currency.tip.days_suffix', { count: series.valid.length })} <b class="${delta >= 0 ? 'up' : 'down'}">${sign}${delta.toFixed(1)}%</b></span>` +
+    `<span>${t('currency.tip.low', { value: fmt(series.min) })}</span><span>${t('currency.tip.high', { value: fmt(series.max) })}</span></div>` +
     header +
     rows +
-    `<a class="tip-source" data-href="${esc(scoutUrl)}" title="View this currency's data on poe2scout.com">source: poe2scout.com &#8599;</a>`
+    `<a class="tip-source" data-href="${esc(scoutUrl)}" title="${t('currency.tip.source_link_title')}">${t('currency.tip.source_link')}</a>`
   );
 }
 
@@ -189,7 +189,7 @@ function showTipFor(el, buildHtml, pinned) {
   const tip = $('spark-tip');
   tip.innerHTML =
     buildHtml() +
-    (pinned ? '<div class="tip-pin">pinned · click again or Esc to release</div>' : '');
+    (pinned ? `<div class="tip-pin">${t('currency.tip.pinned_hint')}</div>` : '');
   tip.classList.toggle('pinned', !!pinned);
   tip.classList.remove('hidden');
   positionTip(el);
@@ -341,10 +341,10 @@ function ovrAgeStr(a, b) {
   const at = ovrAt(a, b);
   if (!at) return '';
   const m = Math.floor((Date.now() - at) / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
+  if (m < 1) return t('currency.time.just_now');
+  if (m < 60) return t('currency.time.minutes_ago', { count: m });
   const h = Math.floor(m / 60);
-  return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
+  return h < 24 ? t('currency.time.hours_ago', { count: h }) : t('currency.time.days_ago', { count: Math.floor(h / 24) });
 }
 const OVR_STALE_MS = 3 * 60 * 60 * 1000; // past this, a pinned rate needs a look
 function ovrIsStale(a, b) {
@@ -444,7 +444,8 @@ function legStr(fromText, toText, ratePerFrom) {
 
 function nameOf(apiId) {
   const c = catalog[apiId];
-  return (c && c.text) || apiId;
+  // the feed is English-only; show the name the player's own client uses
+  return window.gameName((c && c.text) || apiId);
 }
 
 function pairVol(a, b) {
@@ -488,14 +489,14 @@ function buildArbRoute(baseId, itemId, direct, cross) {
   const M = nameOf(best.m);
   const steps = below
     ? [
-        `Trade ${B} → ${X} on the direct pair - ${legStr(B, X, 1 / direct)}`,
-        `Trade ${X} → ${M} - ${legStr(X, M, best.vXM)}`,
-        `Trade ${M} → ${B} - ${legStr(M, B, best.vMB)}`
+        t('currency.arb.step_direct', { from: B, to: X, leg: legStr(B, X, 1 / direct) }),
+        t('currency.arb.step_via', { from: X, to: M, leg: legStr(X, M, best.vXM) }),
+        t('currency.arb.step_via', { from: M, to: B, leg: legStr(M, B, best.vMB) })
       ]
     : [
-        `Trade ${B} → ${M} - ${legStr(B, M, 1 / best.vMB)}`,
-        `Trade ${M} → ${X} - ${legStr(M, X, 1 / best.vXM)}`,
-        `Trade ${X} → ${B} on the direct pair - ${legStr(X, B, direct)}`
+        t('currency.arb.step_via', { from: B, to: M, leg: legStr(B, M, 1 / best.vMB) }),
+        t('currency.arb.step_via', { from: M, to: X, leg: legStr(M, X, 1 / best.vXM) }),
+        t('currency.arb.step_direct', { from: X, to: B, leg: legStr(X, B, direct) })
       ];
   const legPairs = below
     ? [
@@ -552,17 +553,17 @@ function volumeTooltipHtml(baseId, itemId, liq) {
   const deep = liq.units >= 500;
   const thin = liq.units < 50;
   return (
-    `<div class="tip-head">Traded last hour</div>` +
-    `<div class="tip-sub">${esc(X)} against ${esc(B)}</div>` +
-    (manual ? `<div class="tip-step tip-manual"><span>✎</span><span>Your manual rate drives this row - market data ignored until you clear it.</span></div>` : '') +
-    `<div class="tip-step"><span>·</span><span><b>${fmtQty(liq.units)}</b> ${esc(X)} changed hands</span></div>` +
-    `<div class="tip-step"><span>·</span><span>against <b>${fmtQty(liq.other)}</b> ${esc(B)}</span></div>` +
+    `<div class="tip-head">${t('currency.tip.traded_last_hour')}</div>` +
+    `<div class="tip-sub">${t('currency.tip.x_against_b', { item: esc(X), base: esc(B) })}</div>` +
+    (manual ? `<div class="tip-step tip-manual"><span>✎</span><span>${t('currency.tip.manual_rate_note')}</span></div>` : '') +
+    `<div class="tip-step"><span>·</span><span>${t('currency.tip.changed_hands', { units: fmtQty(liq.units), item: esc(X) })}</span></div>` +
+    `<div class="tip-step"><span>·</span><span>${t('currency.tip.against_units', { units: fmtQty(liq.other), base: esc(B) })}</span></div>` +
     `<div class="tip-roi">` +
     (deep
-      ? 'Deep market - the rate above is backed by real volume and you can move size at it.'
+      ? t('currency.tip.market_deep')
       : thin
-        ? 'Thin market. Few trades set this rate, so treat it as a rough guide and check in game before committing.'
-        : 'Moderate volume. The rate is real but you may need patience to fill a large order.') +
+        ? t('currency.tip.market_thin')
+        : t('currency.tip.market_moderate')) +
     `</div>`
   );
 }
@@ -578,19 +579,19 @@ function arbTooltipHtml(baseId, itemId, direct, cross, gapPct) {
   lastArbCtx = { baseId, itemId, route, acq };
 
   const headText = route
-    ? `Arbitrage route - ${route.loopRoi >= 0 ? '+' : ''}${route.loopRoi.toFixed(1)}% per cycle`
-    : `Arbitrage - ${gapPct.toFixed(1)}% gap`;
-  const subText = `${X}: direct pair ${fmt(direct)} vs cross ${fmt(cross)} ${abbr(nameOf(baseId)) || ''}`;
+    ? t('currency.arb.route_head', { sign: route.loopRoi >= 0 ? '+' : '', pct: route.loopRoi.toFixed(1) })
+    : t('currency.arb.gap_head', { pct: gapPct.toFixed(1) });
+  const subText = t('currency.arb.sub', { item: X, direct: fmt(direct), cross: fmt(cross), baseAbbr: abbr(nameOf(baseId)) || '' });
 
   let html =
     `<div class="tip-head tip-head-row"><span>${esc(headText)}</span><span class="tip-head-btns">` +
-    `<button class="tip-fix" title="Type the rate you actually see in game for this pair - it overrides the feed everywhere, instantly">✎ fix rate</button>` +
-    `<button class="tip-copy" title="Copy route as text">⧉ copy</button></span></div>` +
+    `<button class="tip-fix" title="${t('currency.arb.fix_rate_btn_title')}">${t('currency.arb.fix_rate_btn')}</button>` +
+    `<button class="tip-copy" title="${t('currency.arb.copy_route_btn_title')}">${t('currency.arb.copy_route_btn')}</button></span></div>` +
     `<div class="tip-sub">${esc(subText)}</div>`;
 
-  const lines = [`[POE2 Currency Overlay] ${headText}`, subText.trim()];
+  const lines = [t('currency.arb.copy_prefix', { headline: headText }), subText.trim()];
   let n = 1;
-  const acqLine = `Acquire ${B} (if needed)` + (acq ? ` - cheapest: ${legStr(nameOf(acq.m), B, 1 / acq.vBM)}` : '');
+  const acqLine = t('currency.arb.acquire_base', { base: B }) + (acq ? t('currency.arb.acquire_cheapest_suffix', { leg: legStr(nameOf(acq.m), B, 1 / acq.vBM) }) : '');
   html += `<div class="tip-step"><span>${n}.</span><span>${esc(acqLine)}</span></div>`;
   lines.push(`${n}. ${acqLine}`);
   n++;
@@ -601,10 +602,10 @@ function arbTooltipHtml(baseId, itemId, direct, cross, gapPct) {
       lines.push(`${n}. ${s}`);
       n++;
     }
-    const roiLine = `Loop ROI: ${route.loopRoi >= 0 ? '+' : ''}${route.loopRoi.toFixed(1)}% per cycle (before slippage)`;
+    const roiVars = { sign: route.loopRoi >= 0 ? '+' : '', pct: route.loopRoi.toFixed(1) };
+    const roiLine = t('currency.arb.loop_roi', roiVars).replace(/<\/?b>/g, '');
     html +=
-      `<div class="tip-roi">Loop ROI: <b class="${route.loopRoi >= 0 ? 'up' : 'down'}">` +
-      `${route.loopRoi >= 0 ? '+' : ''}${route.loopRoi.toFixed(1)}%</b> per cycle (before slippage)</div>`;
+      `<div class="tip-roi">${t('currency.arb.loop_roi', roiVars).replace('<b>', `<b class="${route.loopRoi >= 0 ? 'up' : 'down'}">`)}</div>`;
     lines.push(roiLine);
     // The loop is only as executable as its THINNEST leg - the rate on a pair
     // that barely trades is a couple of fills, not a market you can move size
@@ -619,20 +620,22 @@ function arbTooltipHtml(baseId, itemId, direct, cross, gapPct) {
       const legTxt = `${abbr(nameOf(thin.pa))}→${abbr(nameOf(thin.pb))}`;
       const few = thin.lq.units < 50;
       const note = few
-        ? 'barely trades - this rate is a couple of fills, verify before committing'
-        : 'enough volume to fill against';
-      html += `<div class="tip-step"><span>·</span><span class="tip-dim2">Thinnest leg ${esc(legTxt)}: `
-        + `<b class="${few ? 'down' : 'up'}">${fmtQty(thin.lq.units)}</b> traded last hour - ${esc(note)}.</span></div>`;
-      lines.push(`Thinnest leg ${legTxt}: ${fmtQty(thin.lq.units)} traded last hour - ${note}`);
+        ? t('currency.tip.leg_barely_trades')
+        : t('currency.tip.leg_enough_volume');
+      html += `<div class="tip-step"><span>·</span><span class="tip-dim2">`
+        + t('currency.tip.thinnest_leg', { leg: esc(legTxt), units: fmtQty(thin.lq.units), note: esc(note) })
+          .replace('<b>', `<b class="${few ? 'down' : 'up'}">`)
+        + `</span></div>`;
+      lines.push(t('currency.tip.thinnest_leg', { leg: legTxt, units: fmtQty(thin.lq.units), note }).replace(/<\/?b>/g, '').replace(/\.$/, ''));
     }
   } else {
     const line = direct < cross
-      ? `Buy ${X} with ${B} on the direct pair (trading ${gapPct.toFixed(1)}% below cross)`
-      : `Sell ${X} into the direct pair for ${B} (trading ${gapPct.toFixed(1)}% above cross)`;
+      ? t('currency.arb.buy_direct', { item: X, base: B, pct: gapPct.toFixed(1) })
+      : t('currency.arb.sell_direct', { item: X, base: B, pct: gapPct.toFixed(1) });
     html +=
       `<div class="tip-step"><span>${n}.</span><span>${esc(line)}</span></div>` +
-      `<div class="tip-roi">No liquid middle pair found to close the loop - expected edge ≈ ${gapPct.toFixed(1)}%</div>`;
-    lines.push(`${n}. ${line}`, `No liquid middle pair found - expected edge ~${gapPct.toFixed(1)}%`);
+      `<div class="tip-roi">${t('currency.arb.no_route_html', { pct: gapPct.toFixed(1) })}</div>`;
+    lines.push(`${n}. ${line}`, t('currency.arb.no_route_plain', { pct: gapPct.toFixed(1) }));
   }
   lastArbCopyText = lines.join('\n').replace(/→/g, '->');
   html += `<div class="tip-out"></div>`;
@@ -659,7 +662,7 @@ function openRateFix() {
   for (const lp of (lastArbCtx.route && lastArbCtx.route.legPairs) || []) addLeg(lp.have, lp.want);
   if (!legs.length) addLeg(lastArbCtx.itemId, lastArbCtx.baseId);
 
-  let h = '<div class="tip-sec"><div class="tip-sec-head">✎ Fix a rate (overrides the feed)</div>';
+  let h = `<div class="tip-sec"><div class="tip-sec-head">${t('currency.arb.fix_rate_header')}</div>`;
   for (let i = 0; i < legs.length; i++) {
     const { a, b } = legs[i];
     const cur = pairVal(a, b);
@@ -667,7 +670,7 @@ function openRateFix() {
       + `<input class="tip-fix-in" data-a="${esc(a)}" data-b="${esc(b)}" value="${cur > 0 ? fmt(cur) : ''}" `
       + `placeholder="?" /> ${esc(abbr(nameOf(b)) || nameOf(b))}</span></div>`;
   }
-  h += '<div class="tip-step"><span>·</span><span class="tip-dim2">Enter saves. Clear a box and press Enter to drop the override.</span></div></div>';
+  h += `<div class="tip-step"><span>·</span><span class="tip-dim2">${t('currency.arb.fix_rate_help')}</span></div></div>`;
   out.innerHTML = h;
   const first = out.querySelector('.tip-fix-in');
   if (first) { first.focus(); first.select(); }
@@ -692,7 +695,7 @@ async function refresh(force) {
   try {
     const res = await window.api.fetchPrices(force);
     if (res.error) {
-      showStatus(`Fetch failed: ${res.error}`);
+      showStatus(t('currency.status.fetch_failed', { error: res.error }));
     } else {
       catalog = res.catalog;
       pairs = res.pairs || {};
@@ -703,10 +706,10 @@ async function refresh(force) {
       const sig = JSON.stringify([res.league, res.catalog, res.pairs]);
       dataChanged = sig !== lastDataSig;
       lastDataSig = sig;
-      showStatus(res.errors && res.errors.length ? `Partial data: ${res.errors.join('; ')}` : null);
+      showStatus(res.errors && res.errors.length ? t('currency.status.partial_data', { errors: res.errors.join('; ') }) : null);
     }
   } catch (err) {
-    showStatus(`Fetch failed: ${err.message}`);
+    showStatus(t('currency.status.fetch_failed', { error: err.message }));
   }
   refreshing = false;
   $('btn-refresh').style.opacity = '';
@@ -733,7 +736,7 @@ function updateMeta() {
   const fresh = fetchedAt ? timeAgo(fetchedAt) : '';
   const fl = $('fresh-label');
   if (fl) fl.textContent = fresh;
-  $('btn-refresh').title = fetchedAt ? `Refresh prices - updated ${timeAgo(fetchedAt)}` : 'Refresh prices';
+  $('btn-refresh').title = fetchedAt ? t('currency.footer.refresh_title_updated', { time: timeAgo(fetchedAt) }) : t('currency.footer.refresh_title');
 }
 
 let renderToken = 0;
@@ -790,8 +793,8 @@ async function removeCurrencyPair(bucket, apiId) {
   if (!bucket || !Array.isArray(bucket.items) || !bucket.items.some((x) => x.apiId === apiId)) return;
   if (!skipRemoveConfirm) {
     const res = await confirmDialog(
-      `Remove ${nameOf(apiId) || apiId} from your ${nameOf(bucket.base.apiId) || 'bucket'} payments?`,
-      { confirmLabel: 'Remove', danger: true, checkboxLabel: "Don't ask again this session" });
+      t('currency.confirm.remove_payment', { item: nameOf(apiId) || apiId, base: nameOf(bucket.base.apiId) || t('currency.common.bucket_fallback') }),
+      { confirmLabel: t('currency.common.remove'), danger: true, checkboxLabel: t('currency.confirm.dont_ask_again') });
     if (!res.confirmed) { render(); return; } // re-render drops any leftover drag markers
     if (res.dontAsk) skipRemoveConfirm = true;
   }
@@ -852,17 +855,17 @@ function render() {
     });
     const bucketTip = () => {
       let h = `<div class="tip-head">${esc(base.text)}</div>`;
-      h += `<div class="tip-sub">the currency you're buying</div>`;
-      if (base.price != null) h += `<div class="tip-step"><span>·</span><span>Current value: ${fmt(base.price)} ex${window.divAsideHtml(base.price, 'exalted')}</span></div>`;
-      h += `<div class="tip-step"><span>·</span><span>Each row below is a currency you could pay with.</span></div>`;
-      h += `<div class="tip-step"><span>·</span><span>★ marks the cheapest way to buy 1 ${esc(base.text)} right now.</span></div>`;
+      h += `<div class="tip-sub">${t('currency.tip.bucket_sub')}</div>`;
+      if (base.price != null) h += `<div class="tip-step"><span>·</span><span>${t('currency.tip.current_value', { amount: fmt(base.price), divAside: window.divAsideHtml(base.price, 'exalted') })}</span></div>`;
+      h += `<div class="tip-step"><span>·</span><span>${t('currency.tip.bucket_rows_hint')}</span></div>`;
+      h += `<div class="tip-step"><span>·</span><span>${t('currency.tip.bucket_best_hint', { base: esc(base.text) })}</span></div>`;
       return h;
     };
     // header: [chevron] [icon] Name  buying  ->  [+ payment]  [x]
     // ("buying" carries margin-right:auto, pushing the buttons to the right)
     const chev = document.createElement('button');
     chev.className = 'bucket-chev';
-    chev.title = collapsed ? 'Expand this bucket' : 'Collapse this bucket';
+    chev.title = collapsed ? t('currency.bucket.expand_title') : t('currency.bucket.collapse_title');
     chev.textContent = collapsed ? '▸' : '▾';
     chev.addEventListener('click', () => {
       bucket.collapsed = !collapsed;
@@ -884,25 +887,25 @@ function render() {
     head.appendChild(title);
     const buyLab = document.createElement('span');
     buyLab.className = 'bucket-buy';
-    buyLab.textContent = 'buying';
+    buyLab.textContent = t('currency.bucket.buying_label');
     head.appendChild(buyLab);
 
     const addBtn = document.createElement('button');
     addBtn.className = 'bucket-add';
-    addBtn.title = 'Add a currency to pay with';
-    addBtn.textContent = '+ payment';
+    addBtn.title = t('currency.bucket.add_payment_title');
+    addBtn.textContent = t('currency.bucket.add_payment');
     addBtn.addEventListener('click', () => openPicker({ type: 'add-item', bucketId: bucket.id }));
     head.appendChild(addBtn);
 
     const delBtn = document.createElement('button');
     delBtn.className = 'bucket-del';
-    delBtn.title = `Remove ${base.text}`;
+    delBtn.title = t('currency.bucket.remove_title', { base: base.text });
     delBtn.textContent = '✕';
     delBtn.addEventListener('click', async () => {
       const n = bucket.items.length;
       const ok = await confirmDialog(
-        `Remove ${base.text}${n ? ` and its ${n} payment${n === 1 ? '' : 's'}` : ''}?`,
-        { confirmLabel: 'Remove', danger: true });
+        t('currency.confirm.remove_bucket', { base: base.text, payment_suffix: n ? ` and its ${n} payment${n === 1 ? '' : 's'}` : '' }),
+        { confirmLabel: t('currency.common.remove'), danger: true });
       if (!ok) return;
       config.buckets = config.buckets.filter((b) => b.id !== bucket.id);
       logAction(`remove bucket ${bucket.base.apiId}`);
@@ -921,8 +924,8 @@ function render() {
       cols.innerHTML =
         '<span></span>' +
         '<span></span>' +
-        '<span>Pay with</span>' +
-        '<span>7d trend</span><span>Price</span><span>Vol</span><span>Arb</span><span></span>';
+        `<span>${t('currency.bucket.col_pay_with')}</span>` +
+        `<span>${t('currency.bucket.col_trend')}</span><span>${t('currency.bucket.col_price')}</span><span>${t('currency.bucket.col_vol')}</span><span>${t('currency.bucket.col_arb')}</span><span></span>`;
       el.appendChild(cols);
     }
 
@@ -960,12 +963,11 @@ function render() {
       sum.className = 'bucket-sum';
       if (bestPay) {
         const bi = itemInfo(bucket.items.find((r) => r.apiId === bestPay) || { apiId: bestPay });
-        sum.innerHTML = `★ ${esc(bi.text)} <span class="bucket-sum-cost">${fmt(payCosts[bestPay])} ex`
-          + `${base.apiId === 'divine' ? '' : window.divAsideHtml(payCosts[bestPay], 'exalted')}</span>`;
-        sum.title = `Cheapest way to buy 1 ${base.text} right now. Expand for the other payments.`;
+        sum.innerHTML = t('currency.bucket.collapsed_best', { item: esc(bi.text), cost: fmt(payCosts[bestPay]), divAside: base.apiId === 'divine' ? '' : window.divAsideHtml(payCosts[bestPay], 'exalted') });
+        sum.title = t('currency.bucket.collapsed_best_title', { base: base.text });
       } else {
         const n = bucket.items.length;
-        sum.textContent = n ? `${n} payment${n === 1 ? '' : 's'}` : 'no payments yet';
+        sum.textContent = n ? tn('currency.bucket.payment_count', n, { count: n }) : t('currency.bucket.no_payments');
       }
       head.insertBefore(sum, addBtn);
     }
@@ -983,8 +985,8 @@ function render() {
       const handle = document.createElement('span');
       handle.className = 'row-drag';
       handle.textContent = '⠿'; // braille 6-dot grip
-      handle.title = 'Drag to reorder';
-      handle.setAttribute('aria-label', 'Drag to reorder');
+      handle.title = t('currency.row.drag_title');
+      handle.setAttribute('aria-label', t('currency.row.drag_title'));
       handle.draggable = true;
       handle.addEventListener('dragstart', (e) => {
         dragState = { bucketId: bucket.id, apiId: ref.apiId };
@@ -1044,17 +1046,17 @@ function render() {
       const itemTip = () => {
         let h = `<div class="tip-head">${esc(it.text)}</div>`;
         const catLabel = (catalog[ref.apiId] && catalog[ref.apiId].category) || ref.category || '';
-        h += `<div class="tip-sub">${esc(catLabel)}${isBest ? ' · ★ best value' : ''}</div>`;
-        if (it.price != null) h += `<div class="tip-step"><span>·</span><span>Exalt value: ${fmt(it.price)} ex${window.divAsideHtml(it.price, 'exalted')}</span></div>`;
-        if (cross != null) h += `<div class="tip-step"><span>·</span><span>Value in ${esc(base.text)}: ${fmt(cross)}</span></div>`;
+        h += `<div class="tip-sub">${esc(catLabel)}${isBest ? ' ' + t('currency.tip.best_value_suffix') : ''}</div>`;
+        if (it.price != null) h += `<div class="tip-step"><span>·</span><span>${t('currency.tip.exalt_value', { amount: fmt(it.price), divAside: window.divAsideHtml(it.price, 'exalted') })}</span></div>`;
+        if (cross != null) h += `<div class="tip-step"><span>·</span><span>${t('currency.tip.value_in_base', { base: esc(base.text), amount: fmt(cross) })}</span></div>`;
         if (payCosts[ref.apiId] != null) {
           // no "(1.0 div)" when the base IS divine - that's tautology, not help
           const costAside = base.apiId === 'divine' ? '' : window.divAsideHtml(payCosts[ref.apiId], 'exalted');
-          h += `<div class="tip-step"><span>·</span><span>Buying 1 ${esc(base.text)} with this costs ≈ ${fmt(payCosts[ref.apiId])} ex${costAside}</span></div>`;
+          h += `<div class="tip-step"><span>·</span><span>${t('currency.tip.buying_cost', { base: esc(base.text), amount: fmt(payCosts[ref.apiId]), divAside: costAside })}</span></div>`;
           if (payBadge) {
             h += payBadge.good
-              ? `<div class="tip-step"><span>·</span><span>★ Cheapest - <b class="up">${payBadge.pct.toFixed(1)}% cheaper</b> than the next-best payment.</span></div>`
-              : `<div class="tip-step"><span>·</span><span><b class="down">${payBadge.pct.toFixed(1)}% more expensive</b> than the ★ row.</span></div>`;
+              ? `<div class="tip-step"><span>·</span><span>${t('currency.tip.cheapest_badge', { pct: payBadge.pct.toFixed(1) })}</span></div>`
+              : `<div class="tip-step"><span>·</span><span>${t('currency.tip.expensive_badge', { pct: payBadge.pct.toFixed(1) })}</span></div>`;
           }
         }
         return h;
@@ -1078,9 +1080,9 @@ function render() {
         const chip = document.createElement('span');
         chip.className = 'best-chip';
         chip.textContent = payBadge
-          ? `BEST +${payBadge.pct.toFixed(payBadge.pct >= 10 ? 0 : 1)}%`
-          : 'BEST';
-        chip.title = 'Best value - cheapest way to buy 1 ' + (bucket.base.text || bucket.base.apiId);
+          ? t('currency.row.best_chip_pct', { pct: payBadge.pct.toFixed(payBadge.pct >= 10 ? 0 : 1) })
+          : t('currency.row.best_chip');
+        chip.title = t('currency.row.best_chip_title', { base: bucket.base.text || bucket.base.apiId });
         name.appendChild(chip);
       } else if (payBadge) {
         // other rows: dim red penalty vs the best row
@@ -1104,7 +1106,7 @@ function render() {
         sparkCell.appendChild(dl);
         attachSparkTip(sparkCell, series, it.text, base.text, bucket.base.apiId === 'exalted');
       } else {
-        sparkCell.title = 'No price history available for this pair yet.';
+        sparkCell.title = t('currency.row.no_history_title');
       }
       row.appendChild(sparkCell);
 
@@ -1132,22 +1134,22 @@ function render() {
           sub.textContent = `1 : ${fmt(1 / shown)}`;
         } else {
           const unit = abbr(it.text) || shortName(it.text).toLowerCase();
-          sub.textContent = `${unit} each`;
+          sub.textContent = t('currency.row.unit_each', { unit });
         }
         main.appendChild(sub);
         attachTip(main, () => {
           const b = abbr(base.text) || '';
           const it2 = shortName(it.text);
-          const src = isManual ? 'your manual rate'
-            : direct != null ? 'GGG exchange, traded on this exact pair'
-              : `estimated via ${esc(nameOf('exalted'))} - this pair has no direct market`;
+          const src = isManual ? t('currency.tip.rate_source_manual')
+            : direct != null ? t('currency.tip.rate_source_exchange')
+              : t('currency.tip.rate_source_estimated', { exalted: esc(nameOf('exalted')) });
           // when the price is <1, the inverse (pay-currency per 1 of what you're
           // buying) is the number people actually want - lead with it, show both
           const head = shown > 0 && shown < 1
-            ? `<div class="tip-head">${fmt(1 / shown)} ${esc(it2)} per 1 ${esc(b)}</div>` +
-              `<div class="tip-sub">${fmt(shown)} ${esc(b)} per 1 ${esc(it2)}</div>`
-            : `<div class="tip-head">${fmt(shown)} ${esc(b)} per 1 ${esc(it2)}</div>`;
-          return head + `<div class="tip-step"><span>·</span><span class="tip-dim2">Source: ${src}.</span></div>`;
+            ? `<div class="tip-head">${t('currency.tip.value_per_one', { value: fmt(1 / shown), currencyX: esc(it2), currencyY: esc(b) })}</div>` +
+              `<div class="tip-sub">${t('currency.tip.value_per_one', { value: fmt(shown), currencyX: esc(b), currencyY: esc(it2) })}</div>`
+            : `<div class="tip-head">${t('currency.tip.value_per_one', { value: fmt(shown), currencyX: esc(b), currencyY: esc(it2) })}</div>`;
+          return head + `<div class="tip-step"><span>·</span><span class="tip-dim2">${t('currency.tip.rate_source_line', { src })}</span></div>`;
         });
         if (direct != null && cross != null) {
           // no second ratio in the row: it was the same price from a weaker
@@ -1172,12 +1174,11 @@ function render() {
             main.classList.add('stale');
             const staleTip = () => {
               lastArbCtx = { baseId, itemId, pairOnly: true };
-              return `<div class="tip-head">Pair rate likely stale</div>` +
-              `<div class="tip-sub">${esc(nameOf(itemId))} in ${esc(nameOf(baseId))}</div>` +
-              `<div class="tip-step"><span>·</span><span>Smoothed market price: ${fmt(cross)}</span></div>` +
-              `<div class="tip-step"><span>·</span><span>Direct pair's last executed trades: ${fmt(direct)}</span></div>` +
-              `<div class="tip-roi">These disagree by ${gap.toFixed(0)}%. A gap this big usually means the pair ` +
-              `trades thinly and its ratio reflects old fills - not a price you can get. Trust the main price; check in-game.</div>`;
+              return `<div class="tip-head">${t('currency.tip.stale_head')}</div>` +
+              `<div class="tip-sub">${t('currency.tip.stale_sub', { item: esc(nameOf(itemId)), base: esc(nameOf(baseId)) })}</div>` +
+              `<div class="tip-step"><span>·</span><span>${t('currency.tip.stale_smoothed', { value: fmt(cross) })}</span></div>` +
+              `<div class="tip-step"><span>·</span><span>${t('currency.tip.stale_direct', { value: fmt(direct) })}</span></div>` +
+              `<div class="tip-roi">${t('currency.tip.stale_explanation', { pct: gap.toFixed(0) })}</div>`;
             };
             attachTip(gapCol, staleTip);
           } else {
@@ -1194,7 +1195,7 @@ function render() {
               attachTip(gapCol, volTip);
             } else {
               gapCol.textContent = '';
-              gapCol.title = 'No exchange volume published for this pair yet.';
+              gapCol.title = t('currency.row.no_volume_title');
             }
           }
           if (hot) {
@@ -1206,7 +1207,7 @@ function render() {
               attachTip(arbCol, () => arbTooltipHtml(baseId, itemId, direct, cross, gap));
             } else {
               arbCol.textContent = ' - ';
-              arbCol.title = 'No profitable route at current rates.';
+              arbCol.title = t('currency.row.no_route_title');
             }
           }
         }
@@ -1223,8 +1224,8 @@ function render() {
       editBtn.className = 'row-edit';
       editBtn.textContent = '✎';
       editBtn.title = isManual
-        ? 'Edit or clear your manual rate for this pair'
-        : 'Manually override this pair\'s exchange rate';
+        ? t('currency.row.edit_rate_title_manual')
+        : t('currency.row.edit_rate_title_default');
       editBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const openEditor = () => startInlineOverride(row, ref, bucket.base, direct != null ? direct : cross);
@@ -1241,7 +1242,7 @@ function render() {
       actions.appendChild(editBtn);
       const del = document.createElement('button');
       del.className = 'row-del';
-      del.title = 'Remove';
+      del.title = t('currency.row.remove_title');
       del.textContent = '✕';
       del.addEventListener('click', () => removeCurrencyPair(bucket, ref.apiId));
       actions.appendChild(del);
@@ -1257,7 +1258,7 @@ function render() {
   if (!config.buckets || config.buckets.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'buckets-empty';
-    empty.textContent = 'Track the cheapest way to buy a currency. Click "+ Add currency" below to start.';
+    empty.textContent = t('currency.bucket.empty_state');
     container.appendChild(empty);
   }
 
@@ -1294,13 +1295,13 @@ async function openPicker(mode) {
   pickerMode = mode;
   $('picker').classList.remove('hidden');
   $('picker-search').value = '';
-  $('picker-list').innerHTML = '<div class="picker-empty">Loading currencies…</div>';
+  $('picker-list').innerHTML = `<div class="picker-empty">${t('currency.picker.loading')}</div>`;
   $('picker-search').focus();
 
   if (!fullCatalog) {
     const res = await window.api.fetchCatalog();
     if (res.error) {
-      $('picker-list').innerHTML = `<div class="picker-empty">Failed: ${res.error}</div>`;
+      $('picker-list').innerHTML = `<div class="picker-empty">${t('currency.picker.fetch_failed', { error: res.error })}</div>`;
       return;
     }
     fullCatalog = res;
@@ -1336,13 +1337,15 @@ function renderPickerList(query) {
 
   for (const group of fullCatalog.groups) {
     const matches = group.items.filter(
-      (i) => !excluded.has(i.apiId) && (!q || i.text.toLowerCase().includes(q))
+      (i) => !excluded.has(i.apiId) && (!q
+        || i.text.toLowerCase().includes(q)
+        || window.gameName(i.text).toLowerCase().includes(q))
     );
     if (matches.length === 0) continue;
 
     const cat = document.createElement('div');
     cat.className = 'picker-cat';
-    cat.textContent = group.label;
+    cat.textContent = window.gameName(group.label);
     list.appendChild(cat);
 
     for (const item of matches) {
@@ -1355,7 +1358,7 @@ function renderPickerList(query) {
       el.appendChild(img);
       const nm = document.createElement('span');
       nm.className = 'pi-name';
-      nm.textContent = item.text;
+      nm.textContent = window.gameName(item.text); // feed is English; show the client's name
       el.appendChild(nm);
       const pr = document.createElement('span');
       pr.className = 'pi-price';
@@ -1363,8 +1366,8 @@ function renderPickerList(query) {
       // currency reads "31 div" instead of overflowing
       if (item.price != null) {
         const d = divEquivalent(item.price);
-        pr.textContent = d ? `${d} div` : `${fmt(item.price)} ex`;
-        pr.title = `${fmt(item.price)} exalted${d ? ` (${d} divine)` : ''}`;
+        pr.textContent = d ? t('currency.picker.price_div', { amount: d }) : t('currency.picker.price_ex', { amount: fmt(item.price) });
+        pr.title = t('currency.picker.price_title', { amount: fmt(item.price), divine_suffix: d ? ` (${d} divine)` : '' });
       } else {
         pr.textContent = '';
       }
@@ -1378,7 +1381,7 @@ function renderPickerList(query) {
   }
 
   if (shown === 0) {
-    list.innerHTML = '<div class="picker-empty">No matches</div>';
+    list.innerHTML = `<div class="picker-empty">${t('currency.picker.no_matches')}</div>`;
   }
 }
 
@@ -1444,8 +1447,8 @@ function showOvrMenu(anchor, onEdit, onClear) {
     b.addEventListener('click', (ev) => { ev.stopPropagation(); cleanup(); fn(); });
     m.appendChild(b);
   };
-  mk('✎ edit rate', 'Change your manual rate for this pair', onEdit);
-  mk('✕ clear rate', 'Remove the manual rate and return to market data', onClear);
+  mk(t('currency.menu.edit_rate'), t('currency.menu.edit_rate_title'), onEdit);
+  mk(t('currency.menu.clear_rate'), t('currency.menu.clear_rate_title'), onClear);
   document.body.appendChild(m);
   const r = anchor.getBoundingClientRect();
   m.style.left = `${Math.max(6, Math.min(window.innerWidth - m.offsetWidth - 6, r.left - m.offsetWidth + r.width))}px`;
@@ -1493,11 +1496,11 @@ function startInlineOverride(row, ref, base, effRate) {
   const ok = document.createElement('button');
   ok.className = 'mini-btn';
   ok.textContent = '✓';
-  ok.title = 'Save (Enter)';
+  ok.title = t('currency.inline.save_title');
   const cancel = document.createElement('button');
   cancel.className = 'mini-btn';
   cancel.textContent = '✕';
-  cancel.title = 'Cancel (Esc)';
+  cancel.title = t('currency.inline.cancel_title');
 
   ed.append(itemIn, labA, eq, baseIn, labB, ok, cancel);
   row.appendChild(ed);
@@ -1531,7 +1534,7 @@ function renderDefaults() {
   if (items.length === 0) {
     const empty = document.createElement('span');
     empty.className = 'chips-empty';
-    empty.textContent = 'none - add with +';
+    empty.textContent = t('currency.settings.defaults_empty');
     wrap.appendChild(empty);
     return;
   }
@@ -1548,7 +1551,7 @@ function renderDefaults() {
     chip.appendChild(nm);
     const del = document.createElement('button');
     del.textContent = '✕';
-    del.title = 'Remove default';
+    del.title = t('currency.settings.remove_default_title');
     del.addEventListener('click', () => {
       config.defaultItems = config.defaultItems.filter((x) => x.apiId !== d.apiId);
       window.api.setDefaults(config.defaultItems, config.autoAddDefaults);
@@ -1740,7 +1743,7 @@ async function initSettings() {
     input.value = getCur();
     input.addEventListener('focus', () => {
       input.classList.add('recording');
-      input.value = 'press keys…';
+      input.value = t('currency.settings.hotkey_recording');
     });
     input.addEventListener('blur', () => {
       input.classList.remove('recording');
@@ -1757,7 +1760,7 @@ async function initSettings() {
         input.blur();
         showStatus(null);
       } else {
-        showStatus(`Could not register "${acc}" - already in use or taken by another app.`);
+        showStatus(t('currency.settings.hotkey_conflict', { acc }));
       }
     });
   };
@@ -1812,7 +1815,7 @@ async function initSettings() {
     if (!rows.length) {
       const empty = document.createElement('div');
       empty.className = 'cmdhk-empty';
-      empty.textContent = 'Nothing bound yet - add a hotkey and pick its command.';
+      empty.textContent = t('currency.settings.cmdhk_empty');
       cmdRowsEl.appendChild(empty);
     }
     rows.forEach((row, i) => {
@@ -1821,7 +1824,7 @@ async function initSettings() {
       const isCustom = !safeCommands.includes(row.command);
       const cmdSel = document.createElement('select');
       cmdSel.className = 'cmdhk-cmd';
-      cmdSel.title = 'The chat command this key sends';
+      cmdSel.title = t('currency.settings.cmdhk_select_title');
       for (const c of safeCommands) {
         const o = document.createElement('option');
         o.value = c; o.textContent = c;
@@ -1829,7 +1832,7 @@ async function initSettings() {
         cmdSel.appendChild(o);
       }
       const oCustom = document.createElement('option');
-      oCustom.value = '__custom__'; oCustom.textContent = 'Custom…';
+      oCustom.value = '__custom__'; oCustom.textContent = t('currency.settings.cmdhk_custom_option');
       if (isCustom) oCustom.selected = true;
       cmdSel.appendChild(oCustom);
       cmdSel.addEventListener('change', async () => {
@@ -1847,8 +1850,8 @@ async function initSettings() {
       if (isCustom) {
         const custom = document.createElement('input');
         custom.className = 'cmdhk-custom' + (cmdOk(row.command) ? '' : ' cmdhk-bad');
-        custom.placeholder = '/itemfilter Strict';
-        custom.title = 'Any single /command, with or without arguments. Destructive commands (/destroy) are blocked.';
+        custom.placeholder = t('currency.settings.cmdhk_custom_placeholder');
+        custom.title = t('currency.settings.cmdhk_custom_title');
         custom.value = row.command === '/' ? '' : row.command;
         custom.addEventListener('input', () => {
           custom.classList.toggle('cmdhk-bad', !cmdOk(custom.value));
@@ -1866,9 +1869,9 @@ async function initSettings() {
       const field = document.createElement('div');
       field.className = 'kb-field';
       const input = document.createElement('input');
-      input.className = 'kb-input'; input.readOnly = true; input.placeholder = 'click, then press keys';
+      input.className = 'kb-input'; input.readOnly = true; input.placeholder = t('currency.settings.cmdhk_bind_placeholder');
       const hint = document.createElement('span');
-      hint.className = 'kb-hint'; hint.textContent = 'click to rebind';
+      hint.className = 'kb-hint'; hint.textContent = t('currency.settings.cmdhk_bind_hint');
       field.appendChild(input); field.appendChild(hint);
       div.appendChild(field);
       bindHotkeyInput(input, () => row.accelerator || '', async (acc) => {
@@ -1878,7 +1881,7 @@ async function initSettings() {
         return true;
       });
       const del = document.createElement('button');
-      del.className = 'cmdhk-del'; del.textContent = '✕'; del.title = 'Remove this hotkey';
+      del.className = 'cmdhk-del'; del.textContent = '✕'; del.title = t('currency.settings.cmdhk_remove_title');
       del.addEventListener('click', async () => {
         rows.splice(i, 1);
         await saveCmdHotkeys();
@@ -1910,7 +1913,7 @@ async function initSettings() {
     for (const l of leagues) {
       const opt = document.createElement('option');
       opt.value = l.value;
-      opt.textContent = l.isCurrent ? `${l.value} ● current` : l.value;
+      opt.textContent = l.isCurrent ? t('currency.settings.league_current', { league: l.value }) : l.value;
       sel.appendChild(opt);
     }
     sel.value = config.league || 'auto';
@@ -2007,6 +2010,32 @@ async function initSettings() {
     if (t) t.checked = !!checked;
     if (TAB_TOGGLE_CFG[visKey]) config[TAB_TOGGLE_CFG[visKey]] = !!checked;
   };
+  // ---- language ----
+  // One control drives BOTH the interface catalog and the item parser; they can't
+  // drift apart. Changing it reloads the window rather than re-rendering in place:
+  // the parser has to re-init against different data files, and a reload re-runs
+  // every module's own boot path instead of us trying to reproduce it by hand.
+  {
+    const sel = $('lang-select');
+    if (sel && window.I18N) {
+      for (const l of window.I18N.LANGS) {
+        const o = document.createElement('option');
+        o.value = l.code;
+        // each language names itself - a Russian speaker looks for "Русский". No
+        // coverage percentage: that's a QA metric, and a player reading "(97%)" learns
+        // nothing except that the app looks unfinished. Shown only when debugging.
+        o.textContent = l.label + (window.api.debug && l.code !== 'en'
+          ? ` (${window.I18N.coverage(l.code).pct}%)` : '');
+        sel.appendChild(o);
+      }
+      sel.value = window.I18N.lang();
+      sel.addEventListener('change', async () => {
+        try { await window.api.setLanguage(sel.value); } catch {}
+        logAction(`language: ${sel.value}`);
+        location.reload();
+      });
+    }
+  }
   wireTabToggle('show-regex-tab', 'showRegexTab', 'regex');
   wireTabToggle('show-grandex-tab', 'showGrandExTab', 'grandex');
   wireTabToggle('show-networth-tab', 'showNetWorthTab', 'networth');
@@ -2014,7 +2043,7 @@ async function initSettings() {
 
   // Live-rate sliders (Tab-visible + Background). 4 stops: quiet/low/medium/high.
   const RATE_KEYS = ['quiet', 'low', 'medium', 'high'];
-  const RATE_LABEL = { quiet: 'Quiet', low: 'Low', medium: 'Medium', high: 'High' };
+  const RATE_LABEL = { quiet: t('currency.settings.rate_quiet'), low: t('currency.settings.rate_low'), medium: t('currency.settings.rate_medium'), high: t('currency.settings.rate_high') };
   const wireRateSlider = (sliderId, valueId, cfgKey, defIdx) => {
     const s = $(sliderId), v = $(valueId);
     if (!s) return;
@@ -2063,20 +2092,20 @@ async function initSettings() {
   const loginStatus = $('poe-login-status');
   loginBtn.addEventListener('click', async () => {
     loginBtn.disabled = true;
-    loginStatus.textContent = 'log in in the window that opened…';
+    loginStatus.textContent = t('currency.settings.poe_login_wait');
     try {
       await window.api.poeLogin();
-      loginStatus.textContent = 'checking session…';
+      loginStatus.textContent = t('currency.settings.poe_login_checking');
       const league = config.league && config.league !== 'auto'
         ? config.league
         : ((await window.api.trade2Leagues())[0] || 'Standard');
       const authed = await window.api.trade2AuthCheck(league, true);
       loginStatus.textContent = authed
-        ? '✓ logged in - weighted searches run on the trade site'
-        : 'not logged in - fungible rolls match locally';
+        ? t('currency.settings.poe_login_success')
+        : t('currency.settings.poe_login_not_authed');
       if (window.ItemTab && window.ItemTab.setAuthed) window.ItemTab.setAuthed(authed);
     } catch (err) {
-      loginStatus.textContent = `check failed: ${err.message}`;
+      loginStatus.textContent = t('currency.settings.poe_login_check_failed', { error: err.message });
     }
     loginBtn.disabled = false;
   });
@@ -2092,19 +2121,19 @@ function renderOverridesGrid() {
   // axes match Ange's in-game screen: rows = what you WANT (left), columns = what you HAVE (top)
   const corner = document.createElement('span');
   corner.className = 'ovr-h ovr-corner';
-  corner.innerHTML = 'want&nbsp;▾&nbsp;&nbsp;have&nbsp;▸';
-  corner.title = 'Rows are the currency you WANT, columns are the currency you HAVE - like Ange (want on the left).';
+  corner.innerHTML = t('currency.settings.ovr_corner_label');
+  corner.title = t('currency.settings.ovr_corner_title');
   grid.appendChild(corner);
   for (const from of OVR_IDS) {
     const h = document.createElement('span');
     h.className = 'ovr-h';
-    h.textContent = `have ${OVR_SHORT[from]}`;
+    h.textContent = t('currency.settings.ovr_have_label', { short: OVR_SHORT[from] });
     grid.appendChild(h);
   }
   for (const to of OVR_IDS) {
     const lab = document.createElement('span');
     lab.className = 'ovr-h';
-    lab.textContent = `want ${OVR_SHORT[to]}`;
+    lab.textContent = t('currency.settings.ovr_want_label', { short: OVR_SHORT[to] });
     grid.appendChild(lab);
     for (const from of OVR_IDS) {
       if (to === from) {
@@ -2122,7 +2151,7 @@ function renderOverridesGrid() {
       if (typeof cur === 'number' && cur > 0) { inp.value = String(cur); inp.classList.add('set'); }
       const mkt = bestMarketRate(from, to);
       inp.placeholder = mkt != null ? fmt(mkt) : '-';
-      inp.title = `I HAVE ${nameOf(from)}, I WANT ${nameOf(to)}: how many ${nameOf(to)} for 1 ${nameOf(from)}? Accepts 0.25, 1/4, or 1:4. Blank = market.`;
+      inp.title = t('currency.settings.ovr_cell_title', { from: nameOf(from), to: nameOf(to) });
       // auto-apply: committing a cell (Enter or click-out) saves it immediately and
       // recomputes routes; clearing it reverts that pair to live market data.
       const commit = () => {
@@ -2156,18 +2185,18 @@ function showUpdateBanner(s) {
   const btn = $('btn-update');
   banner.classList.remove('hidden');
   if (s.status === 'downloading') {
-    text.textContent = `Downloading update v${s.version}...`;
+    text.textContent = t('currency.update.downloading', { version: s.version });
     btn.classList.add('hidden');
   } else if (s.status === 'ready') {
-    text.textContent = `Version ${s.version} is ready to install.`;
-    btn.textContent = 'Update & restart';
+    text.textContent = t('currency.update.ready', { version: s.version });
+    btn.textContent = t('currency.update.btn_restart');
     btn.classList.remove('hidden');
   } else if (s.status === 'installing') {
-    text.textContent = `Installing v${s.version}... the app will close and restart itself. This can take up to a minute.`;
+    text.textContent = t('currency.update.installing', { version: s.version });
     btn.classList.add('hidden');
   } else if (s.status === 'manual') {
-    text.textContent = `Version ${s.version} is available.`;
-    btn.textContent = 'Download';
+    text.textContent = t('currency.update.available', { version: s.version });
+    btn.textContent = t('currency.update.btn_download');
     btn.classList.remove('hidden');
   }
 }
@@ -2189,17 +2218,17 @@ async function updateFeedStatus() {
     const s = await window.api.getFeedStatus();
     const el = $('feed-status');
     if (s.live) {
-      el.textContent = `live service feed (${s.upstream})`;
+      el.textContent = t('currency.footer.feed_live', { upstream: s.upstream });
       el.classList.add('live');
       el.title = s.base;
     } else if (s.cx) {
-      el.textContent = 'GGG exchange (official) + poe2scout';
+      el.textContent = t('currency.footer.feed_ggg');
       el.classList.add('live');
-      el.title = `Rates use the freshest real source per pair: the live trade-site order book (what you can execute right now, refreshed while the overlay is open), backed by GGG's official Currency Exchange digests (${s.cxPairs} markets of executed trades, hourly). poe2scout supplies icons and history, and is the fallback if GGG data is unreachable. Your manual rate overrides always win.`;
+      el.title = t('currency.footer.feed_ggg_title', { cxPairs: s.cxPairs });
     } else {
-      el.textContent = 'public API (poe2scout)';
+      el.textContent = t('currency.footer.feed_public');
       el.classList.remove('live');
-      el.title = 'Direct connection to the public poe2scout API';
+      el.title = t('currency.footer.feed_public_title');
     }
   } catch {}
 }
@@ -2301,15 +2330,15 @@ function openNotes(mode) {
   }
 
   if (notesMode === 'history') {
-    $('notes-title').textContent = 'Release notes';
-    $('notes-sub').textContent = 'Every update, newest first';
+    $('notes-title').textContent = t('currency.notes.title_history');
+    $('notes-sub').textContent = t('currency.notes.subtitle_history');
     $('notes-close').classList.remove('hidden'); // history: X is fine
-    $('notes-dismiss').textContent = 'Close';
+    $('notes-dismiss').textContent = t('currency.notes.btn_close');
   } else {
-    $('notes-title').textContent = "What's new";
-    $('notes-sub').textContent = `Updated to v${RELEASE_NOTES[0].version}`;
+    $('notes-title').textContent = t('currency.notes.title_latest');
+    $('notes-sub').textContent = t('currency.notes.updated_to', { version: RELEASE_NOTES[0].version });
     $('notes-close').classList.add('hidden'); // one-time popup: button-only dismiss
-    $('notes-dismiss').textContent = 'Got it';
+    $('notes-dismiss').textContent = t('currency.notes.btn_got_it');
   }
   body.scrollTop = 0; // open at the newest release
   modal.classList.remove('hidden');
@@ -2351,12 +2380,12 @@ let fbKind = 'feedback';
 function openFeedback(kind) {
   fbKind = kind === 'bug' ? 'bug' : 'feedback';
   const isBug = fbKind === 'bug';
-  $('fb-title').textContent = isBug ? 'Report a bug' : 'Feedback';
+  $('fb-title').textContent = isBug ? t('currency.feedback.title_bug') : t('currency.feedback.title_feedback');
   $('fb-type-row').classList.toggle('hidden', isBug); // bugs need no type picker
   $('fb-note').classList.toggle('hidden', !isBug);
   $('fb-details').placeholder = isBug
-    ? 'What happened? Steps to reproduce, what you expected...'
-    : 'What would you like to see, or what did you think?';
+    ? t('currency.feedback.placeholder_bug')
+    : t('currency.feedback.placeholder_feedback');
   $('fb-details').value = '';
   $('fb-contact').value = '';
   $('fb-status').textContent = '';
@@ -2370,7 +2399,7 @@ function closeFeedback() { $('feedback-modal').classList.add('hidden'); }
 // accidental dismiss (backdrop / Esc) shouldn't throw away a written report
 async function maybeCloseFeedback() {
   if ($('fb-details').value.trim()
-    && !(await confirmDialog('Discard this report?', { confirmLabel: 'Discard', danger: true }))) return;
+    && !(await confirmDialog(t('currency.feedback.discard_confirm'), { confirmLabel: t('currency.feedback.btn_discard'), danger: true }))) return;
   closeFeedback();
 }
 
@@ -2389,8 +2418,8 @@ function confirmDialog(message, opts = {}) {
       + '<div class="cf-msg"></div>'
       + (hasBox ? '<label class="cf-skip"><input type="checkbox" class="cf-skip-box"><span></span></label>' : '')
       + '<div class="cf-actions">'
-      + `<button class="cf-btn cf-cancel">${esc(opts.cancelLabel || 'Cancel')}</button>`
-      + `<button class="cf-btn cf-ok${opts.danger ? ' danger' : ''}">${esc(opts.confirmLabel || 'OK')}</button>`
+      + `<button class="cf-btn cf-cancel">${esc(opts.cancelLabel || t('currency.dialog.btn_cancel_default'))}</button>`
+      + `<button class="cf-btn cf-ok${opts.danger ? ' danger' : ''}">${esc(opts.confirmLabel || t('currency.dialog.btn_ok_default'))}</button>`
       + '</div></div>';
     overlay.querySelector('.cf-msg').textContent = String(message == null ? '' : message);
     if (hasBox) overlay.querySelector('.cf-skip span').textContent = opts.checkboxLabel;
@@ -2414,7 +2443,7 @@ async function sendFeedback() {
   if (!details) { $('fb-details').focus(); return; }
   const status = $('fb-status');
   $('fb-send').disabled = true;
-  status.textContent = 'Sending...';
+  status.textContent = t('currency.feedback.status_sending');
   status.className = 'fb-status';
   const isBug = fbKind === 'bug';
   const ok = await window.api.submitFeedback({
@@ -2425,11 +2454,11 @@ async function sendFeedback() {
     log: isBug ? ACTIVITY_LOG.join('\n') : ''
   });
   if (ok) {
-    status.textContent = 'Sent - thank you!';
+    status.textContent = t('currency.feedback.status_sent');
     status.className = 'fb-status ok';
     setTimeout(closeFeedback, 1100);
   } else {
-    status.textContent = 'Could not send - try again later.';
+    status.textContent = t('currency.feedback.status_failed');
     status.className = 'fb-status err';
     $('fb-send').disabled = false;
   }
@@ -2466,7 +2495,7 @@ async function main() {
   onActivate('btn-release-notes', () => openNotes('history'));
   // clicking the version in the titlebar opens the patch-notes viewer
   const verEl = $('app-version');
-  if (verEl) { verEl.title = 'View patch notes'; verEl.addEventListener('click', () => openNotes('history')); }
+  if (verEl) { verEl.title = t('currency.footer.version_title'); verEl.addEventListener('click', () => openNotes('history')); }
   $('notes-close').addEventListener('click', closeNotes);
   $('notes-dismiss').addEventListener('click', closeNotes);
   // backdrop click closes only the Settings viewer; the one-time popup is button-only
@@ -2587,10 +2616,10 @@ async function main() {
     if (btn && lastArbCopyText) {
       navigator.clipboard.writeText(lastArbCopyText).then(
         () => {
-          btn.textContent = 'copied!';
-          setTimeout(() => { btn.textContent = '⧉ copy'; }, 1400);
+          btn.textContent = t('currency.arb.copy_success');
+          setTimeout(() => { btn.textContent = t('currency.arb.copy_route_btn'); }, 1400);
         },
-        () => { btn.textContent = 'copy failed'; setTimeout(() => { btn.textContent = '⧉ copy'; }, 1400); }
+        () => { btn.textContent = t('currency.arb.copy_failed'); setTimeout(() => { btn.textContent = t('currency.arb.copy_route_btn'); }, 1400); }
       );
       return;
     }
@@ -2658,7 +2687,7 @@ async function main() {
   setInterval(() => {
     const fl = $('fresh-label');
     if (fl) fl.textContent = fetchedAt ? timeAgo(fetchedAt) : '';
-    $('btn-refresh').title = fetchedAt ? `Refresh prices - updated ${timeAgo(fetchedAt)}` : 'Refresh prices';
+    $('btn-refresh').title = fetchedAt ? t('currency.footer.refresh_title_updated', { time: timeAgo(fetchedAt) }) : t('currency.footer.refresh_title');
   }, 5000);
 
   render();

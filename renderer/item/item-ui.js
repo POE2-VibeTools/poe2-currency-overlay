@@ -9,10 +9,10 @@
 
   function ageStr(ts) {
     const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
-    if (s < 60) return `${s}s ago`;
-    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-    if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-    return `${Math.floor(s / 86400)}d ago`;
+    if (s < 60) return t('item.misc.age_seconds', { n: s });
+    if (s < 3600) return t('item.misc.age_minutes', { n: Math.floor(s / 60) });
+    if (s < 86400) return t('item.misc.age_hours', { n: Math.floor(s / 3600) });
+    return t('item.misc.age_days', { n: Math.floor(s / 86400) });
   }
   // a price worth a divine or more, quoted in exalts/chaos, is unreadable
   // ("8888 exalted") - append the divine equivalent (shared helper in renderer.js)
@@ -41,25 +41,25 @@
   // the left column first (see .misc-grid), so this order reads top-left down,
   // then top-right down.
   const MISC_FILTERS = [
-    ['corrupted', 'Corrupted'], ['crafted', 'Crafted'],
-    ['desecrated', 'Desecrated'], ['fractured_item', 'Fractured'],
-    ['twice_corrupted', 'Twice Corrupted'], ['sanctified', 'Sanctified'],
-    ['mirrored', 'Mirrored'],
+    ['corrupted', t('item.misc.filter_corrupted')], ['crafted', t('item.misc.filter_crafted')],
+    ['desecrated', t('item.misc.filter_desecrated')], ['fractured_item', t('item.misc.filter_fractured')],
+    ['twice_corrupted', t('item.misc.filter_twice_corrupted')], ['sanctified', t('item.misc.filter_sanctified')],
+    ['mirrored', t('item.misc.filter_mirrored')],
   ];
 
   // GGG's own status_filters enum, their wording. 'securable' is the game's
   // "Instant Buyout" - the listings you can actually buy - and our default.
   const SALE_TYPES = [
-    ['securable', 'Instant Buyout'],
-    ['available', 'Instant Buyout and In Person'],
-    ['onlineleague', 'In Person (Online in League)'],
-    ['online', 'In Person (Online)'],
-    ['any', 'Any'],
+    ['securable', t('item.search.sale_type_securable')],
+    ['available', t('item.search.sale_type_available')],
+    ['onlineleague', t('item.search.sale_type_onlineleague')],
+    ['online', t('item.search.sale_type_online')],
+    ['any', t('item.search.any_option')],
   ];
 
-  const KIND_LABEL = { 'added-rune': 'augment', rune: 'rune', implicit: 'implicit', crafted: 'crafted', desecrated: 'desecrated', fractured: 'fractured', enchant: 'enchant', skill: 'skill', sanctum: 'sanctum', property: 'property', pseudo: 'pseudo' };
+  const KIND_LABEL = { 'added-rune': t('item.mods.kind_augment'), rune: t('item.mods.kind_rune'), implicit: t('item.mods.kind_implicit'), crafted: t('item.mods.kind_crafted'), desecrated: t('item.mods.kind_desecrated'), fractured: t('item.mods.kind_fractured'), enchant: t('item.mods.kind_enchant'), skill: t('item.mods.kind_skill'), sanctum: t('item.mods.kind_sanctum'), property: t('item.mods.kind_property'), pseudo: t('item.mods.kind_pseudo') };
   // compact status abbreviations shown right of the name in result rows
-  const LI_FLAG_ABBR = { 'Corrupted': 'corr', 'Twice Corrupted': '2×corr', 'Desecrated': 'desec', 'Fractured': 'frac', 'Sanctified': 'sanct', 'Mirrored': 'mir', 'Split': 'split', 'Unmodifiable': 'unmod' };
+  const LI_FLAG_ABBR = { 'Corrupted': t('item.listings.flag_corrupted_abbr'), 'Twice Corrupted': t('item.listings.flag_twice_corrupted_abbr'), 'Desecrated': t('item.listings.flag_desecrated_abbr'), 'Fractured': t('item.listings.flag_fractured_abbr'), 'Sanctified': t('item.listings.flag_sanctified_abbr'), 'Mirrored': t('item.listings.flag_mirrored_abbr'), 'Split': t('item.listings.flag_split_abbr'), 'Unmodifiable': t('item.listings.flag_unmodifiable_abbr') };
 
   // "Adds 27 to 45 Fire damage to Attacks" reads as two numbers you then have to
   // average in your head - and the average IS the value the search ranks on. So
@@ -89,16 +89,16 @@
     const row = el('div', 'mod' + (mod.mode === 'off' ? ' off' : '') + (kind !== 'explicit' ? ` k-${esc(kind)}` : ''));
     if (!mod.id) {
       // no trade filter exists for this line (in this scope) - visibly unsearchable
-      const na = el('span', 'mode-pill off', 'n/a');
-      na.title = 'The trade site has no filter for this line - excluded from the search';
+      const na = el('span', 'mode-pill off', t('item.mods.na_label'));
+      na.title = t('item.mods.na_tooltip');
       row.appendChild(na);
       row.appendChild(el('span', 'mod-text', hlNums(mod.text || '')));
       return row;
     }
     if (mod.group) {
       // make-fungible member: matches if ANY mod in its group is present
-      const chip = el('span', 'or-chip', 'OR');
-      chip.title = 'Fungible group - listings match with any one of these mods';
+      const chip = el('span', 'or-chip', t('item.mods.or_chip'));
+      chip.title = t('item.mods.or_chip_tooltip');
       row.appendChild(chip);
     } else {
       // the pill IS the game's mod-type tag, now a flat colored rail tag. FUNGIBLE is
@@ -109,14 +109,14 @@
       // kind 'pseudo' = a REAL GGG pseudo stat line (total res etc.), shown as
       // its own row; the pseudo-mode styling doubles as its look when active
       const pill = el('span', `mode-pill k-${esc(kind)} ${kind === 'pseudo' && mode !== 'off' ? 'pseudo' : mode}`,
-        mode === 'pseudo' ? 'fungible' : kindLabel);
+        mode === 'pseudo' ? t('item.mods.kind_fungible') : kindLabel);
       pill.onclick = () => h.onModeToggle && h.onModeToggle(i);
-      pill.title = mode === 'off' ? 'Off - click to include in the search'
+      pill.title = mode === 'off' ? t('item.mods.pill_tooltip_off')
         : kind === 'pseudo'
           ? (mod.editableMin
-            ? 'GGG pseudo stat: chaos resistance must EXIST on the listing; type a minimum to enforce an amount. Click to turn off.'
-            : 'GGG\'s own pseudo stat - resistances totaled, any element mix matches. Click to turn off.')
-          : 'Click to cycle: on / fungible / off';
+            ? t('item.mods.pill_tooltip_pseudo_editable')
+            : t('item.mods.pill_tooltip_pseudo_fixed'))
+          : t('item.mods.pill_tooltip_cycle');
       row.appendChild(pill);
     }
 
@@ -135,9 +135,14 @@
     const showSlider = opts && opts.__showSliders !== false;
     const hasSlider = !!(showSlider && mod.sliderMin != null && mod.sliderMax != null && mod.mode !== 'off' && window.makeSlider);
     const fullRange = mod.sliderMin != null && mod.sliderMax != null && (mod.sliderMin !== mod.min || mod.sliderMax !== mod.max);
-    const bracketInner = (!hasSlider && fullRange) ? `${mod.min}-${mod.max} of ${mod.sliderMin}-${mod.sliderMax}` : `${mod.min}-${mod.max}`;
+    const bracketInner = (!hasSlider && fullRange) ? t('item.mods.tier_of_full_range', { min: mod.min, max: mod.max, sliderMin: mod.sliderMin, sliderMax: mod.sliderMax }) : `${mod.min}-${mod.max}`;
     const rangeHtml = showRange
-      ? `<span class="rng mod-rng" title="your tier${mod.tier != null ? ` (T${mod.tier})` : ''} rolls ${mod.min}-${mod.max}${fullRange ? `; full range ${mod.sliderMin}-${mod.sliderMax} across all tiers` : ''}">(${bracketInner})</span> `
+      ? `<span class="rng mod-rng" title="${esc(
+          (mod.tier != null
+            ? t('item.mods.tier_range_tier', { tier: mod.tier, min: mod.min, max: mod.max })
+            : t('item.mods.tier_range_base', { min: mod.min, max: mod.max }))
+          + (fullRange ? t('item.mods.tier_range_full', { sliderMin: mod.sliderMin, sliderMax: mod.sliderMax }) : '')
+        )}">(${bracketInner})</span> `
       : '';
     const textSpan = el('span', 'mod-text', rangeHtml + hlNums(withAvg(mod)));
     textSpan.title = mod.text || ''; // every row can ellipsize now - keep the full name on hover
@@ -153,8 +158,8 @@
     // the fold toggle also moves inline ("· 2 folded lines ▾")
     if (fold && fold.n) {
       const tog = el('span', 'fold-toggle' + (fold.open ? ' open' : ''),
-        `&middot; ${fold.n} folded ${fold.n === 1 ? 'line' : 'lines'} ${fold.open ? '&#9652;' : '&#9662;'}`);
-      tog.title = fold.open ? 'Hide the lines this replaces' : 'Show the lines this replaces (each can be turned back on)';
+        `${t('item.mods.fold_toggle_label', { count: fold.n, line: fold.n === 1 ? t('item.mods.fold_line_singular') : t('item.mods.fold_lines_plural') })} ${fold.open ? '&#9652;' : '&#9662;'}`);
+      tog.title = fold.open ? t('item.mods.fold_toggle_tooltip_hide') : t('item.mods.fold_toggle_tooltip_show');
       tog.onclick = () => fold.onToggle();
       textSpan.appendChild(tog);
     }
@@ -168,10 +173,10 @@
       inp = el('input', 'mm-min');
       inp.type = 'text';
       inp.value = effMin != null ? effMin : '';
-      if (mod.editableMin && effMin == null) inp.placeholder = 'any';
+      if (mod.editableMin && effMin == null) inp.placeholder = t('item.search.any_placeholder');
       inp.title = mod.value != null
-        ? `Search minimum (your roll: ${mod.value}). Type an exact number.`
-        : 'No minimum - the stat just has to exist. Type a number to enforce one.';
+        ? t('item.mods.min_tooltip_with_roll', { value: mod.value })
+        : t('item.mods.min_tooltip_no_min');
       inp.dataset.fk = `mod:${mod.id || i}:min`;
       inp.onchange = () => h.onValueChange && h.onValueChange(i, inp.value);
       seg.appendChild(stepWrap(inp, mod.value));
@@ -184,8 +189,8 @@
         const mx = el('input', 'mm-max');
         mx.type = 'text';
         mx.value = mod.searchMax != null ? mod.searchMax : '';
-        mx.placeholder = 'any';
-        mx.title = 'Search maximum - blank means no upper limit.';
+        mx.placeholder = t('item.search.any_placeholder');
+        mx.title = t('item.mods.max_tooltip');
         mx.dataset.fk = `mod:${mod.id || i}:max`;
         mx.onchange = () => h.onMaxChange(i, mx.value);
         seg.appendChild(stepWrap(mx, mod.value));
@@ -194,7 +199,7 @@
     }
     if (h.onModMenu) {
       const menu = el('span', 'mod-menu', '&#8942;'); // vertical ellipsis
-      menu.title = 'Make fungible with... / Add to garbage pool';
+      menu.title = t('item.mods.mod_menu_tooltip');
       menu.onclick = (ev) => h.onModMenu(i, ev);
       row.appendChild(menu);
     }
@@ -204,7 +209,7 @@
     if (hasSlider) {
       row.classList.add('has-track');
       const sl = el('div', 'mod-sl');
-      sl.title = `full range ${mod.sliderMin}-${mod.sliderMax} · your roll: ${mod.value}`;
+      sl.title = t('item.mods.slider_tooltip', { sliderMin: mod.sliderMin, sliderMax: mod.sliderMax, value: mod.value });
       row.appendChild(sl);
       window.makeSlider(sl, {
         min: mod.sliderMin,
@@ -212,7 +217,7 @@
         step: mod.sliderStep || 1,
         value: effMin != null ? effMin : mod.sliderMin,
         marker: mod.value,
-        markerTitle: `your roll: ${mod.value}`,
+        markerTitle: t('item.mods.slider_marker_tooltip', { value: mod.value }),
         onInput: (v) => { if (inp) inp.value = v; },
         onChange: (v) => h.onValueChange && h.onValueChange(i, String(v)),
       });
@@ -246,10 +251,10 @@
       if (inp.onchange) inp.onchange();
     };
     const dn = el('span', 'mm-step mm-dn');
-    dn.title = '-1';
+    dn.title = t('item.mods.stepper_down_tooltip');
     dn.onclick = () => step(-1);
     const up = el('span', 'mm-step mm-up');
-    up.title = '+1';
+    up.title = t('item.mods.stepper_up_tooltip');
     up.onclick = () => step(1);
     cell.appendChild(dn);
     cell.appendChild(inp);
@@ -265,8 +270,8 @@
     // top-left corner
     if (h.onBack) {
       const br = el('div', 'back-row');
-      const back = el('div', 'back-link', '&larr; searches');
-      back.title = 'Back to your search history';
+      const back = el('div', 'back-link', t('item.header.back_link'));
+      back.title = t('item.header.back_link_tooltip');
       back.onclick = () => h.onBack();
       br.appendChild(back);
       wrap.appendChild(br);
@@ -286,10 +291,10 @@
       // dead without one. Same predicate desecrate.js uses to pick that mod, so
       // the button can never offer a tab that finds nothing to reroll.
       const hasDes = (item.mods || []).some((m) => m.kind === 'desecrated' && !m.prop);
-      const d = el('span', 'des-corner' + (hasDes ? '' : ' off'), 'redesecrate?');
+      const d = el('span', 'des-corner' + (hasDes ? '' : ' off'), t('item.header.redesecrate_label'));
       d.title = hasDes
-        ? 'Omen of Light EV: is this item worth desecration rerolling?'
-        : 'Nothing to reroll - this item has no desecrated modifier.';
+        ? t('item.header.redesecrate_tooltip_active')
+        : t('item.header.redesecrate_tooltip_inactive');
       if (hasDes) d.onclick = () => h.onDesecrate();
       head.appendChild(d);
     }
@@ -297,25 +302,25 @@
     // to the item's OWN value (level / quality / socket count), blank max = no
     // upper limit, and none is ever lowered by the stat-range %.
     const ranges = [];
-    if (item.itemLevel != null && h.onIlvl) ranges.push(['ilvl', state.ilvlMin, state.ilvlMax, h.onIlvl, "Item level range. The minimum defaults to this item's level."]);
+    if (item.itemLevel != null && h.onIlvl) ranges.push([t('item.header.range_ilvl_label'), state.ilvlMin, state.ilvlMax, h.onIlvl, t('item.header.range_ilvl_tooltip')]);
     // gems: level is the price driver, so it defaults to this gem's EXACT level
     if (item.isGem && item.gemLevel != null && h.onGemLvl) {
-      ranges.push(['gem level', state.gemLvlMin, state.gemLvlMax, h.onGemLvl, item.gemLevelBonus > 0
-        ? `Gem level range. Your gear adds +${item.gemLevelBonus} levels, so the copy read level ${item.gemLevel + item.gemLevelBonus} - the search uses the gem's own level ${item.gemLevel}.`
-        : "Gem level range, defaulting to this gem's exact level. Gem prices step hard per level, so widen it deliberately."]);
+      ranges.push([t('item.header.range_gemlevel_label'), state.gemLvlMin, state.gemLvlMax, h.onGemLvl, item.gemLevelBonus > 0
+        ? t('item.header.range_gemlevel_tooltip_bonus', { bonus: item.gemLevelBonus, totalLevel: item.gemLevel + item.gemLevelBonus, gemLevel: item.gemLevel })
+        : t('item.header.range_gemlevel_tooltip_default')]);
     }
-    if (item.quality > 0 && h.onQual) ranges.push(['quality', state.qualMin, state.qualMax, h.onQual, "Quality range. The minimum defaults to this item's own quality."]);
-    if (item.sockets > 0 && h.onSock) ranges.push(['sockets', state.sockMin, state.sockMax, h.onSock, "Augmentable socket range. The minimum defaults to this item's own count."]);
+    if (item.quality > 0 && h.onQual) ranges.push([t('item.header.range_quality_label'), state.qualMin, state.qualMax, h.onQual, t('item.header.range_quality_tooltip')]);
+    if (item.sockets > 0 && h.onSock) ranges.push([t('item.header.range_sockets_label'), state.sockMin, state.sockMax, h.onSock, t('item.header.range_sockets_tooltip')]);
     let strip = null;
     if (ranges.length) {
       strip = el('div', 'hdr-ctrls');
       for (const [lab, lo, hi, fn, tip] of ranges) {
         const g = el('span', 'hc-grp');
-        g.title = tip + ' Blank max = no upper limit. Never lowered by the stat-range %.';
+        g.title = tip + ' ' + t('item.header.range_tooltip_suffix');
         g.appendChild(el('span', 'hc-lab', lab));
         const a = el('input', 'hc-in');
         a.type = 'text';
-        a.placeholder = 'any';
+        a.placeholder = t('item.search.any_placeholder');
         a.value = lo != null ? lo : '';
         a.dataset.fk = `hc:${lab}:min`;
         a.onchange = () => fn('min', a.value);
@@ -323,7 +328,7 @@
         g.appendChild(el('span', 'hc-dash', '&ndash;'));
         const b = el('input', 'hc-in');
         b.type = 'text';
-        b.placeholder = 'any';
+        b.placeholder = t('item.search.any_placeholder');
         b.value = hi != null ? hi : '';
         b.dataset.fk = `hc:${lab}:max`;
         b.onchange = () => fn('max', b.value);
@@ -347,15 +352,15 @@
     // the charge/duration mods below are the searchable handles)
     if (item.charm) {
       const facts = [];
-      if (item.charm.lasts) facts.push(`Lasts <b>${esc(item.charm.lasts)}s</b>`);
-      if (item.charm.consumes) facts.push(`Consumes <b>${esc(item.charm.consumes)}</b> Charges per use`);
+      if (item.charm.lasts) facts.push(t('item.header.charm_lasts', { seconds: esc(item.charm.lasts) }));
+      if (item.charm.consumes) facts.push(t('item.header.charm_consumes', { count: esc(item.charm.consumes) }));
       const fl = el('div', 'item-facts', facts.join(' <span class="if-dot">&middot;</span> '));
-      fl.title = 'Base charm behavior. Not searchable on trade - the charge/duration mods are the searchable handles.';
+      fl.title = t('item.header.charm_facts_tooltip');
       wrap.appendChild(fl);
     }
     if (state.notice) wrap.appendChild(el('div', 'notice', esc(state.notice)));
     if (state.loginHint) {
-      const n = el('div', 'notice', 'Fungible damage rolls are matched locally. <span class="notice-act">Log in to pathofexile.com</span> for exact server-side weighted matching.');
+      const n = el('div', 'notice', t('item.misc.login_hint'));
       n.querySelector('.notice-act').onclick = () => h.onLogin && h.onLogin();
       wrap.appendChild(n);
     }
@@ -417,8 +422,8 @@
     if (bracketRows.length) {
       const open = !!state.bracketOpen;
       const bhead = el('div', 'mod-bracket-head' + (open ? ' open' : ''),
-        `<span class="mb-caret">${open ? '&#9662;' : '&#9656;'}</span><span class="mb-lab">${bracketRows.length} hidden modifier${bracketRows.length === 1 ? '' : 's'}</span><span class="mb-hint">auto-set-aside &middot; click to ${open ? 'collapse' : 'expand'}</span>`);
-      bhead.title = 'Mods the classifier turned off - defensive/meta explicits, runes, properties, and garbage-pool lines. Expand to search on any of them; turning one on moves it up into the list.';
+        `<span class="mb-caret">${open ? '&#9662;' : '&#9656;'}</span><span class="mb-lab">${tn('item.mods.bracket_count_label', bracketRows.length, { count: bracketRows.length })}</span><span class="mb-hint">${t('item.mods.bracket_hint', { action: open ? t('item.mods.bracket_action_collapse') : t('item.mods.bracket_action_expand') })}</span>`);
+      bhead.title = t('item.mods.bracket_tooltip');
       bhead.onclick = () => {
         state.bracketOpen = !state.bracketOpen;
         h.onRerender ? h.onRerender() : render(document.getElementById('item-root'), state, h);
@@ -434,8 +439,8 @@
     // accordion is expanded.
     const actions = el('div', 'pc-actions');
     if (h.onAddMod) {
-      const add = el('div', 'add-mod', '+ Add a mod');
-      add.title = 'Search for mods the item does not have (desecrate reveals, omen crafting)';
+      const add = el('div', 'add-mod', t('item.mods.add_mod_label'));
+      add.title = t('item.mods.add_mod_tooltip');
       add.onclick = () => h.onAddMod();
       actions.appendChild(add);
     }
@@ -455,17 +460,16 @@
       // defaults to a value that NARROWS the pool, and a filter you cannot see
       // is a filter you will not think to check when results look thin
       const head = el('div', 'misc-head',
-        `<span>${state.miscOpen ? '&#9662;' : '&#9656;'} Miscellaneous</span>`
+        `<span>${state.miscOpen ? '&#9662;' : '&#9656;'} ${t('item.misc.section_label')}</span>`
         + `<span class="misc-sum">${esc(statusLabel)}</span>`
-        + (setCount ? `<span class="misc-count">${setCount} set</span>` : ''));
-      head.title = 'Which listings to compare against, plus corrupted / crafted / fractured and friends - '
-        + 'exclude the failed attempts that undercut a good item';
+        + (setCount ? `<span class="misc-count">${t('item.misc.set_count_badge', { count: setCount })}</span>` : ''));
+      head.title = t('item.misc.section_tooltip');
       head.onclick = () => { state.miscOpen = !state.miscOpen; h.onRerender && h.onRerender(); };
       acc.appendChild(head);
       if (state.miscOpen) {
         if (h.onOpt) {
           const sale = el('div', 'sale-row');
-          sale.appendChild(el('span', null, 'Listings'));
+          sale.appendChild(el('span', null, t('item.misc.listings_label')));
           const sel = el('select');
           for (const [v, t] of SALE_TYPES) {
             const o = el('option', null, t);
@@ -474,9 +478,7 @@
           }
           sel.value = status;
           if (status !== 'securable') sel.classList.add('set');
-          sel.title = 'Instant Buyout is what the game shows by default: listings you can buy right now. '
-            + 'The wider options add stash-tab listings that are often months old and already sold, '
-            + 'which drags the suggested price far below the real market.';
+          sel.title = t('item.search.sale_type_tooltip');
           sel.onchange = () => h.onOpt('status', sel.value);
           sale.appendChild(sel);
           acc.appendChild(sale);
@@ -486,7 +488,7 @@
           const row = el('label', 'misc-row');
           row.appendChild(el('span', null, esc(label)));
           const sel = el('select');
-          for (const [v, t] of [['', 'Any'], ['true', 'Yes'], ['false', 'No']]) {
+          for (const [v, t] of [['', t('item.search.any_option')], ['true', t('item.misc.filter_yes')], ['false', t('item.misc.filter_no')]]) {
             const o = el('option', null, t);
             o.value = v;
             sel.appendChild(o);
@@ -503,7 +505,7 @@
         // page (recompute + re-search on toggle), not buried in Settings
         if (h.onAssume && state.item && (state.item.q20able || state.item.runeFillable)) {
           const arow = el('div', 'assume-row');
-          arow.appendChild(el('span', 'assume-lab', 'Assume'));
+          arow.appendChild(el('span', 'assume-lab', t('item.misc.assume_label')));
           // Exceptional Normal bases use the per-item override (q20 ON, runes OFF),
           // leaving the global assume pref untouched - so the chips read from it too.
           const asm = (state.item && state.item.exceptionalBase)
@@ -517,10 +519,10 @@
             lab.appendChild(cb); lab.appendChild(el('span', null, esc(label)));
             return lab;
           };
-          if (state.item.q20able) arow.appendChild(mk('q20', 'quality 20', !!asm.q20,
-            'Price as if this item were quality 20 - the standard basis for comparing bases.'));
-          if (state.item.runeFillable) arow.appendChild(mk('fillRunes', 'filled runes', !!asm.fillRunes,
-            'Add the Greater Iron Rune bonus for the empty sockets. Off = the item as it is now, which is how empty-socket bases are usually listed.'));
+          if (state.item.q20able) arow.appendChild(mk('q20', t('item.misc.assume_q20_label'), !!asm.q20,
+            t('item.misc.assume_q20_tooltip')));
+          if (state.item.runeFillable) arow.appendChild(mk('fillRunes', t('item.misc.assume_fillrunes_label'), !!asm.fillRunes,
+            t('item.misc.assume_fillrunes_tooltip')));
           acc.appendChild(arow);
         }
       }
@@ -529,7 +531,7 @@
     if (actions.childNodes.length) wrap.appendChild(actions);
 
     const row = el('div', 'search-row');
-    const btn = el('button', 'btn-search' + (state.stale ? ' attn' : ''), 'Search');
+    const btn = el('button', 'btn-search' + (state.stale ? ' attn' : ''), t('item.search.search_button'));
     btn.onclick = () => h.onSearch && h.onSearch();
     row.appendChild(btn);
 
@@ -542,36 +544,32 @@
       // one segmented control: a "set mins" label cell + tier min | exact roll | ↻
       const grp = el('span', 'opt-grp seg');
       opts.appendChild(grp);
-      grp.appendChild(el('span', 'seg-lab', 'set mins'));
+      grp.appendChild(el('span', 'seg-lab', t('item.search.set_mins_label')));
       const mk = (cls, label, title, act) => {
         const b = el('button', 'seg-btn' + cls, label);
         b.title = title;
         b.onclick = () => h.onSetMins(act);
         grp.appendChild(b);
       };
-      mk('', 'tier min', 'Set every mod to the LOWEST roll of its own tier. Usually the truest comp: '
-        + 'Divine Orbs reroll values within a tier, so the tier matters more than the roll. '
-        + 'Mods without tier info and the computed totals (DPS, defences) keep the % below.', 'min');
-      mk('', 'exact roll', 'Set every minimum to this item\'s own roll - the strictest search, '
-        + 'comps must match or beat your item on every line.', 'current');
-      mk(' seg-reset', '&#8635;', 'Reset: back to the item as parsed - original mods, original on/off, '
-        + 'minimums governed by the % again.', 'reset');
+      mk('', t('item.search.set_mins_tier_label'), t('item.search.set_mins_tier_tooltip'), 'min');
+      mk('', t('item.search.set_mins_exact_label'), t('item.search.set_mins_exact_tooltip'), 'current');
+      mk(' seg-reset', '&#8635;', t('item.search.set_mins_reset_tooltip'), 'reset');
     }
     const rgrp = el('span', 'opt-grp');
-    rgrp.appendChild(el('span', 'sr-lab', 'stat range ±'));
+    rgrp.appendChild(el('span', 'sr-lab', t('item.search.stat_range_label')));
     // SIGNED display: -15 = mins 15% BELOW your roll (the default), positive =
     // mins above it (strictly-better comps). Stored internally as the positive
     // "reduction" it always was - only the box shows the sign flipped.
     const low = el('input'); low.type = 'text'; low.value = -(state.opts.defaultLowerPct || 0);
-    low.title = 'Mods search this % away from your roll: -15 = mins 15% below it (broader comps), positive = mins above it (strictly better).';
+    low.title = t('item.search.stat_range_tooltip');
     low.dataset.fk = 'opt:lowerpct';
     low.onchange = () => h.onOpt && h.onOpt('defaultLowerPct', Math.max(-100, Math.min(100, -(Number(low.value) || 0))));
     rgrp.appendChild(stepWrap(low, -15));
     rgrp.appendChild(el('span', 'sr-lab', '%'));
     opts.appendChild(rgrp);
     if ((item.mods || []).some((m) => m.garbage)) {
-      const g = el('span', 'gtoggle' + (state.opts.garbageOnly ? ' on' : ''), 'garbage comps only');
-      g.title = 'On: listings must carry one of your garbage mods (clean floor). Off: garbage ignored.';
+      const g = el('span', 'gtoggle' + (state.opts.garbageOnly ? ' on' : ''), t('item.search.garbage_only_label'));
+      g.title = t('item.search.garbage_only_tooltip');
       g.onclick = () => h.onOpt && h.onOpt('garbageOnly', !state.opts.garbageOnly);
       opts.appendChild(g);
     }
@@ -583,23 +581,20 @@
     if (state.searching && state.waitUntil) {
       const left = Math.max(0, Math.ceil((state.waitUntil - Date.now()) / 1000));
       const w = el('div', 'wait-note' + (state.waitBanned ? ' banned' : ''),
-        (state.waitBanned
-          ? '<b>Rate limited by the trade site.</b> It caps how often any app may search. '
-            + 'Your search resumes automatically in '
-          : '<b>Queued behind the trade site\'s rate limit.</b> Searching again in ')
-        + `<b class="wait-secs">${left}s</b>`);
-      w.title = 'Path of Exile limits searches per IP. The app queues rather than hammering it, '
-        + 'which would extend the limit. Nothing is lost - the search runs as soon as the window clears.';
+        state.waitBanned
+          ? t('item.search.wait_banned_message', { seconds: left })
+          : t('item.search.wait_queued_message', { seconds: left }));
+      w.title = t('item.search.wait_tooltip');
       wrap.appendChild(w);
     }
     if (state.results) {
       if (state.stale && !state.searching) {
-        wrap.appendChild(el('div', 'stale-note', 'Filters changed - these results are from your previous search. Hit <b>Search</b> when you\'re done adjusting.'));
+        wrap.appendChild(el('div', 'stale-note', t('item.search.stale_note')));
       }
       const ctx = state.searchCtx;
       const paging = ctx ? { more: ctx.loaded < ctx.ids.length, remaining: ctx.ids.length - ctx.loaded } : null;
       wrap.appendChild(resultsPanel(state.results, h, state.searching, state.stale, paging));
-    } else if (state.searching && !state.waitUntil) wrap.appendChild(el('div', 'res-group-title', 'Searching&hellip;'));
+    } else if (state.searching && !state.waitUntil) wrap.appendChild(el('div', 'res-group-title', t('item.search.searching_label')));
     return wrap;
   }
 
@@ -607,7 +602,7 @@
   // headline chips: weapon output + the rarer defence-adjacent numbers. The
   // big four defences (ES/Armour/Evasion/Ward) and quality compare with deltas
   // in the "Vs your item" section instead of floating here.
-  const CHIP_EXT = [['dps', 'DPS'], ['pdps', 'Phys DPS'], ['edps', 'Ele DPS'], ['block', 'Block'], ['spirit', 'Spirit']];
+  const CHIP_EXT = [['dps', t('item.listings.chip_dps')], ['pdps', t('item.listings.chip_pdps')], ['edps', t('item.listings.chip_edps')], ['block', t('item.listings.chip_block')], ['spirit', t('item.listings.chip_spirit')]];
 
   // full item card, rendered in the floating peek window beside the overlay
   function peekCardHtml(l) {
@@ -621,19 +616,19 @@
       s += `<div class="pk-flags">${l.flags.map((f) => `<span class="pk-flag pk-flag-${esc(f.toLowerCase().split(' ')[0])}">${esc(f)}</span>`).join('')}</div>`;
     }
     s += '</div>';
-    s += `<div class="pk-price">${priceHtml(l.price)}${age ? `<div class="pk-age">listed ${esc(age)}</div>` : ''}</div>`;
+    s += `<div class="pk-price">${priceHtml(l.price)}${age ? `<div class="pk-age">${window.t('item.listings.listed_age', { age: esc(age) })}</div>` : ''}</div>`;
     s += '</div>';
     const chips = CHIP_EXT.filter(([k]) => l.ext && l.ext[k]).map(([k, lab]) => `<span class="pk-stat"><b>${l.ext[k]}</b> ${lab}</span>`);
     // charm base facts, in the game tooltip's own order: Lasts, Consumes
     if (l.charm) {
-      if (l.charm.consumes) chips.unshift(`<span class="pk-stat"><b>${esc(l.charm.consumes)}</b> Charges/use</span>`);
-      if (l.charm.lasts) chips.unshift(`<span class="pk-stat"><b>${esc(l.charm.lasts)}s</b> Lasts</span>`);
+      if (l.charm.consumes) chips.unshift(`<span class="pk-stat">${window.t('item.listings.charm_charges_per_use', { count: esc(l.charm.consumes) })}</span>`);
+      if (l.charm.lasts) chips.unshift(`<span class="pk-stat">${window.t('item.listings.charm_lasts', { seconds: esc(l.charm.lasts) })}</span>`);
     }
     if (chips.length) s += `<div class="pk-stats">${chips.join('')}</div>`;
     // At-a-glance comparability: one total per dimension your search uses, each
     // with a +/- vs your item (green = yours ahead, red = this comp beats you) -
     // so you don't total each comp's resistances or added damage by hand.
-    const t = l.totals || {};
+    const tot = l.totals || {}; // NOT `t`: that shadows the translator for this whole function
     const cmpRow = (lab, c, title) => {
       if (!c || c.val == null) return '';
       const d = c.delta;
@@ -642,17 +637,17 @@
       return `<div class="pk-cmp" title="${esc(title)}"><span class="pk-cmp-lab">${lab}</span>`
         + `<b>${c.val}</b>${dl}</div>`;
     };
-    const cmp = cmpRow(`Quality${t.qualKind ? ` (${esc(t.qualKind)})` : ''}`, t.qual, 'This comp\'s quality % vs yours (on jewellery, the catalyst kind decides which mods it boosts)')
-      + cmpRow('Energy Shield', t.es, 'This comp\'s total Energy Shield (GGG\'s computed number, quality included) vs yours')
-      + cmpRow('Armour', t.ar, 'This comp\'s total Armour vs yours')
-      + cmpRow('Evasion', t.ev, 'This comp\'s total Evasion vs yours')
-      + cmpRow('Runic Ward', t.ward, 'This comp\'s total Runic Ward vs yours')
-      + cmpRow('Total Resistance', t.res, 'Sum of this comp\'s resistances (all-res x3, chaos included) vs yours')
-      + cmpRow('Added Damage', t.dmg, 'Weighted added damage to attacks (the fungible pool) vs yours')
-      + cmpRow('Sockets', t.sockets, 'Augmentable (rune) sockets vs yours');
-    if (cmp) s += `<div class="pk-seclab">Vs your item</div><div class="pk-compare">${cmp}</div>`;
+    const cmp = cmpRow(`${t('item.listings.cmp_quality_label')}${t.qualKind ? ` (${esc(t.qualKind)})` : ''}`, t.qual, t('item.listings.cmp_quality_tooltip'))
+      + cmpRow(t('item.listings.cmp_es_label'), t.es, t('item.listings.cmp_es_tooltip'))
+      + cmpRow(t('item.listings.cmp_armour_label'), t.ar, t('item.listings.cmp_armour_tooltip'))
+      + cmpRow(t('item.listings.cmp_evasion_label'), t.ev, t('item.listings.cmp_evasion_tooltip'))
+      + cmpRow(t('item.listings.cmp_ward_label'), t.ward, t('item.listings.cmp_ward_tooltip'))
+      + cmpRow(t('item.listings.cmp_res_label'), tot.res, t('item.listings.cmp_res_tooltip'))
+      + cmpRow(t('item.listings.cmp_dmg_label'), tot.dmg, t('item.listings.cmp_dmg_tooltip'))
+      + cmpRow(t('item.listings.cmp_sockets_label'), tot.sockets, t('item.listings.cmp_sockets_tooltip'));
+    if (cmp) s += `<div class="pk-seclab">${t('item.listings.vs_your_item_label')}</div><div class="pk-compare">${cmp}</div>`;
     // the game's tooltip layout: runes/enchants, implicits, explicits - separated
-    const KIND_TAG = { des: 'desecrated', fractured: 'fractured', crafted: 'crafted' };
+    const KIND_TAG = { des: t('item.mods.kind_desecrated'), fractured: t('item.mods.kind_fractured'), crafted: t('item.mods.kind_crafted') };
     const line = (m) => {
       const modText = typeof m === 'string' ? m : m.text;
       const match = typeof m === 'object' && m.match;
@@ -668,14 +663,14 @@
       return `<div class="pk-mod${match ? ' match' : ''}${kind ? ' ' + kind : ''}"><span class="pk-mtext">${hlNums(modText)}${tag}</span>${dl}</div>`;
     };
     const sections = l.secs && l.secs.length ? l.secs : (l.mods && l.mods.length ? [{ key: 'explicit', lines: l.mods }] : []);
-    const SEC_LABEL = { rune: 'Runes & Implicits', 'added-rune': 'Runes', enchant: 'Enchants', implicit: 'Implicits', pseudo: 'Pseudo', explicit: 'Explicits' };
+    const SEC_LABEL = { rune: t('item.listings.section_runes_implicits'), 'added-rune': t('item.listings.section_runes'), enchant: t('item.listings.section_enchants'), implicit: t('item.listings.section_implicits'), pseudo: t('item.listings.section_pseudo'), explicit: t('item.listings.section_explicits') };
     for (const sec of sections) {
       const lab = SEC_LABEL[sec.key] || sec.key;
-      const hint = sec.key === 'explicit' ? ' <span class="pk-key">bright = matches your search &middot; &plusmn; = their roll vs yours</span>' : '';
+      const hint = sec.key === 'explicit' ? ` <span class="pk-key">${t('item.listings.explicit_hint')}</span>` : '';
       s += `<div class="pk-seclab">${esc(lab)}${hint}</div>`;
       s += `<div class="pk-mods pk-sec-${esc(sec.key)}">${sec.lines.map(line).join('')}</div>`;
     }
-    if (l.missing && l.missing.length) s += `<div class="pk-miss">lacks: ${esc(l.missing.join(', '))}</div>`;
+    if (l.missing && l.missing.length) s += `<div class="pk-miss">${t('item.listings.lacks_prefix', { mods: esc(l.missing.join(', ')) })}</div>`;
     return s;
   }
 
@@ -715,9 +710,9 @@
     // shorthand) and charm lasts/charges, so results read without hovering
     const bits = [];
     if (l.name && l.base) bits.push(esc(l.base));
-    if (l.quality) bits.push('q' + esc(String(l.quality.val).replace(/[+%]/g, '')) + (l.quality.kind ? ' ' + esc(l.quality.kind.replace(/ Modifiers$/, '')) : ''));
-    if (l.charm && l.charm.lasts) bits.push(esc(l.charm.lasts) + 's');
-    if (l.charm && l.charm.consumes) bits.push(esc(l.charm.consumes) + ' charges');
+    if (l.quality) bits.push(t('item.listings.quality_prefix') + esc(String(l.quality.val).replace(/[+%]/g, '')) + (l.quality.kind ? ' ' + esc(l.quality.kind.replace(/ Modifiers$/, '')) : ''));
+    if (l.charm && l.charm.lasts) bits.push(t('item.listings.charm_lasts_suffix', { seconds: esc(l.charm.lasts) }));
+    if (l.charm && l.charm.consumes) bits.push(t('item.listings.charm_charges_suffix', { count: esc(l.charm.consumes) }));
     center.appendChild(el('div', 'li-base', bits.join(' &middot; ')));
     row.appendChild(center);
     const ts = l.indexed ? Date.parse(l.indexed) : null;
@@ -743,7 +738,7 @@
     });
     // click PINS the detail card to this row (click again to release; clicking
     // another row moves the pin). The ✉ button owns the whisper copy.
-    row.title = 'Click to pin the detail card';
+    row.title = t('item.listings.row_pin_tooltip');
     row.addEventListener('click', () => {
       if (peekPinned === l) {
         peekPinned = null;
@@ -760,8 +755,8 @@
       window.api.itemPeekShow({ html: peekCardHtml(l), frac: r.top / window.innerHeight });
     });
     if (l.whisper && h.onWhisper) {
-      const wb = el('span', 'li-whisper', '&#9993; whisper');
-      wb.title = 'Copy the whisper for this listing';
+      const wb = el('span', 'li-whisper', t('item.listings.whisper_button'));
+      wb.title = t('item.listings.whisper_tooltip');
       wb.onclick = (ev) => { ev.stopPropagation(); h.onWhisper(l); };
       row.appendChild(wb);
     }
@@ -776,32 +771,29 @@
     const sug = res.suggested && typeof res.suggested === 'object' ? res.suggested : null;
     // .suggested is preserved here (tutorial hook + hard constraint)
     const floorEl = el('div', 'suggested rh-floor');
-    floorEl.appendChild(el('div', 'rh-floor-lab', 'Suggested floor'));
+    floorEl.appendChild(el('div', 'rh-floor-lab', t('item.floor.label')));
     const val = el('div', 'rh-floor-val');
     if (sug) val.innerHTML = `${esc(String(sug.amount))} ${curUnitHtml(sug.currency, 'rh-floor-unit')}${floorAside(sug)}`;
-    else val.innerHTML = res.suggested ? esc(res.suggested) : '&mdash;';
+    else val.innerHTML = res.suggested ? esc(res.suggested) : t('item.floor.no_suggestion');
     floorEl.appendChild(val);
     // sub-label + hover receipt: HOW this number was reached, comp by comp
     const why = sug && sug.why;
     const pctS = (v) => `${v > 0 ? '+' : ''}${Math.round(v * 100)}%`;
-    let sub = 'median of cheapest comps';
-    let tip = 'Fallback: none of the comps share a measurable stat with your item, so this is the median of the 3 cheapest listings.';
+    let sub = t('item.floor.sub_median_fallback');
+    let tip = t('item.floor.why_median_fallback');
     if (why && why.mode === 'weapon-dps') {
       const r = why.theirDPS ? why.myDPS / why.theirDPS : 1;
-      sub = r < 0.98 ? 'scaled down from a stronger, cheaper comp' : r > 1.02 ? 'scaled up from the best DPS deal' : 'matched to the best DPS deal';
-      tip = `Weapons price on total DPS, and steeply. The best DPS-per-${esc(why.cur || '')} deal is the ${why.anchorAmt} ${esc(why.cur || '')} listing at ${why.theirDPS} DPS; yours is ${why.myDPS} DPS `
-        + `(${pctS(r - 1)}). Price scales ~2.5-power with the DPS ratio, so your floor lands at ${esc(String(sug.amount))} ${esc(sug.currency || '')}.`
-        + '\nThat anchor row is outlined below. A higher-DPS bow selling for less means yours is worth well under its price.';
+      sub = r < 0.98 ? t('item.floor.sub_dps_scaled_down') : r > 1.02 ? t('item.floor.sub_dps_scaled_up') : t('item.floor.sub_dps_matched');
+      tip = t('item.floor.why_dps', { currency: esc(why.cur || ''), anchorAmount: why.anchorAmt, theirDps: why.theirDPS, myDps: why.myDPS, pct: pctS(r - 1), floorAmount: esc(String(sug.amount)), floorCurrency: esc(sug.currency || '') });
     } else if (why && why.mode === 'between') {
-      sub = 'bracketed between two comps';
-      tip = `Your item sits between the ${why.below.amount} ${sug.currency} comp it beats (${pctS(why.below.gap)}) `
-        + `and the cheapest comp that beats it, ${why.above.amount} (${pctS(why.above.gap)}) - the floor interpolates between their prices.`;
+      sub = t('item.floor.sub_between');
+      tip = t('item.floor.why_between', { belowAmount: why.below.amount, currency: sug.currency, belowGap: pctS(why.below.gap), aboveAmount: why.above.amount, aboveGap: pctS(why.above.gap) });
     } else if (why && why.mode === 'below-best') {
-      sub = 'just under the cheapest better comp';
-      tip = `Every comp beats your item, so the cheapest of them caps its price: ${why.above.amount} ${sug.currency} (${pctS(why.above.gap)} vs yours). The floor sits just under it.`;
+      sub = t('item.floor.sub_below_best');
+      tip = t('item.floor.why_below_best', { amount: why.above.amount, currency: sug.currency, gap: pctS(why.above.gap) });
     } else if (why && why.mode === 'above-worst') {
-      sub = 'just over the priciest comp you beat';
-      tip = `Your item beats every comp listed. The most expensive one you beat is ${why.below.amount} ${sug.currency} (${pctS(why.below.gap)} vs yours) - the floor sits just over it.`;
+      sub = t('item.floor.sub_above_worst');
+      tip = t('item.floor.why_above_worst', { amount: why.below.amount, currency: sug.currency, gap: pctS(why.below.gap) });
     }
     floorEl.title = tip;
     floorEl.appendChild(el('div', 'rh-floor-sub', sub));
@@ -812,8 +804,8 @@
     const cnt = el('div', 'rh-count');
     const n = allListings.length;
     cnt.appendChild(el('div', 'rh-count-n', String(n)));
-    cnt.appendChild(el('div', 'rh-count-lab', n === 1 ? 'listing' : 'listings'));
-    if (res.total != null && res.total !== n) cnt.title = `${n} shown of ${res.total} found`;
+    cnt.appendChild(el('div', 'rh-count-lab', n === 1 ? t('item.listings.count_singular') : t('item.listings.count_plural')));
+    if (res.total != null && res.total !== n) cnt.title = t('item.listings.count_tooltip', { shown: n, total: res.total });
     card.appendChild(cnt);
     return card;
   }
@@ -872,7 +864,7 @@
     const plot = el('div', 'rh-hist-plot');
     plot.innerHTML = svg;
     if (floorPos != null) {
-      const chip = el('span', 'rh-floor-chip', 'floor');
+      const chip = el('span', 'rh-floor-chip', t('item.floor.chip_label'));
       chip.style.left = (floorPos * 100) + '%';
       plot.appendChild(chip);
     }
@@ -941,7 +933,7 @@
     // match on (res.plain). `shown` counts listing rows only, so the CUTOFF
     // truncation and a header's own hidden state stay in step.
     const groups = (res.highly || res.similar)
-      ? [['Highly similar', res.highly || []], ['Similar', res.similar || []]].filter(([, g]) => g.length)
+      ? [[t('item.listings.group_highly_similar'), res.highly || []], [t('item.listings.group_similar'), res.similar || []]].filter(([, g]) => g.length)
       : [[null, res.plain || allListings]];
     let shown = 0;
     for (const [label, items] of groups) {
@@ -963,7 +955,7 @@
     }
     if (allListings.length > CUTOFF) {
       const hiddenN = allListings.length - CUTOFF;
-      const more = el('div', 'show-more', `show ${hiddenN} more &#9662;`);
+      const more = el('div', 'show-more', t('item.listings.show_more', { count: hiddenN }));
       const revealAll = () => { rows.forEach((r) => r.classList.remove('li-hidden')); more.remove(); };
       more.onclick = revealAll;
       reveal.fn = revealAll;
@@ -971,12 +963,12 @@
     }
     // live paged search: fetch the next page on demand (button only while ids remain)
     if (paging && paging.more && h.onLoadMore) {
-      const btn = el('button', 'load-more', `Load more results (${paging.remaining} left)`);
+      const btn = el('button', 'load-more', t('item.listings.load_more_results', { remaining: paging.remaining }));
       btn.disabled = !!updating;
       btn.onclick = () => h.onLoadMore();
       wrap.appendChild(btn);
     }
-    if (!allListings.length) wrap.appendChild(el('div', 'no-results', 'No listings matched. Lower some minimums or turn mods off, then hit Search again.'));
+    if (!allListings.length) wrap.appendChild(el('div', 'no-results', t('item.listings.no_results')));
     return wrap;
   }
 
@@ -985,8 +977,8 @@
     const wrap = el('div');
     if (state.authed === false && h.onLogin) {
       const b = el('div', 'login-banner',
-        '<span><b>Logged out</b> - sign in for exact weighted damage matching and higher search limits.</span>');
-      const btn = el('button', 'mini-btn', 'Log in');
+        `<span>${t('item.history.logged_out_message')}</span>`);
+      const btn = el('button', 'mini-btn', t('item.history.login_button'));
       btn.onclick = () => h.onLogin();
       b.appendChild(btn);
       wrap.appendChild(b);
@@ -994,15 +986,15 @@
     // the prompt shows the user's ACTUAL bind (config-driven, default Ctrl+F)
     const hk = (state.itemHotkey || 'Ctrl+F').replace(/Control|CommandOrControl/g, 'Ctrl')
       .split('+').map((k) => `<kbd>${esc(k)}</kbd>`).join('+');
-    wrap.appendChild(el('div', 'paste-prompt', `Hover an item in game and press ${hk}.<br><span class="pp-alt">Copied item text works too: press <kbd>Ctrl</kbd>+<kbd>V</kbd> or <b>click here</b>.</span>`));
+    wrap.appendChild(el('div', 'paste-prompt', `${t('item.history.paste_prompt_main', { hotkey: hk })}<br><span class="pp-alt">${t('item.history.paste_prompt_alt')}</span>`));
     if (h.onLoadSample) {
-      const sample = el('button', 'sample-btn', 'See an example');
+      const sample = el('button', 'sample-btn', t('item.history.see_example_button'));
       sample.onclick = () => h.onLoadSample();
       wrap.appendChild(sample);
     }
     const hist = state.history || [];
     if (hist.length) {
-      wrap.appendChild(el('div', 'history-title', 'Recent searches'));
+      wrap.appendChild(el('div', 'history-title', t('item.history.recent_searches_title')));
       const shown = Math.min(hist.length, state.histShown || 10);
       hist.slice(0, shown).forEach((rec, i) => {
         const it = el('div', 'hist-item');
@@ -1030,7 +1022,7 @@
         wrap.appendChild(it);
       });
       if (hist.length > shown && h.onHistoryMore) {
-        const more = el('button', 'load-more', `Load more (${hist.length - shown} left)`);
+        const more = el('button', 'load-more', t('item.history.load_more', { remaining: hist.length - shown }));
         more.onclick = () => h.onHistoryMore();
         wrap.appendChild(more);
       }
@@ -1096,10 +1088,10 @@
     const panel = el('div', 'ipicker-panel');
     const head = el('div', 'ipicker-head');
     const inp = el('input');
-    inp.placeholder = opts.placeholder || 'Search mods...';
+    inp.placeholder = opts.placeholder || t('item.picker.default_placeholder');
     inp.autocomplete = 'off';
     const x = el('button', 'icon-btn', '&#x2715;');
-    head.append(el('div', 'ipicker-title', esc(opts.title || 'Pick a mod')), inp, x);
+    head.append(el('div', 'ipicker-title', esc(opts.title || t('item.picker.default_title'))), inp, x);
     const list = el('div', 'ipicker-list');
     // a scope entry is either a plain string ("explicit") or {key,label} when the
     // pill's display name differs from the trade key it selects ("Greater Runes")
@@ -1134,7 +1126,7 @@
       // a typed scope word ("frac") overrides the chip - mirror it in the chip row
       const eff = entries.scope || scope;
       if (scopeRow) scopeRow.querySelectorAll('.scope-chip').forEach((c) => c.classList.toggle('on', c.dataset.scope === eff));
-      if (!entries.length) { list.appendChild(el('div', 'ipicker-empty', 'No matching mods')); return; }
+      if (!entries.length) { list.appendChild(el('div', 'ipicker-empty', t('item.picker.no_matches'))); return; }
       for (const e of entries) {
         const row = el('div', 'ipicker-item' + (e.picked ? ' picked' : ''), hlNums(e.text) + (e.picked ? ' <span class="pick-mark">&#10003;</span>' : ''));
         row.onclick = () => { opts.onPick(e); refresh(); };

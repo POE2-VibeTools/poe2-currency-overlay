@@ -218,6 +218,11 @@ const DEFAULT_CONFIG = {
   itemHotkeyTemp: 'Control+Alt+F', // same check, but the overlay hides once the mouse visits it and leaves
   stashHotkey: 'F7', // view a currency tab in game, press this: reads + values it into the Net Worth tally
   gameWindowMatch: 'Path of Exile 2', // LINUX only: window title xdotool looks for (non-English clients)
+  // Language for BOTH the app's own text and the item parser. 'auto' follows the OS
+  // locale on first run; anything else is an explicit choice. The parser matters more
+  // than the UI here: a Russian client's item text cannot be matched against the
+  // English stat data at all, so a price check simply fails until this is right.
+  uiLang: 'auto',
   // LINUX only, opt-in: let the price-check hotkey press Ctrl+C in the game for you via
   // xdotool. Off by default because on GNOME Wayland, Xwayland routes XTEST through
   // libei and the RemoteDesktop portal, so every press pops an "Allow Remote
@@ -1126,6 +1131,32 @@ ipcMain.handle('save-buckets', (_e, buckets) => {
   config.buckets = buckets;
   saveConfig();
   return true;
+});
+
+// The renderer needs its language BEFORE the first paint - an async config fetch would
+// render English and then repaint. preload asks for this synchronously, so every module
+// is already in the right language the moment it runs.
+const UI_LANGS = ['en', 'ru', 'pt', 'de', 'fr', 'es'];
+// 'qa' is the pseudo-locale used to test localisation (see scripts/i18n-pseudo.mjs). It
+// is accepted ONLY with POE2_OVERLAY_DEBUG set, so a normal user can never end up stored
+// on it - but without this the setting silently fell back to 'auto' and the reload put
+// the tester straight back into English.
+const allowedLangs = () => (process.env.POE2_OVERLAY_DEBUG ? UI_LANGS.concat('qa') : UI_LANGS);
+function resolvedUiLang() {
+  const want = (config && config.uiLang) || 'auto';
+  if (want !== 'auto') return allowedLangs().includes(want) ? want : 'en';
+  // 'auto' = follow the OS on first run. app.getLocale() gives e.g. "pt-BR", "de".
+  const loc = String(app.getLocale() || 'en').toLowerCase();
+  const base = loc.split('-')[0];
+  return UI_LANGS.includes(base) ? base : 'en';
+}
+ipcMain.on('get-ui-lang', (e) => { e.returnValue = resolvedUiLang(); });
+
+ipcMain.handle('set-language', (_e, code) => {
+  const ok = ['auto'].concat(allowedLangs());
+  config.uiLang = ok.includes(String(code)) ? String(code) : 'auto';
+  saveConfig();
+  return config.uiLang;
 });
 
 ipcMain.handle('set-tutorial-done', () => {

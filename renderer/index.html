@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; connect-src 'self' ee2:; img-src 'self' https://web.poecdn.com data:; style-src 'self'; font-src 'self'" />
-  <title>POE2 Price Overlay</title>
+  <title data-i18n="ui.app.window_title">POE2 Price Overlay</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="item/item.css" />
 </head>
@@ -13,107 +13,114 @@
     <header id="titlebar">
       <div class="title-left">
         <span class="dot"></span>
-        <span class="app-title">POE2 Prices</span>
+        <span class="app-title" data-i18n="ui.titlebar.app_title">POE2 Prices</span>
         <span id="app-version" class="app-version"></span>
         <span id="league-label" class="league"></span>
       </div>
       <div class="title-right">
         <span id="fresh-label" class="fresh"></span>
-        <button id="btn-refresh" class="icon-btn" title="Refresh prices">&#x21bb;</button>
-        <button id="btn-settings" class="icon-btn" title="Settings">&#x2699;</button>
-        <button id="btn-hide" class="icon-btn" title="Hide (hotkey toggles back)">&#x2715;</button>
+        <button id="btn-refresh" class="icon-btn" data-i18n-title="ui.titlebar.refresh_tooltip" title="Refresh prices">&#x21bb;</button>
+        <button id="btn-settings" class="icon-btn" data-i18n-title="ui.titlebar.settings_tooltip" title="Settings">&#x2699;</button>
+        <button id="btn-hide" class="icon-btn" data-i18n-title="ui.titlebar.hide_tooltip" title="Hide (hotkey toggles back)">&#x2715;</button>
       </div>
     </header>
 
     <section id="settings" class="hidden">
       <div class="set-top">
-        <span class="set-title">Settings</span>
-        <span id="set-close" class="set-close" role="button" tabindex="0" title="Close settings">&#x2715; close &amp; return</span>
+        <span class="set-title" data-i18n="ui.settings.title">Settings</span>
+        <span id="set-close" class="set-close" role="button" tabindex="0" data-i18n="ui.settings.close_label" data-i18n-title="ui.settings.close_tooltip" title="Close settings">&#x2715; close &amp; return</span>
       </div>
       <div class="set-main">
         <nav class="set-rail">
-          <button class="set-nav active" data-sec="general">App</button>
-          <button class="set-nav" data-sec="currency">Currency</button>
-          <button class="set-nav" data-sec="pricecheck">Price Check</button>
-          <button class="set-nav" data-sec="networth">Net Worth</button>
-          <button class="set-nav" data-sec="hotkeys">Hotkeys</button>
-          <button class="set-nav" data-sec="help">Help &amp; About</button>
-          <button id="btn-quit" class="set-quit" title="Quit the app entirely">Quit app</button>
+          <button class="set-nav active" data-sec="general" data-i18n="ui.settings.nav_app">App</button>
+          <button class="set-nav" data-sec="currency" data-i18n="ui.settings.nav_currency">Currency</button>
+          <button class="set-nav" data-sec="pricecheck" data-i18n="ui.settings.nav_pricecheck">Price Check</button>
+          <button class="set-nav" data-sec="networth" data-i18n="ui.settings.nav_networth">Net Worth</button>
+          <button class="set-nav" data-sec="hotkeys" data-i18n="ui.settings.nav_hotkeys">Hotkeys</button>
+          <button class="set-nav" data-sec="help" data-i18n="ui.settings.nav_help">Help &amp; About</button>
+          <button id="btn-quit" class="set-quit" data-i18n="ui.settings.quit_button" data-i18n-title="ui.settings.quit_tooltip" title="Quit the app entirely">Quit app</button>
         </nav>
         <div class="set-scroll">
           <section class="set-card sec-on" id="sec-general">
-            <div class="set-card-lab">General</div>
+            <div class="set-card-lab" data-i18n="ui.settings.general.heading">General</div>
             <div class="set-grid2">
               <div class="set-field">
-                <label for="league-select" title="Which league's prices to show. Auto follows the current temp league.">League</label>
-                <select id="league-select"><option value="auto">Auto (current)</option></select>
+                <label for="league-select" data-i18n="ui.settings.general.league_label" data-i18n-title="ui.settings.general.league_tooltip" title="Which league's prices to show. Auto follows the current temp league.">League</label>
+                <select id="league-select"><option value="auto" data-i18n="ui.settings.general.league_auto_option">Auto (current)</option></select>
               </div>
               <div class="set-field">
-                <label title="Global key that shows/hides this overlay. Click, then press a key or combo.">Overlay hotkey</label>
-                <div class="kb-field"><input id="hotkey-input" class="kb-input" readonly placeholder="click, then press keys" /><span class="kb-hint">click to rebind</span></div>
+                <label data-i18n="ui.settings.general.overlay_hotkey_label" data-i18n-title="ui.settings.general.overlay_hotkey_tooltip" title="Global key that shows/hides this overlay. Click, then press a key or combo.">Overlay hotkey</label>
+                <div class="kb-field"><input id="hotkey-input" class="kb-input" readonly data-i18n-ph="ui.settings.hotkey_placeholder" placeholder="click, then press keys" /><span class="kb-hint" data-i18n="ui.settings.hotkey_rebind_hint">click to rebind</span></div>
               </div>
               <div class="set-field">
-                <label title="Hover an item in game and press this: the overlay opens with the item searched and STAYS until you hide it.">Price check <span class="kb-mode">stays open</span></label>
-                <div class="kb-field"><input id="item-hotkey-input" class="kb-input" readonly placeholder="click, then press keys" /><span class="kb-hint">click to rebind</span></div>
+                <label data-i18n-title="ui.settings.pricecheck_hotkey_tooltip" title="Hover an item in game and press this: the overlay opens with the item searched and STAYS until you hide it."><span data-i18n="ui.settings.pricecheck_hotkey_label">Price check</span> <span class="kb-mode" data-i18n="ui.settings.pricecheck_hotkey_mode">stays open</span></label>
+                <div class="kb-field"><input id="item-hotkey-input" class="kb-input" readonly data-i18n-ph="ui.settings.hotkey_placeholder" placeholder="click, then press keys" /><span class="kb-hint" data-i18n="ui.settings.hotkey_rebind_hint">click to rebind</span></div>
               </div>
               <div class="set-field">
-                <label title="Same check, but temporary: once your mouse visits the overlay and leaves it, the overlay hides itself.">Quick check <span class="kb-mode">auto-hides</span></label>
-                <div class="kb-field"><input id="item-hotkey-temp-input" class="kb-input" readonly placeholder="click, then press keys" /><span class="kb-hint">click to rebind</span></div>
+                <label data-i18n-title="ui.settings.quickcheck_hotkey_tooltip" title="Same check, but temporary: once your mouse visits the overlay and leaves it, the overlay hides itself."><span data-i18n="ui.settings.quickcheck_hotkey_label">Quick check</span> <span class="kb-mode" data-i18n="ui.settings.quickcheck_hotkey_mode">auto-hides</span></label>
+                <div class="kb-field"><input id="item-hotkey-temp-input" class="kb-input" readonly data-i18n-ph="ui.settings.hotkey_placeholder" placeholder="click, then press keys" /><span class="kb-hint" data-i18n="ui.settings.hotkey_rebind_hint">click to rebind</span></div>
               </div>
               <div class="set-field">
-                <div class="set-slab"><label title="Zoom the whole overlay up or down (50-200%).">UI scale</label><span id="scale-value" class="scale-value">100%</span></div>
+                <div class="set-slab"><label data-i18n="ui.settings.ui_scale_label" data-i18n-title="ui.settings.ui_scale_tooltip" title="Zoom the whole overlay up or down (50-200%).">UI scale</label><span id="scale-value" class="scale-value">100%</span></div>
                 <div id="scale-slider" class="cslider"></div>
               </div>
               <div class="set-field">
-                <div class="set-slab"><label title="How solid the overlay background is - lower lets more of the game show through.">Background</label><span id="bg-value" class="scale-value">92%</span></div>
+                <div class="set-slab"><label data-i18n="ui.settings.background_label" data-i18n-title="ui.settings.background_tooltip" title="How solid the overlay background is - lower lets more of the game show through.">Background</label><span id="bg-value" class="scale-value">92%</span></div>
                 <div id="bg-slider" class="cslider"></div>
               </div>
             </div>
-            <div class="set-datarow" title="Where prices come from - the public poe2scout API, or a live feed when one is active.">
-              <span class="live-dot"></span><span id="feed-status" class="feed-status">public API</span>
-              <span class="set-note">Game must be in Windowed or Windowed&nbsp;Fullscreen mode.</span>
+            <div class="set-datarow" data-i18n-title="ui.settings.feed_status_tooltip" title="Where prices come from - the public poe2scout API, or a live feed when one is active.">
+              <span class="live-dot"></span><span id="feed-status" class="feed-status" data-i18n="ui.settings.feed_status_default">public API</span>
+              <span class="set-note" data-i18n="ui.settings.feed_status_note">Game must be in Windowed or Windowed&nbsp;Fullscreen mode.</span>
             </div>
-            <label class="switch set-excl" title="Replace currency names/units with their icons next to prices on the Price Check and Desecrate tabs. Hover or screen readers still get the full name."><input type="checkbox" id="currency-icons" /><span class="sw-track"></span><span class="sw-lab">Show currency icons instead of names</span><span class="set-sub">Price Check &amp; Desecrate - hover still shows the name</span></label>
-            <label class="switch set-excl" title="Render the whole app in OpenDyslexic, a typeface designed to be easier to read with dyslexia. Bundled with the app; off by default."><input type="checkbox" id="dyslexic-font" /><span class="sw-track"></span><span class="sw-lab">Dyslexia-friendly font</span><span class="set-sub">OpenDyslexic, applied app-wide</span></label>
-            <label class="switch set-excl" title="Show the Regex tab in the tab bar. Off hides it entirely until you turn it back on here."><input type="checkbox" id="show-regex-tab" /><span class="sw-track"></span><span class="sw-lab">Show Regex tab</span></label>
-            <label class="switch set-excl" title="Show the Grand Expedition tab in the tab bar. Off hides it entirely until you turn it back on here."><input type="checkbox" id="show-grandex-tab" /><span class="sw-track"></span><span class="sw-lab">Show Grand Expedition tab</span></label>
-            <label class="switch set-excl" title="Show the Net Worth tab in the tab bar. Off hides it entirely until you turn it back on here. The capture hotkey still works either way."><input type="checkbox" id="show-networth-tab" /><span class="sw-track"></span><span class="sw-lab">Show Net Worth tab</span></label>
-            <label class="switch set-excl" title="Show the Desecrate tab in the tab bar. Off hides it - it still appears when you open an item's redesecrate? button, then hides again when you leave it."><input type="checkbox" id="show-desecrate-tab" /><span class="sw-track"></span><span class="sw-lab">Show Desecrate tab</span><span class="set-sub">hidden, it still opens via redesecrate? and hides when you leave</span></label>
+            <label class="switch set-excl" data-i18n-title="ui.settings.currency_icons_tooltip" title="Replace currency names/units with their icons next to prices on the Price Check and Desecrate tabs. Hover or screen readers still get the full name."><input type="checkbox" id="currency-icons" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.currency_icons_label">Show currency icons instead of names</span><span class="set-sub" data-i18n="ui.settings.currency_icons_sub">Price Check &amp; Desecrate - hover still shows the name</span></label>
+            <div class="set-field set-lang-field">
+              <label for="lang-select" data-i18n-title="ui.settings.language_tooltip" title="Language for the app and for reading your items. Item text is read in your game client's language, so pick the one you play in.">
+                <span data-i18n="ui.settings.language_label">Language</span>
+              </label>
+              <select id="lang-select"></select>
+              <span class="set-sub" data-i18n="ui.settings.language_sub">reads your items in this language too</span>
+            </div>
+            <label class="switch set-excl" data-i18n-title="ui.settings.dyslexic_font_tooltip" title="Render the whole app in OpenDyslexic, a typeface designed to be easier to read with dyslexia. Bundled with the app; off by default."><input type="checkbox" id="dyslexic-font" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.dyslexic_font_label">Dyslexia-friendly font</span><span class="set-sub" data-i18n="ui.settings.dyslexic_font_sub">OpenDyslexic, applied app-wide</span></label>
+            <label class="switch set-excl" data-i18n-title="ui.settings.show_regex_tab_tooltip" title="Show the Regex tab in the tab bar. Off hides it entirely until you turn it back on here."><input type="checkbox" id="show-regex-tab" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.show_regex_tab_label">Show Regex tab</span></label>
+            <label class="switch set-excl" data-i18n-title="ui.settings.show_grandex_tab_tooltip" title="Show the Grand Expedition tab in the tab bar. Off hides it entirely until you turn it back on here."><input type="checkbox" id="show-grandex-tab" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.show_grandex_tab_label">Show Grand Expedition tab</span></label>
+            <label class="switch set-excl" data-i18n-title="ui.settings.show_networth_tab_tooltip" title="Show the Net Worth tab in the tab bar. Off hides it entirely until you turn it back on here. The capture hotkey still works either way."><input type="checkbox" id="show-networth-tab" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.show_networth_tab_label">Show Net Worth tab</span></label>
+            <label class="switch set-excl" data-i18n-title="ui.settings.show_desecrate_tab_tooltip" title="Show the Desecrate tab in the tab bar. Off hides it - it still appears when you open an item's redesecrate? button, then hides again when you leave it."><input type="checkbox" id="show-desecrate-tab" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.show_desecrate_tab_label">Show Desecrate tab</span><span class="set-sub" data-i18n="ui.settings.show_desecrate_tab_sub">hidden, it still opens via redesecrate? and hides when you leave</span></label>
           </section>
 
           <section class="set-card" id="sec-currency">
-            <div class="set-card-lab">Currency</div>
+            <div class="set-card-lab" data-i18n="ui.settings.currency.heading">Currency</div>
             <div class="set-row-between">
-              <div class="set-inline"><label title="Currencies auto-filled as payment options each time you add a currency to buy (toggle at right).">Default payments</label><span class="set-sub">seeded into every new currency</span></div>
-              <label class="switch" title="Auto-fill these into each new currency"><input type="checkbox" id="auto-defaults" /><span class="sw-track"></span><span class="sw-lab">auto-fill</span></label>
+              <div class="set-inline"><label data-i18n="ui.settings.currency.default_payments_label" data-i18n-title="ui.settings.currency.default_payments_tooltip" title="Currencies auto-filled as payment options each time you add a currency to buy (toggle at right).">Default payments</label><span class="set-sub" data-i18n="ui.settings.currency.default_payments_sub">seeded into every new currency</span></div>
+              <label class="switch" data-i18n-title="ui.settings.currency.auto_fill_tooltip" title="Auto-fill these into each new currency"><input type="checkbox" id="auto-defaults" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.currency.auto_fill_label">auto-fill</span></label>
             </div>
-            <div class="set-chips-row"><div id="default-items" class="chips"></div><button id="btn-add-default" class="chip-add" title="Add a default currency">+ add</button></div>
+            <div class="set-chips-row"><div id="default-items" class="chips"></div><button id="btn-add-default" class="chip-add" data-i18n="ui.settings.currency.add_default_button" data-i18n-title="ui.settings.currency.add_default_tooltip" title="Add a default currency">+ add</button></div>
             <div class="set-rates">
-              <div class="set-inline"><label title="Manually set exchange rates for the core currencies. Yours override the market; blank cells use live data.">Rate overrides</label><span class="set-sub">grey = live market; type to pin your own; accepts 0.25, 1/4 or 1:4</span></div>
+              <div class="set-inline"><label data-i18n="ui.settings.currency.rate_overrides_label" data-i18n-title="ui.settings.currency.rate_overrides_tooltip" title="Manually set exchange rates for the core currencies. Yours override the market; blank cells use live data.">Rate overrides</label><span class="set-sub" data-i18n="ui.settings.currency.rate_overrides_sub">grey = live market; type to pin your own; accepts 0.25, 1/4 or 1:4</span></div>
               <div id="ovr-panel" class="ovr-panel"><div id="ovr-grid" class="ovr-grid"></div></div>
-              <div class="set-legend"><span class="legend-swatch"></span>blue border = your override</div>
+              <div class="set-legend"><span class="legend-swatch"></span><span data-i18n="ui.settings.currency.rate_overrides_legend">blue border = your override</span></div>
             </div>
-            <label class="switch set-excl" title="Ange charges gold per unit traded, so routing thousands of low-value Exalted through a loop drains gold. This skips Exalted as an intermediate hop when building arbitrage routes."><input type="checkbox" id="exclude-exalted-arb" /><span class="sw-track"></span><span class="sw-lab">Exclude Exalted from arbitrage routes</span><span class="set-sub">avoids gold-heavy loops</span></label>
+            <label class="switch set-excl" data-i18n-title="ui.settings.currency.exclude_exalted_arb_tooltip" title="Ange charges gold per unit traded, so routing thousands of low-value Exalted through a loop drains gold. This skips Exalted as an intermediate hop when building arbitrage routes."><input type="checkbox" id="exclude-exalted-arb" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.currency.exclude_exalted_arb_label">Exclude Exalted from arbitrage routes</span><span class="set-sub" data-i18n="ui.settings.currency.exclude_exalted_arb_sub">avoids gold-heavy loops</span></label>
             <div class="set-live-group">
-              <div class="set-live-title" title="How often the Currency tab's live trade-site rates refresh. Two independent rates: while you're viewing the tab, and while it runs in the background. Every setting stays safely under GGG's limits - the poll self-throttles, so none of these can rate-limit you.">Live rate updates</div>
+              <div class="set-live-title" data-i18n="ui.settings.currency.live_rate_updates_label" data-i18n-title="ui.settings.currency.live_rate_updates_tooltip" title="How often the Currency tab's live trade-site rates refresh. Two independent rates: while you're viewing the tab, and while it runs in the background. Every setting stays safely under GGG's limits - the poll self-throttles, so none of these can rate-limit you.">Live rate updates</div>
               <div class="set-live-row">
-                <div class="set-live-cap">While viewing the Currency tab</div>
-                <input type="range" id="currency-tabrate" class="live-slider" min="0" max="3" step="1" value="2" aria-label="Currency update rate while viewing" />
+                <div class="set-live-cap" data-i18n="ui.settings.currency.live_rate_viewing_cap">While viewing the Currency tab</div>
+                <input type="range" id="currency-tabrate" class="live-slider" min="0" max="3" step="1" value="2" data-i18n-aria="ui.settings.currency.rate_viewer_aria_label" aria-label="Currency update rate while viewing" />
                 <div class="live-labels">
-                  <span data-rate="quiet" title="No auto-refresh while viewing - only the ⟳ button updates rates.">Quiet</span>
-                  <span data-rate="low" title="Refreshes about one pair every 60s while you watch.">Low</span>
-                  <span data-rate="medium" title="Refreshes about one pair every 30s while you watch. Default.">Medium</span>
-                  <span data-rate="high" title="Refreshes about one pair every 12s - as fast as GGG allows (a full sweep of the majors lands every ~2.5 min).">High</span>
+                  <span data-rate="quiet" data-i18n="ui.settings.currency.rate_label_quiet" data-i18n-title="ui.settings.currency.rate_viewer_quiet_tooltip" title="No auto-refresh while viewing - only the ⟳ button updates rates.">Quiet</span>
+                  <span data-rate="low" data-i18n="ui.settings.currency.rate_label_low" data-i18n-title="ui.settings.currency.rate_viewer_low_tooltip" title="Refreshes about one pair every 60s while you watch.">Low</span>
+                  <span data-rate="medium" data-i18n="ui.settings.currency.rate_label_medium" data-i18n-title="ui.settings.currency.rate_viewer_medium_tooltip" title="Refreshes about one pair every 30s while you watch. Default.">Medium</span>
+                  <span data-rate="high" data-i18n="ui.settings.currency.rate_label_high" data-i18n-title="ui.settings.currency.rate_viewer_high_tooltip" title="Refreshes about one pair every 12s - as fast as GGG allows (a full sweep of the majors lands every ~2.5 min).">High</span>
                 </div>
               </div>
               <div class="set-live-row">
-                <div class="set-live-cap">In the background (while on other tabs)</div>
-                <input type="range" id="currency-bgrate" class="live-slider" min="0" max="3" step="1" value="0" aria-label="Currency update rate in the background" />
+                <div class="set-live-cap" data-i18n="ui.settings.currency.live_rate_bg_cap">In the background (while on other tabs)</div>
+                <input type="range" id="currency-bgrate" class="live-slider" min="0" max="3" step="1" value="0" data-i18n-aria="ui.settings.currency.rate_bg_aria_label" aria-label="Currency update rate in the background" />
                 <div class="live-labels">
-                  <span data-rate="quiet" title="Off. No background polling - the tab only updates when you open it. Default, lightest on the API.">Quiet</span>
-                  <span data-rate="low" title="Keeps rates warm in the background, slowly (about one pair every 60s).">Low</span>
-                  <span data-rate="medium" title="Background refresh at a moderate pace (about one pair every 30s).">Medium</span>
-                  <span data-rate="high" title="Background refresh as fast as GGG allows (about one pair every 12s). Still can't get you rate-limited.">High</span>
+                  <span data-rate="quiet" data-i18n="ui.settings.currency.rate_label_quiet" data-i18n-title="ui.settings.currency.rate_bg_quiet_tooltip" title="Off. No background polling - the tab only updates when you open it. Default, lightest on the API.">Quiet</span>
+                  <span data-rate="low" data-i18n="ui.settings.currency.rate_label_low" data-i18n-title="ui.settings.currency.rate_bg_low_tooltip" title="Keeps rates warm in the background, slowly (about one pair every 60s).">Low</span>
+                  <span data-rate="medium" data-i18n="ui.settings.currency.rate_label_medium" data-i18n-title="ui.settings.currency.rate_bg_medium_tooltip" title="Background refresh at a moderate pace (about one pair every 30s).">Medium</span>
+                  <span data-rate="high" data-i18n="ui.settings.currency.rate_label_high" data-i18n-title="ui.settings.currency.rate_bg_high_tooltip" title="Background refresh as fast as GGG allows (about one pair every 12s). Still can't get you rate-limited.">High</span>
                 </div>
               </div>
             </div>
@@ -121,35 +128,35 @@
 
           <div class="set-half">
             <section class="set-card" id="sec-pricecheck">
-              <div class="set-card-lab">Price Check</div>
-              <label class="switch" title="Show a range slider beside each mod. Off saves space - the number inputs still work."><input type="checkbox" id="item-sliders" /><span class="sw-track"></span><span class="sw-lab">Show mod sliders</span></label>
+              <div class="set-card-lab" data-i18n="ui.settings.pricecheck.heading">Price Check</div>
+              <label class="switch" data-i18n-title="ui.settings.pricecheck.mod_sliders_tooltip" title="Show a range slider beside each mod. Off saves space - the number inputs still work."><input type="checkbox" id="item-sliders" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.pricecheck.mod_sliders_label">Show mod sliders</span></label>
               <div class="set-field set-login">
-                <label title="Logged-in sessions get exact server-side weighted searches for fungible damage rolls. You sign in on pathofexile.com's own page - this app never sees your credentials.">Trade account</label>
-                <button id="btn-poe-login" class="set-login-btn">Log in to pathofexile.com</button>
+                <label data-i18n="ui.settings.pricecheck.trade_account_label" data-i18n-title="ui.settings.pricecheck.trade_account_tooltip" title="Logged-in sessions get exact server-side weighted searches for fungible damage rolls. You sign in on pathofexile.com's own page - this app never sees your credentials.">Trade account</label>
+                <button id="btn-poe-login" class="set-login-btn" data-i18n="ui.settings.pricecheck.login_button">Log in to pathofexile.com</button>
                 <span id="poe-login-status" class="settings-hint"></span>
-                <span class="set-sub">exact weighted searches; sign-in happens on GGG's own page</span>
+                <span class="set-sub" data-i18n="ui.settings.pricecheck.trade_account_sub">exact weighted searches; sign-in happens on GGG's own page</span>
               </div>
             </section>
 
             <section class="set-card" id="sec-help">
-              <div class="set-card-lab">Help &amp; About</div>
+              <div class="set-card-lab" data-i18n="ui.settings.help.heading">Help &amp; About</div>
               <div class="set-field">
-                <label title="Run the tutorial for a section">Replay tutorial</label>
+                <label data-i18n="ui.settings.help.replay_tutorial_label" data-i18n-title="ui.settings.help.replay_tutorial_tooltip" title="Run the tutorial for a section">Replay tutorial</label>
                 <div class="tut-chips">
-                  <button class="tut-chip" data-tut="currency">Currency</button>
-                  <button class="tut-chip" data-tut="pricecheck">Price Check</button>
-                  <button class="tut-chip" data-tut="desecrate">Desecrate</button>
-                  <button class="tut-chip" data-tut="networth">Net Worth</button>
-                  <button class="tut-chip" data-tut="regex">Regex</button>
-                  <button class="tut-chip" data-tut="grandex">Grand Expedition</button>
+                  <button class="tut-chip" data-tut="currency" data-i18n="ui.settings.help.tut_chip_currency">Currency</button>
+                  <button class="tut-chip" data-tut="pricecheck" data-i18n="ui.settings.help.tut_chip_pricecheck">Price Check</button>
+                  <button class="tut-chip" data-tut="desecrate" data-i18n="ui.settings.help.tut_chip_desecrate">Desecrate</button>
+                  <button class="tut-chip" data-tut="networth" data-i18n="ui.settings.help.tut_chip_networth">Net Worth</button>
+                  <button class="tut-chip" data-tut="regex" data-i18n="ui.settings.help.tut_chip_regex">Regex</button>
+                  <button class="tut-chip" data-tut="grandex" data-i18n="ui.settings.help.tut_chip_grandex">Grand Expedition</button>
                 </div>
               </div>
               <div class="set-field">
-                <label title="See what changed in each release">Release notes</label>
-                <button id="btn-release-notes" class="set-login-btn">View release notes</button>
+                <label data-i18n="ui.settings.help.release_notes_label" data-i18n-title="ui.settings.help.release_notes_tooltip" title="See what changed in each release">Release notes</label>
+                <button id="btn-release-notes" class="set-login-btn" data-i18n="ui.settings.help.release_notes_button">View release notes</button>
               </div>
               <div class="settings-support">
-                <span id="set-bug" class="support-bug" role="button" tabindex="0" title="Report a bug (attaches a short activity log)">
+                <span id="set-bug" class="support-bug" role="button" tabindex="0" data-i18n-title="ui.settings.help.bug_tooltip" title="Report a bug (attaches a short activity log)">
                   <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
                     <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
                       <path d="M9 4 L10.6 7.2" /><path d="M15 4 L13.4 7.2" />
@@ -159,36 +166,36 @@
                     <ellipse cx="12" cy="13.6" rx="4.1" ry="5.4" fill="currentColor" />
                     <circle cx="12" cy="7.4" r="2.4" fill="currentColor" />
                   </svg>
-                  <span class="support-bug-lab">Bug</span>
+                  <span class="support-bug-lab" data-i18n="ui.settings.help.bug_label">Bug</span>
                 </span>
                 <span class="support-sep">&middot;</span>
-                <span id="set-feedback" class="support-lnk" role="button" tabindex="0" title="Suggest a feature or share feedback">Feedback</span>
+                <span id="set-feedback" class="support-lnk" role="button" tabindex="0" data-i18n="ui.settings.help.feedback_label" data-i18n-title="ui.settings.help.feedback_tooltip" title="Suggest a feature or share feedback">Feedback</span>
                 <span class="support-sep">&middot;</span>
-                <span id="set-help" class="support-lnk" role="button" tabindex="0" title="Open the FAQ">Help</span>
+                <span id="set-help" class="support-lnk" role="button" tabindex="0" data-i18n="ui.settings.help.help_label" data-i18n-title="ui.settings.help.help_tooltip" title="Open the FAQ">Help</span>
                 <span class="support-sep">&middot;</span>
-                <span id="set-support" class="support-lnk" role="button" tabindex="0" title="Buy me a coffee on Ko-fi">&#x2615; Coffee</span>
+                <span id="set-support" class="support-lnk" role="button" tabindex="0" data-i18n="ui.settings.help.coffee_label" data-i18n-title="ui.settings.help.coffee_tooltip" title="Buy me a coffee on Ko-fi">&#x2615; Coffee</span>
               </div>
             </section>
           </div>
 
           <section class="set-card" id="sec-networth">
-            <div class="set-card-lab">Net Worth</div>
+            <div class="set-card-lab" data-i18n="ui.settings.networth.heading">Net Worth</div>
             <div class="set-field">
-              <label title="Global key: open a currency tab in game and press this to scan and value it into the tally.">Capture hotkey</label>
-              <div class="kb-field"><input id="stash-hotkey-input" class="kb-input" readonly placeholder="click, then press keys" /><span class="kb-hint">click to rebind</span></div>
+              <label data-i18n="ui.settings.networth.capture_hotkey_label" data-i18n-title="ui.settings.networth.capture_hotkey_tooltip" title="Global key: open a currency tab in game and press this to scan and value it into the tally.">Capture hotkey</label>
+              <div class="kb-field"><input id="stash-hotkey-input" class="kb-input" readonly data-i18n-ph="ui.settings.hotkey_placeholder" placeholder="click, then press keys" /><span class="kb-hint" data-i18n="ui.settings.hotkey_rebind_hint">click to rebind</span></div>
             </div>
             <div id="nw-set-root"></div>
           </section>
 
           <section class="set-card" id="sec-hotkeys">
-            <div class="set-card-lab">Command Hotkeys</div>
+            <div class="set-card-lab" data-i18n="ui.settings.hotkeys.heading">Command Hotkeys</div>
             <div class="cmdhk-head">
-              <label title="Each hotkey sends exactly one chat command when pressed. Commands come from a fixed safe list - one key, one manual action, nothing GGG's rules disallow.">Bind a key to a chat command</label>
-              <span class="set-sub">One press, one command - fires only while the game is focused, with the chat input closed.</span>
-              <span class="set-sub cmdhk-nofocus hidden">On this platform the app can't yet tell which window is focused, so a command is sent to whatever has your keyboard. Keep that in mind before binding one.</span>
+              <label data-i18n="ui.settings.hotkeys.bind_label" data-i18n-title="ui.settings.hotkeys.bind_tooltip" title="Each hotkey sends exactly one chat command when pressed. Commands come from a fixed safe list - one key, one manual action, nothing GGG's rules disallow.">Bind a key to a chat command</label>
+              <span class="set-sub" data-i18n="ui.settings.hotkeys.bind_sub">One press, one command - fires only while the game is focused, with the chat input closed.</span>
+              <span class="set-sub cmdhk-nofocus hidden" data-i18n="ui.settings.hotkeys.nofocus_warning">On this platform the app can't yet tell which window is focused, so a command is sent to whatever has your keyboard. Keep that in mind before binding one.</span>
             </div>
             <div id="cmd-hotkeys-rows" class="cmdhk-rows"></div>
-            <button id="cmd-hotkeys-add" class="chip-add" title="Add a command hotkey">+ Add hotkey</button>
+            <button id="cmd-hotkeys-add" class="chip-add" data-i18n="ui.settings.hotkeys.add_hotkey_button" data-i18n-title="ui.settings.hotkeys.add_hotkey_tooltip" title="Add a command hotkey">+ Add hotkey</button>
           </section>
         </div>
       </div>
@@ -196,16 +203,16 @@
 
     <div id="update-banner" class="hidden">
       <span id="update-text"></span>
-      <button id="btn-update" class="update-btn hidden">Update &amp; restart</button>
+      <button id="btn-update" class="update-btn hidden" data-i18n="ui.update.restart_button">Update &amp; restart</button>
     </div>
 
     <nav id="tabs" class="tabs">
-      <button id="tab-currency" class="tab active" title="Currency prices, best-value payments and arbitrage">Currency</button>
-      <button id="tab-items" class="tab" title="Price-check items: hover one in game and press your price-check hotkey (default Ctrl+F)">Price Check</button>
-      <button id="tab-desecrate" class="tab" title="Is this item worth Omen of Light + bone rerolling? Load an item from Price Check, or paste one here with Ctrl+V.">Desecrate</button>
-      <button id="tab-networth" class="tab" title="Value your currency tabs: open a tab in game, click Capture, and it reads the counts and totals what they're worth.">Net Worth</button>
-      <button id="tab-regex" class="tab" title="Build stash-search regex for waystones and tablets, and keep your saved regexes one click from the clipboard.">Regex</button>
-      <button id="tab-grandex" class="tab" title="Plan your Grand Expedition: track rumors, identify islands, and prep the run.">Grand Expedition</button>
+      <button id="tab-currency" class="tab active" data-i18n="ui.tabs.currency_label" data-i18n-title="ui.tabs.currency_tooltip" title="Currency prices, best-value payments and arbitrage">Currency</button>
+      <button id="tab-items" class="tab" data-i18n="ui.tabs.pricecheck_label" data-i18n-title="ui.tabs.pricecheck_tooltip" title="Price-check items: hover one in game and press your price-check hotkey (default Ctrl+F)">Price Check</button>
+      <button id="tab-desecrate" class="tab" data-i18n="ui.tabs.desecrate_label" data-i18n-title="ui.tabs.desecrate_tooltip" title="Is this item worth Omen of Light + bone rerolling? Load an item from Price Check, or paste one here with Ctrl+V.">Desecrate</button>
+      <button id="tab-networth" class="tab" data-i18n="ui.tabs.networth_label" data-i18n-title="ui.tabs.networth_tooltip" title="Value your currency tabs: open a tab in game, click Capture, and it reads the counts and totals what they're worth.">Net Worth</button>
+      <button id="tab-regex" class="tab" data-i18n="ui.tabs.regex_label" data-i18n-title="ui.tabs.regex_tooltip" title="Build stash-search regex for waystones and tablets, and keep your saved regexes one click from the clipboard.">Regex</button>
+      <button id="tab-grandex" class="tab" data-i18n="ui.tabs.grandex_label" data-i18n-title="ui.tabs.grandex_tooltip" title="Plan your Grand Expedition: track rumors, identify islands, and prep the run.">Grand Expedition</button>
     </nav>
 
     <div id="status" class="hidden"></div>
@@ -213,7 +220,7 @@
     <main id="buckets" class="hidden"></main>
 
     <footer class="hidden">
-      <button id="btn-add-bucket">+ Track another currency</button>
+      <button id="btn-add-bucket" data-i18n="ui.footer.add_bucket_button">+ Track another currency</button>
     </footer>
 
     <main id="item-root"></main>
@@ -227,7 +234,7 @@
     <main id="grandex-root" class="hidden"></main>
 
     <div id="support-bar">
-      <span id="btn-bug" class="support-bug" role="button" tabindex="0" title="Report a bug (attaches a short activity log)">
+      <span id="btn-bug" class="support-bug" role="button" tabindex="0" data-i18n-title="ui.support.bug_tooltip" title="Report a bug (attaches a short activity log)">
         <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
           <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
             <path d="M9 4 L10.6 7.2" /><path d="M15 4 L13.4 7.2" />
@@ -237,35 +244,35 @@
           <ellipse cx="12" cy="13.6" rx="4.1" ry="5.4" fill="currentColor" />
           <circle cx="12" cy="7.4" r="2.4" fill="currentColor" />
         </svg>
-        <span class="support-bug-lab">Bug</span>
+        <span class="support-bug-lab" data-i18n="ui.support.bug_label">Bug</span>
       </span>
       <span class="support-sep">&middot;</span>
-      <span id="lnk-feedback" class="support-lnk" role="button" tabindex="0" title="Suggest a feature or share feedback">Feedback</span>
+      <span id="lnk-feedback" class="support-lnk" role="button" tabindex="0" data-i18n="ui.support.feedback_label" data-i18n-title="ui.support.feedback_tooltip" title="Suggest a feature or share feedback">Feedback</span>
       <span class="support-sep">&middot;</span>
-      <span id="lnk-help" class="support-lnk" role="button" tabindex="0" title="Open the FAQ in your browser">Help</span>
+      <span id="lnk-help" class="support-lnk" role="button" tabindex="0" data-i18n="ui.support.help_label" data-i18n-title="ui.support.help_tooltip" title="Open the FAQ in your browser">Help</span>
       <span class="support-sep">&middot;</span>
-      <span id="lnk-coffee" class="support-lnk" role="button" tabindex="0" title="Buy me a coffee on Ko-fi (opens in your browser)">&#x2615; Coffee</span>
+      <span id="lnk-coffee" class="support-lnk" role="button" tabindex="0" data-i18n="ui.support.coffee_label" data-i18n-title="ui.support.coffee_tooltip" title="Buy me a coffee on Ko-fi (opens in your browser)">&#x2615; Coffee</span>
     </div>
   </div>
 
   <div id="feedback-modal" class="hidden">
     <div class="fb-card">
-      <div id="fb-title" class="fb-title">Report a bug</div>
+      <div id="fb-title" class="fb-title" data-i18n="ui.feedback_modal.title">Report a bug</div>
       <div id="fb-type-row" class="fb-row">
-        <label class="fb-lab">Type</label>
+        <label class="fb-lab" data-i18n="ui.feedback_modal.type_label">Type</label>
         <select id="fb-type">
-          <option value="Feature request">Feature request</option>
-          <option value="General feedback">General feedback</option>
-          <option value="Praise">Praise</option>
+          <option value="Feature request" data-i18n="ui.feedback_modal.type_option_feature">Feature request</option>
+          <option value="General feedback" data-i18n="ui.feedback_modal.type_option_general">General feedback</option>
+          <option value="Praise" data-i18n="ui.feedback_modal.type_option_praise">Praise</option>
         </select>
       </div>
-      <textarea id="fb-details" rows="4" placeholder="What happened, or what would you like to see?"></textarea>
-      <input id="fb-contact" type="text" maxlength="200" placeholder="Contact (optional) - Discord, email, etc." />
-      <div id="fb-note" class="fb-note hidden">A short activity log is attached to help us debug.</div>
+      <textarea id="fb-details" rows="4" data-i18n-ph="ui.feedback_modal.details_placeholder" placeholder="What happened, or what would you like to see?"></textarea>
+      <input id="fb-contact" type="text" maxlength="200" data-i18n-ph="ui.feedback_modal.contact_placeholder" placeholder="Contact (optional) - Discord, email, etc." />
+      <div id="fb-note" class="fb-note hidden" data-i18n="ui.feedback_modal.log_note">A short activity log is attached to help us debug.</div>
       <div class="fb-actions">
         <span id="fb-status" class="fb-status"></span>
-        <button id="fb-cancel" class="mini-btn">Cancel</button>
-        <button id="fb-send" class="mini-btn">Send</button>
+        <button id="fb-cancel" class="mini-btn" data-i18n="ui.feedback_modal.cancel_button">Cancel</button>
+        <button id="fb-send" class="mini-btn" data-i18n="ui.feedback_modal.send_button">Send</button>
       </div>
     </div>
   </div>
@@ -274,17 +281,17 @@
     <div class="notes-card">
       <div class="notes-head">
         <div>
-          <div id="notes-title" class="notes-title">What's new</div>
+          <div id="notes-title" class="notes-title" data-i18n="ui.notes_modal.title">What's new</div>
           <div id="notes-sub" class="notes-sub"></div>
         </div>
-        <button id="notes-close" class="icon-btn" title="Close">&#x2715;</button>
+        <button id="notes-close" class="icon-btn" data-i18n-title="ui.notes_modal.close_tooltip" title="Close">&#x2715;</button>
       </div>
       <div class="notes-main">
-        <nav id="notes-nav" class="notes-nav" aria-label="Versions"></nav>
+        <nav id="notes-nav" class="notes-nav" data-i18n-aria="ui.notes_modal.nav_aria_label" aria-label="Versions"></nav>
         <div id="notes-body" class="notes-body"></div>
       </div>
       <div class="notes-actions">
-        <button id="notes-dismiss" class="mini-btn">Got it</button>
+        <button id="notes-dismiss" class="mini-btn" data-i18n="ui.notes_modal.dismiss_button">Got it</button>
       </div>
     </div>
   </div>
@@ -294,16 +301,28 @@
   <div id="picker" class="hidden">
     <div class="picker-panel">
       <div class="picker-head">
-        <input id="picker-search" placeholder="Search currencies..." autocomplete="off" />
+        <input id="picker-search" data-i18n-ph="ui.picker.search_placeholder" placeholder="Search currencies..." autocomplete="off" />
         <button id="picker-close" class="icon-btn">&#x2715;</button>
       </div>
       <div id="picker-list"></div>
     </div>
   </div>
 
-  <!-- i18n first: every other renderer script calls t() at load time -->
-  <script src="i18n/i18n.js"></script>
+  <!-- CATALOGS FIRST, then the runtime, then everything else. The catalogs are
+       self-registering (window.I18N_CATALOGS ||= {}), and i18n.js picks the active
+       language the moment it loads - which it can only do if the catalogs are already
+       there. Other renderer scripts call t() at load time, so the language has to be
+       settled before them. -->
   <script src="i18n/en.js"></script>
+  <script src="i18n/ru.js"></script>
+  <script src="i18n/pt.js"></script>
+  <script src="i18n/de.js"></script>
+  <script src="i18n/fr.js"></script>
+  <script src="i18n/es.js"></script>
+  <script src="i18n/qa.js"></script>
+  <script src="i18n/game-names.js"></script>
+  <script src="i18n/rumor-names.js"></script>
+  <script src="i18n/i18n.js"></script>
   <script src="release-notes.js"></script>
   <script src="renderer.js"></script>
   <script src="tutorial.js"></script>

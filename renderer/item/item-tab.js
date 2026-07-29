@@ -50,8 +50,8 @@
   //   Greater Runes  = the "soul" pool (Medved's Tending & co) -> read as explicit
   //   Otherworldly   = the Altered-bone pool -> read as desecrated
   const SPECIAL_SCOPES = [
-    { key: 'soul', label: 'Greater Runes', real: 'explicit' },
-    { key: 'other', label: 'Otherworldly', real: 'desecrated' },
+    { key: 'soul', label: t('itemtab.search.pill_greater_runes'), real: 'explicit' },
+    { key: 'other', label: t('itemtab.search.pill_otherworldly'), real: 'desecrated' },
   ];
   let specialSets = null;
   function specialFor(key) {
@@ -166,10 +166,10 @@
         }
       }
       state.currencyResult = it || null;
-      if (!it) state.notice = 'No exchange price found for this item yet.';
+      if (!it) state.notice = t('itemtab.currency.no_price_found_yet');
       else pushCurrencyHistory(it); // currency lookups belong in Recent searches too
     } catch (err) {
-      state.notice = 'Price lookup failed: ' + (err && err.message || err);
+      state.notice = t('itemtab.currency.price_lookup_failed', { error: (err && err.message || err) });
     }
     state.searching = false; state.stale = false;
     render();
@@ -187,14 +187,14 @@
     const wrap = cel('div', 'cur-spark');
     wrap.innerHTML = `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="cur-spark-svg ${up ? 'up' : 'down'}"><path d="${d}"/></svg>`;
     const lbl = cel('div', 'cur-spark-lbl');
-    lbl.appendChild(cel('span', null, '7-day'));
-    lbl.appendChild(cel('span', null, `${fmtNum(lo)}–${fmtNum(hi)} ex`));
+    lbl.appendChild(cel('span', null, t('itemtab.currency.spark_label_7day')));
+    lbl.appendChild(cel('span', null, t('itemtab.currency.spark_range', { lo: fmtNum(lo), hi: fmtNum(hi) })));
     wrap.appendChild(lbl);
     return wrap;
   }
   function renderCurrency(root) {
     root.innerHTML = '';
-    const back = cel('div', 'back-link', '&larr; back');
+    const back = cel('div', 'back-link', t('itemtab.currency.back_link'));
     back.onclick = () => { state.view = 'empty'; state.item = null; state.currencyResult = null; render(); };
     root.appendChild(back);
     const card = cel('div', 'cur-card');
@@ -204,25 +204,25 @@
     card.appendChild(head);
     const r = state.currencyResult;
     if (state.searching && !r) {
-      card.appendChild(cel('div', 'cur-note', 'Fetching exchange value…'));
+      card.appendChild(cel('div', 'cur-note', t('itemtab.currency.fetching')));
     } else if (r && r.price != null) {
       const div = divRateFull();
       const ex = r.price, big = div && ex >= div;
       // unit as icon (Settings > "Show currency icons instead of names") or the
       // plain "div"/"ex" abbreviation, whichever the toggle calls for
       const unit = (apiId, abbr) => (window.currencyIconTag && window.currencyIconTag(apiId)) || abbr;
-      const primary = big ? `${(ex / div).toFixed(2)} ${unit('divine', 'div')}` : `${fmtNum(ex)} ${unit('exalted', 'ex')}`;
-      const secondary = big ? `${fmtNum(ex)} ${unit('exalted', 'ex')}` : (div ? `${(ex / div).toFixed(3)} ${unit('divine', 'div')}` : '');
+      const primary = big ? `${(ex / div).toFixed(2)} ${unit('divine', t('itemtab.currency.unit_div'))}` : `${fmtNum(ex)} ${unit('exalted', t('itemtab.currency.unit_ex'))}`;
+      const secondary = big ? `${fmtNum(ex)} ${unit('exalted', t('itemtab.currency.unit_ex'))}` : (div ? `${(ex / div).toFixed(3)} ${unit('divine', t('itemtab.currency.unit_div'))}` : '');
       const val = cel('div', 'cur-value', primary);
       if (secondary) val.appendChild(cel('span', 'cur-value-sub', ' · ' + secondary));
       card.appendChild(val);
       const spark = currencySpark(r.logs);
       if (spark) card.appendChild(spark);
       card.appendChild(cel('div', 'cur-note', r.source === 'cx'
-        ? 'Exchange value from GGG’s currency market (executed trades) — bulk items like this trade by exchange, not by whisper.'
-        : 'Exchange value from the currency market (poe2scout) — bulk items like this trade by exchange, not by whisper.'));
+        ? t('itemtab.currency.note_cx')
+        : t('itemtab.currency.note_scout')));
     } else {
-      card.appendChild(cel('div', 'cur-note', cesc(state.notice || 'No exchange price found.')));
+      card.appendChild(cel('div', 'cur-note', cesc(state.notice || t('itemtab.currency.no_price_found'))));
     }
     root.appendChild(card);
   }
@@ -526,16 +526,16 @@
           exact: key === 'map_tier', // tier is a bracket, not a floor
         });
       };
-      mp('map_tier', 'Waystone Tier', parsed.mapTier, true);
-      mp('map_iir', 'Item Rarity', parsed.mapItemRarity, true);
-      mp('map_packsize', 'Pack Size', parsed.mapPackSize, true);
-      mp('map_rare_monsters', 'Monster Rarity',
+      mp('map_tier', t('itemtab.property.waystone_tier'), parsed.mapTier, true);
+      mp('map_iir', t('itemtab.property.item_rarity'), parsed.mapItemRarity, true);
+      mp('map_packsize', t('itemtab.property.pack_size'), parsed.mapPackSize, true);
+      mp('map_rare_monsters', t('itemtab.property.monster_rarity'),
         parsed.mapMonsterRarity != null ? parsed.mapMonsterRarity : parsed.mapRareMonsters, true);
-      mp('map_magic_monsters', 'Monster Effectiveness',
+      mp('map_magic_monsters', t('itemtab.property.monster_effectiveness'),
         parsed.mapEffectiveness != null ? parsed.mapEffectiveness : parsed.mapMagicMonsters, true);
-      mp('map_bonus', 'Waystone Drop Chance', parsed.mapDropChance, false);
-      mp('map_revives', 'Revives Available', parsed.mapRevives, false);
-      mp('map_gold', 'Waystone Gold', parsed.mapGold, false);
+      mp('map_bonus', t('itemtab.property.waystone_drop_chance'), parsed.mapDropChance, false);
+      mp('map_revives', t('itemtab.property.revives_available'), parsed.mapRevives, false);
+      mp('map_gold', t('itemtab.property.waystone_gold'), parsed.mapGold, false);
       for (const m of mods) m.mode = 'off';
     }
 
@@ -552,10 +552,10 @@
         const total = entry.values[0] * emptySockets;
         if (/Physical Damage/.test(entry.baseStat || entry.string || '')) runeIncrPhys = total;
         else if (/Armour|Evasion|Energy Shield/.test(entry.baseStat || entry.string || '')) runeIncrDef = total;
-        if (runeIncrPhys || runeIncrDef) runeNote = `+${emptySockets} rune${emptySockets > 1 ? 's' : ''}`;
+        if (runeIncrPhys || runeIncrDef) runeNote = tn('itemtab.property.rune_note', emptySockets, { count: emptySockets });
       }
     }
-    const notes = [q20On && (parsed.quality || 0) < 20 ? 'q20' : '', runeNote].filter(Boolean).join(', ');
+    const notes = [q20On && (parsed.quality || 0) < 20 ? t('itemtab.property.q20_tag') : '', runeNote].filter(Boolean).join(', ');
 
     // defences/phys: displayed = baseFlat x (1 + increased%) x (1 + quality%).
     // Runes are "increased" mods, so they ADD to the item's increased-sum
@@ -569,16 +569,16 @@
       try { incr = window.EE2.calcPropBase(window.EE2.QUALITY_STATS[statsKey], parsed).incr.value || 0; } catch {}
       return raw * ((1 + (incr + runeIncr) / 100) / (1 + incr / 100)) * ((1 + qEff / 100) / (1 + qCur / 100));
     };
-    addProp('ar', 'Armour', adjVal(parsed.armourAR, 'ARMOUR', runeIncrDef), true, false, notes);
-    addProp('ev', 'Evasion', adjVal(parsed.armourEV, 'EVASION', runeIncrDef), true, false, notes);
-    addProp('es', 'Energy Shield', adjVal(parsed.armourES, 'ENERGY_SHIELD', runeIncrDef), true, false, notes);
+    addProp('ar', t('itemtab.property.armour'), adjVal(parsed.armourAR, 'ARMOUR', runeIncrDef), true, false, notes);
+    addProp('ev', t('itemtab.property.evasion'), adjVal(parsed.armourEV, 'EVASION', runeIncrDef), true, false, notes);
+    addProp('es', t('itemtab.property.energy_shield'), adjVal(parsed.armourES, 'ENERGY_SHIELD', runeIncrDef), true, false, notes);
     // Runic Ward is real defence - runeforged gear trades raw AR/EV/ES for it,
     // so leaving it out prices those items against the wrong comps entirely.
     // Left unscaled: quality and Iron Runes boost Armour/Evasion/Energy Shield,
     // not ward, so the printed number is already the number.
-    addProp('ward', 'Runic Ward', parsed.armourRW, true);
-    addProp('block', 'Block', parsed.armourBLOCK, true);
-    addProp('spirit', 'Spirit', parsed.weaponSPIRIT, true);
+    addProp('ward', t('itemtab.property.runic_ward'), parsed.armourRW, true);
+    addProp('block', t('itemtab.property.block'), parsed.armourBLOCK, true);
+    addProp('spirit', t('itemtab.property.spirit'), parsed.weaponSPIRIT, true);
 
     // weapons: parser's weaponPHYSICAL/ELEMENTAL are damage PER HIT; DPS = dmg x APS.
     // Physical normalizes to q20 and adds the assumed rune's increased-phys (same
@@ -588,11 +588,11 @@
     if (physHit > 0) physHit = adjVal(physHit, 'PHYSICAL_DAMAGE', runeIncrPhys);
     const pdps = aps ? physHit * aps : 0;
     const edps = aps ? (parsed.weaponELEMENTAL || 0) * aps : 0;
-    addProp('pdps', 'Physical DPS', pdps, pdps >= 50, true, notes);
-    addProp('edps', 'Elemental DPS', edps, edps >= 50, true);
-    if (pdps + edps > 0) addProp('dps', 'Total DPS', pdps + edps, pdps + edps >= 100, true, notes);
-    addProp('aps', 'Attacks per Second', aps, false, true);
-    addProp('crit', 'Critical Chance', parsed.weaponCRIT, false, true);
+    addProp('pdps', t('itemtab.property.physical_dps'), pdps, pdps >= 50, true, notes);
+    addProp('edps', t('itemtab.property.elemental_dps'), edps, edps >= 50, true);
+    if (pdps + edps > 0) addProp('dps', t('itemtab.property.total_dps'), pdps + edps, pdps + edps >= 100, true, notes);
+    addProp('aps', t('itemtab.property.attacks_per_second'), aps, false, true);
+    addProp('crit', t('itemtab.property.critical_chance'), parsed.weaponCRIT, false, true);
 
     // Rune sockets ("Augmentable Sockets" - GGG's own term), its own
     // equipment_filter (rune_sockets). A count, not a roll, so it searches
@@ -605,8 +605,8 @@
     if (sock && sock.current > 0) {
       const socketsMatter = sock.current > sock.normal || parsed.isCorrupted;
       props.push({
-        id: 'prop.rune_sockets', prop: true, kind: 'property', ref: 'Augmentable Sockets',
-        text: `Augmentable Sockets: ${sock.current}`,
+        id: 'prop.rune_sockets', prop: true, kind: 'property', ref: t('itemtab.property.augmentable_sockets'),
+        text: `${t('itemtab.property.augmentable_sockets')}: ${sock.current}`,
         value: sock.current, min: null, max: null, tier: null, searchMin: null,
         mode: socketsMatter ? 'strict' : 'off', exact: true,
         damage: null, form: null, weight: null, group: null, altIds: [],
@@ -672,7 +672,7 @@
       const pseudoRows = [{
         id: 'pseudo.pseudo_total_resistance',
         altIds: [], kind: 'pseudo', pseudoAuto: true, ref: 'pseudo total resistance',
-        text: `+${total}% total Resistance`,
+        text: t('itemtab.property.pseudo_total_resistance', { total }),
         value: total, min: null, max: null, tier: null, searchMin: null,
         mode: 'strict', damage: null, form: null, weight: null, group: null, garbage: false,
         foldGroup: 'res', foldHead: true, // the folded res lines accordion under this
@@ -681,7 +681,7 @@
         pseudoRows.push({
           id: 'pseudo.pseudo_total_chaos_resistance', altIds: [], kind: 'pseudo',
           pseudoAuto: true, editableMin: true, ref: 'pseudo chaos resistance',
-          text: '+#% to Chaos Resistance', value: null, min: null, max: null,
+          text: t('itemtab.property.pseudo_chaos_resistance'), value: null, min: null, max: null,
           tier: null, searchMin: null, mode: 'strict', damage: null, form: null,
           weight: null, group: null, garbage: false,
         });
@@ -1147,10 +1147,10 @@
         // fractured has no top-level flag (the fractured scope is the signal).
         // duplicated(mirrored)/split/sanctified/unmodifiable are the standard trade
         // shape but unconfirmed in PoE2 data - kept as harmless no-ops until seen.
-        const STATUS = [['corrupted', 'Corrupted'], ['desecrated', 'Desecrated'], ['duplicated', 'Mirrored'], ['split', 'Split'], ['sanctified', 'Sanctified'], ['unmodifiable', 'Unmodifiable']];
+        const STATUS = [['corrupted', t('itemtab.property.status_corrupted')], ['desecrated', t('itemtab.property.status_desecrated')], ['duplicated', t('itemtab.property.status_mirrored')], ['split', t('itemtab.property.status_split')], ['sanctified', t('itemtab.property.status_sanctified')], ['unmodifiable', t('itemtab.property.status_unmodifiable')]];
         const f = STATUS.filter(([k]) => item[k]).map(([, lab]) => lab);
         const eh = (item.extended && item.extended.hashes) || {};
-        if ((eh.fractured || []).length) f.push('Fractured');
+        if ((eh.fractured || []).length) f.push(t('itemtab.property.status_fractured'));
         return f;
       })(),
       totals, // res / dmg / sockets, each { val, delta } or null - peek card
@@ -1571,15 +1571,19 @@
     async onWhisper(l) {
       if (!l.whisper) return;
       await window.api.writeClipboard(l.whisper);
-      state.notice = 'Whisper copied - paste it in the game chat to contact the seller.';
+      const shown = t('itemtab.notice.whisper_copied');
+      state.notice = shown;
       render();
-      setTimeout(() => { if (state.notice && state.notice.startsWith('Whisper copied')) { state.notice = null; render(); } }, 3500);
+      // compare against the string we actually set, not an English prefix: the old
+      // startsWith('Whisper copied') check silently stopped clearing the notice the
+      // moment the UI wasn't English
+      setTimeout(() => { if (state.notice === shown) { state.notice = null; render(); } }, 3500);
     },
     onSearch: doSearch,
     onAddMod() {
       window.ItemUI.showPicker({
-        title: 'Add a mod to the search',
-        placeholder: 'Search any mod to add…',
+        title: t('itemtab.search.add_mod_title'),
+        placeholder: t('itemtab.search.add_mod_placeholder'),
         scopes: [...PICKER_SCOPES, ...SPECIAL_SCOPES],
         query: (q, scope) => filterStats(q, new Set(state.item.mods.map((m) => m.id)), scope || 'explicit'),
         onPick(e) {
@@ -1603,11 +1607,11 @@
       if (m.prop) return; // properties have no garbage/fungible actions
       const inGarbage = m.id && state.garbage.includes(m.id);
       window.ItemUI.showMenu(ev, [
-        m.id && { label: 'Make fungible with…', fn: () => openFungiblePicker(i) },
-        m.group && { label: 'Remove fungible group', fn: () => ungroup(i) },
-        m.added && !m.group && { label: 'Remove this mod', fn: () => { state.item.mods.splice(i, 1); markStale(); } },
-        m.id && !inGarbage && { label: 'Add to garbage pool', fn: () => addGarbage(i) },
-        m.id && inGarbage && { label: 'Remove from garbage pool', fn: () => removeGarbage(m.id) },
+        m.id && { label: t('itemtab.search.menu_make_fungible'), fn: () => openFungiblePicker(i) },
+        m.group && { label: t('itemtab.search.menu_remove_fungible_group'), fn: () => ungroup(i) },
+        m.added && !m.group && { label: t('itemtab.search.menu_remove_mod'), fn: () => { state.item.mods.splice(i, 1); markStale(); } },
+        m.id && !inGarbage && { label: t('itemtab.search.menu_add_garbage'), fn: () => addGarbage(i) },
+        m.id && inGarbage && { label: t('itemtab.search.menu_remove_garbage'), fn: () => removeGarbage(m.id) },
       ]);
     },
     async onLogin() {
@@ -1615,7 +1619,7 @@
       const league = await resolveLeague();
       state.authed = await window.api.trade2AuthCheck(league, true);
       state.loginHint = !state.authed;
-      state.notice = state.authed ? 'Logged in - weighted searches now run on the trade site.' : 'Still not logged in.';
+      state.notice = state.authed ? t('itemtab.notice.login_success') : t('itemtab.notice.login_still_out');
       render();
       if (state.authed && state.item) doSearch();
     },
@@ -1663,11 +1667,11 @@
           rec.floor = state.results.suggested;
           window.api.setItemHistory(state.history);
         }
-        state.notice = `Cached result from ${ageStr(rec.ts)} - Search re-runs it live.`;
+        state.notice = t('itemtab.history.cached_result', { age: ageStr(rec.ts) });
       } else {
         // pre-raw-cache history entry: its snapshot is stale-formatted, don't show it
         state.results = null;
-        state.notice = rec.cached ? 'This cached search predates a display update - hit Search to refresh it.' : null;
+        state.notice = rec.cached ? t('itemtab.history.stale_format_notice') : null;
       }
       render();
     },
@@ -1689,7 +1693,7 @@
       if (!model) return;
       state.item = model;
       state.itemOriginal = JSON.parse(JSON.stringify(model));
-      state.notice = 'Sample item - explore the mods and comps, or paste your own to replace it.';
+      state.notice = t('itemtab.notice.sample_item_loaded');
       state.stale = false;
       state.view = 'item';
       try { state.results = buildResults(demoSynthListings(model), 3); } catch { state.results = null; }
@@ -1703,8 +1707,8 @@
     const groupId = host.group || (host.group = 'fg' + i);
     const pickedIds = () => new Set(state.item.mods.filter((m) => m.group === groupId).map((m) => m.id));
     window.ItemUI.showPicker({
-      title: 'Fungible with: ' + host.text,
-      placeholder: 'Search mods (e.g. "maximum Life")...',
+      title: t('itemtab.search.fungible_with_title', { mod_text: host.text }),
+      placeholder: t('itemtab.search.fungible_placeholder'),
       scopes: [...PICKER_SCOPES, ...SPECIAL_SCOPES],
       query: (q, scope) => filterStats(q, pickedIds(), scope || 'explicit'),
       onPick(e) {
@@ -1741,7 +1745,7 @@
     window.api.setGarbagePool(state.garbage);
     m.mode = 'off'; // garbage defaults to off; the COUNT toggle re-constrains the flex slot
     m.garbage = true;
-    state.notice = `"${m.text}" added to your garbage pool.`;
+    state.notice = t('itemtab.search.garbage_added', { mod_text: m.text });
     markStale();
   }
   function removeGarbage(id) {
@@ -1754,10 +1758,10 @@
 
   function ageStr(ts) {
     const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
-    if (s < 60) return `${s}s ago`;
-    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-    if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-    return `${Math.floor(s / 86400)}d ago`;
+    if (s < 60) return t('itemtab.history.age_seconds', { count: s });
+    if (s < 3600) return t('itemtab.history.age_minutes', { count: Math.floor(s / 60) });
+    if (s < 86400) return t('itemtab.history.age_hours', { count: Math.floor(s / 3600) });
+    return t('itemtab.history.age_days', { count: Math.floor(s / 86400) });
   }
 
   // ---------- search ----------
@@ -1851,7 +1855,7 @@
       state.results = buildResults(rawAll, d.total);
       pushHistory(rawAll, d.total);
     } catch (err) {
-      state.notice = `Search failed: ${err.message}`;
+      state.notice = t('itemtab.search.failed', { error: err.message });
       if (window.logAction) window.logAction('item-search-error', String(err.message));
     }
     state.searching = false;
@@ -1876,7 +1880,7 @@
       learnRanges(res.data || []);
       state.results = buildResults(ctx.rawAll, ctx.total);
     } catch (err) {
-      state.notice = `Couldn't load more: ${err.message}`;
+      state.notice = t('itemtab.search.load_more_failed', { error: err.message });
     }
     state.searching = false;
     clearWait();
@@ -1997,8 +2001,8 @@
     if (!m || !m.currencyTag) return;
     const rec = {
       ts: Date.now(),
-      base: m.currencyName || it.text || m.base || 'Currency',
-      summary: it && it.price > 0 ? `${fmtNum(it.price)} ex` : 'no price yet',
+      base: m.currencyName || it.text || m.base || t('itemtab.history.currency_fallback_name'),
+      summary: it && it.price > 0 ? `${fmtNum(it.price)} ${t('itemtab.currency.unit_ex')}` : t('itemtab.history.no_price_yet'),
       icon: m.currencyIcon || (it && it.icon) || null,
       model: m,
       currency: true,
@@ -2034,7 +2038,7 @@
       console.error('item parse threw:', err);
     }
     if (!res.ok) {
-      state.notice = `Couldn't read that item: ${res.error}`;
+      state.notice = t('itemtab.notice.parse_failed', { error: res.error });
       render();
       if (window.logAction) window.logAction('item-parse-error', String(res.error).slice(0, 200));
       return false;
@@ -2106,7 +2110,10 @@
   function ensureInit() {
     if (!initPromise) {
       initPromise = Promise.all([
-        window.EE2.init('en'),
+        // The parser MUST load the same language the player's client is in: Russian
+        // item text cannot be matched against English stat data at all. Falls back to
+        // English for any language we haven't vendored data for.
+        window.EE2.init(window.I18N && ['en', 'ru', 'pt', 'de', 'fr', 'es'].includes(window.I18N.lang()) ? window.I18N.lang() : 'en'),
         Promise.resolve(window.api.getCxCatalog ? window.api.getCxCatalog() : null)
           .then((cat) => {
             if (cat && !cat.error) {
@@ -2325,7 +2332,7 @@
         const x = document.createElement('span');
         x.className = 'tab-x';
         x.textContent = '✕';
-        x.title = 'Hide this tab - turn it back on in Settings → App';
+        x.title = t('itemtab.settings.hide_tab_tooltip');
         x.addEventListener('click', (e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -2434,7 +2441,7 @@
       window.api.onItemCopyFailed(() => {
         setTab(true);
         const hk = String(state.itemHotkey || 'Ctrl+F').replace(/Control|CommandOrControl/g, 'Ctrl');
-        state.notice = `Couldn't grab the hovered item. Hover it in game and press ${hk} again, or copy it with Ctrl+C and paste it here.`;
+        state.notice = t('itemtab.notice.copy_failed', { hotkey: hk });
         render();
       });
     }

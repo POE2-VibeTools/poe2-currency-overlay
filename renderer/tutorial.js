@@ -75,37 +75,37 @@ function currencySteps() {
   const exBucket = () => tutBucket(TUT_BASE);
   return [
     {
-      title: 'Welcome to POE2 Currency Overlay',
-      text: `Floats over your game. Press <b>${esc(config.hotkey || 'F6')}</b> to toggle it (change it in <b>⚙ Settings</b>), <b>Esc</b> to hide; drag the bar to move, edges to resize. Quick tour? Under a minute.`,
+      title: t('tutorial.currency.welcome_title'),
+      text: t('tutorial.currency.welcome_text', { hotkey: esc(config.hotkey || 'F6') }),
       target: () => null
     },
     {
-      title: 'Each card is a currency you buy',
-      text: 'You\'re set up watching <b>Exalted</b>, <b>Chaos</b> and <b>Divine</b>. Each card is a currency you want to <b>buy</b> - its header names the currency with a small <b>"buying"</b> tag, and the rows beneath are the currencies you\'d <b>pay with</b>.',
+      title: t('tutorial.currency.card_intro_title'),
+      text: t('tutorial.currency.card_intro_text'),
       target: () => { const b = exBucket(); return (b && b.querySelector('.bucket-head')) || b; },
       inert: true
     },
     {
-      title: 'The BEST row is cheapest',
-      text: 'Two ways to buy Exalted here - pay with Chaos or Divine. The row tagged <b>BEST</b> (green) is the <b>cheapest right now</b>; its <b>+%</b> is the edge over the next option, and a red <b>−%</b> on another row shows what that alternative costs you.',
+      title: t('tutorial.currency.best_row_title'),
+      text: t('tutorial.currency.best_row_text'),
       target: () => exBucket(),
       inert: true
     },
     {
-      title: 'Every column is labelled',
-      text: '<b>Trend</b> is 7-day history, <b>Price</b> comes from GGG\'s exchange, <b>Vol</b> is how much traded, and <b>Arb</b> lights up when a profitable trade loop starts on that row. <b>Hover any cell</b> for the detail behind it; <b>click</b> to pin it so it stays while you tab into the game.',
+      title: t('tutorial.currency.columns_title'),
+      text: t('tutorial.currency.columns_text'),
       target: () => { const b = exBucket(); return (b && b.querySelector('.bucket-cols')) || b; },
       inert: true
     },
     {
-      title: 'Fix a rate, or refresh',
-      text: 'Feed prices can lag. Hover a row and click the blue <b>✎</b> to type the rate you see in game - fractions like <b>1/4</b> work - and it drives the math until you clear it. The <b>⟳</b> button pulls fresh prices now (core pairs also refresh every ~30s while you\'re on this tab).',
+      title: t('tutorial.currency.fix_rate_title'),
+      text: t('tutorial.currency.fix_rate_text'),
       target: () => document.getElementById('btn-refresh'),
       inert: true
     },
     {
-      title: 'You\'re all set',
-      text: 'That\'s the core. <b>⚙ Settings</b> holds manual rates (laid out like Ange), your default currencies, <b>Hotkeys</b> - bind a key to a safe chat command like <b>/hideout</b> - and <b>Replay tutorial</b>. Reorder a bucket\'s payments by dragging the handle on the left, and remove one by dragging it out of the bucket or clicking its <b>✕</b>; add more with <b>+ payment</b>. Next, a quick look at the other two tabs - good hunting, exile.',
+      title: t('tutorial.currency.allset_title'),
+      text: t('tutorial.currency.allset_text'),
       target: () => document.getElementById('btn-settings'),
       inert: true
     }
@@ -120,16 +120,16 @@ function pricecheckSteps() {
     {
       // starts on the REAL landing screen - the surface you paste into
       onArrive: () => { try { if (window.ItemTab) window.ItemTab.demoEmpty(); } catch {} },
-      title: 'Price Check: getting an item in',
-      text: 'Hover an item in game and press your <b>price-check hotkey</b> (default <b>Ctrl+F</b>) - the overlay opens with it priced. <b>Ctrl+Alt+F</b> is a quick check that hides once your mouse leaves. No overlay open? Copy the item with <b>Ctrl+C</b> and paste it here with <b>Ctrl+V</b>.',
+      title: t('tutorial.pricecheck.getting_item_title'),
+      text: t('tutorial.pricecheck.getting_item_text'),
       target: () => document.querySelector('#item-root .paste-prompt'),
       inert: true
     },
     {
       // now load the demo item WITH comparable listings, so results are real
       onArrive: () => { try { if (window.ItemTab) window.ItemTab.demoLoad(TUT_DEMO_ITEM); } catch {} },
-      title: 'The results',
-      text: 'Here\'s a demo <b>Gloom Coil</b>. Comparable listings appear here cheapest-first, with a <b>suggested floor</b> up top.',
+      title: t('tutorial.pricecheck.results_title'),
+      text: t('tutorial.pricecheck.results_text'),
       target: () => document.querySelector('#item-root .results') || document.querySelector('#item-root .suggested'),
       inert: true
     },
@@ -137,28 +137,28 @@ function pricecheckSteps() {
       // actually POP the peek on the top comp so the hover payoff is shown, not just described
       onArrive: () => { try { const row = document.querySelector('#item-root .listing'); if (row) row.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true })); } catch {} },
       onExit: () => { try { if (window.api) window.api.itemPeekHide(); } catch {} },
-      title: 'Compare on hover',
-      text: 'That card beside the overlay popped up from hovering the top comp - every listing does it. It reads line-by-line against your item: <b>green</b> where you\'re ahead, <b>red</b> where it wins, with total resistance and added damage side by side.',
+      title: t('tutorial.pricecheck.compare_hover_title'),
+      text: t('tutorial.pricecheck.compare_hover_text'),
       target: () => document.querySelector('#item-root .listing') || document.querySelector('#item-root .results'),
       inert: true
     },
     {
-      title: 'Each mod is a filter',
-      text: 'Every line on your item is a search filter - the number shown is the minimum. Turn a line off, loosen it, add one it doesn\'t have, or use the presets below (tier min / exact roll) to set them all at once.',
+      title: t('tutorial.pricecheck.mod_filter_title'),
+      text: t('tutorial.pricecheck.mod_filter_text'),
       target: () => document.querySelector('#item-root .mod'),
       inert: true
     },
     {
       // open the accordion so the toggles are on screen when we point at it
       onArrive: () => { try { if (window.ItemTab) window.ItemTab.setMiscOpen(true); } catch {} },
-      title: 'Miscellaneous: cut the junk comps',
-      text: 'Easy to miss, worth knowing: toggle out <b>corrupted / crafted / fractured</b> and friends so failed crafts don\'t drag your price down, and choose which <b>Listings</b> to compare against - <b>Instant Buyout</b> by default, the same as in game.',
+      title: t('tutorial.pricecheck.misc_title'),
+      text: t('tutorial.pricecheck.misc_text'),
       target: () => document.querySelector('#item-root .misc-acc'),
       inert: true
     },
     {
-      title: 'The redesecrate? button',
-      text: 'When an item carries a <b>desecrated</b> mod (the green line on this ring), this appears in the top corner. It opens the <b>Desecrate</b> tab, which works out whether re-rolling that mod with Omens of Light is worth the currency. Let\'s look.',
+      title: t('tutorial.pricecheck.redesecrate_button_title'),
+      text: t('tutorial.pricecheck.redesecrate_button_text'),
       target: () => document.querySelector('#item-root .des-corner'),
       inert: true
     }
@@ -172,22 +172,22 @@ function desecrateSteps() {
   return [
     {
       onArrive: () => { try { tutEnterDesecrate(); } catch {} },
-      title: 'Desecrate: is re-rolling worth it?',
-      text: 'Chasing a better mod with <b>Omens of Light</b> isn\'t obvious to price out. This tab does it for you: it takes your item, its current worth, and the odds, and tells you whether to spam - and which route.',
+      title: t('tutorial.desecrate.intro_title'),
+      text: t('tutorial.desecrate.intro_text'),
       target: () => document.querySelector('#desecrate-root .des-item') || document.querySelector('#desecrate-root .des-sec'),
       inert: true
     },
     {
       onArrive: () => { try { tutEnterDesecrate(); } catch {} },
-      title: 'Pick what counts as a hit',
-      text: 'Tick the outcomes you\'d be happy to land, and the <b>worst tier</b> you\'d still keep. The app weights each by its real spawn chance - so "a hit" means an outcome you\'d actually stop on, not just any change.',
+      title: t('tutorial.desecrate.pick_hit_title'),
+      text: t('tutorial.desecrate.pick_hit_text'),
       target: () => document.querySelector('#desecrate-root .des-list') || document.querySelector('#desecrate-root .des-sec'),
       inert: true
     },
     {
       onArrive: () => { try { tutEnterDesecrate(); } catch {} },
-      title: 'The routes, and the verdict',
-      text: 'It prices your item as it stands and with a hit, then compares the routes (Preserved, Ancient) with real odds, expected bones and net profit. The <b>verdict</b> up top is the bottom line: spam, or move on. That\'s the tour - happy hunting.',
+      title: t('tutorial.desecrate.routes_verdict_title'),
+      text: t('tutorial.desecrate.routes_verdict_text'),
       target: () => document.querySelector('#desecrate-root .des-routes') || document.querySelector('#desecrate-root .des-verdict') || document.querySelector('#desecrate-root .des-sec'),
       inert: true
     }
@@ -247,15 +247,15 @@ function networthSteps() {
   return [
     {
       onArrive: () => tutOpenTab('networth'),
-      title: 'Net Worth: capture a tab',
-      text: `Open a currency tab in game and press <b>${key}</b>. It reads the counts off the screen, prices them, and stacks a row here. The hotkey works even when this tab is hidden.`,
+      title: t('tutorial.networth.capture_title'),
+      text: t('tutorial.networth.capture_text', { stashHotkey: key }),
       target: () => document.querySelector('#networth-root .nw-empty') || document.querySelector('#networth-root .nw-header'),
       inert: true
     },
     {
       onArrive: () => tutOpenTab('networth'),
-      title: 'The total, and fixing a misread',
-      text: 'Captured tabs add up to a running total in <b>Exalted</b> and <b>Divine</b>. Click any count to correct a misread; <b>⚙</b> holds calibration if you don\'t play at 1920x1080.',
+      title: t('tutorial.networth.total_fix_title'),
+      text: t('tutorial.networth.total_fix_text'),
       target: () => document.querySelector('#networth-root .nw-grand') || document.querySelector('#networth-root .nw-header'),
       inert: true
     }
@@ -266,15 +266,15 @@ function regexSteps() {
   return [
     {
       onArrive: tutRegexDemo,
-      title: 'Regex: build a stash search',
-      text: 'Pick <b>Waystone</b> or <b>Tablet</b>, add the mods you want with a minimum roll, and list what you never want under <b>Excluded</b>. Holding an example? Paste it with <b>Ctrl+V</b> and it seeds itself.',
+      title: t('tutorial.regex.build_title'),
+      text: t('tutorial.regex.build_text'),
       target: () => document.querySelector('#regex-root .rx-seg'),
       inert: true
     },
     {
       onArrive: tutRegexDemo,
-      title: 'Copy it, or keep it',
-      text: 'The finished pattern sits down here. <b>⧉ Copy</b> it into your stash search, or label it and <b>+ Save</b> to keep it under <b>🗂 Saved regexes</b> for a one-click copy later.',
+      title: t('tutorial.regex.copy_keep_title'),
+      text: t('tutorial.regex.copy_keep_text'),
       target: () => document.querySelector('#regex-root .rx-bar'),
       inert: true
     }
@@ -285,29 +285,29 @@ function grandexSteps() {
   return [
     {
       onArrive: tutGrandExDemo,
-      title: 'Grand Expedition: worth the Aldurs?',
-      text: 'In Uncharted Waters, tap the rumors you can see, or type a name and press <b>Enter</b>. Only 3 show at a time; move an inventory item to rotate the rest into view.',
+      title: t('tutorial.grandex.intro_title'),
+      text: t('tutorial.grandex.intro_text'),
       target: () => document.querySelector('#grandex-root .gx-search-wrap'),
       inert: true
     },
     {
       onArrive: tutGrandExDemo,
-      title: 'The verdict',
-      text: '<b>SPEND THE ALDURS</b>, <b>SAVE THE ALDURS</b> or <b>YOUR CALL</b>, scored from community island ratings, with the meter showing which zone you\'re in. Under 3 expeditions it\'s a save whatever the score.',
+      title: t('tutorial.grandex.verdict_title'),
+      text: t('tutorial.grandex.verdict_text'),
       target: () => document.querySelector('#grandex-root .gx-bar-top') || document.querySelector('#grandex-root .gx-bar'),
       inert: true
     },
     {
       onArrive: tutGrandExDemo,
-      title: 'Take it with you',
-      text: 'Paste this tag into your map note. <b>🕘 History</b> reads it back later and rebuilds the roster from it.',
+      title: t('tutorial.grandex.tag_title'),
+      text: t('tutorial.grandex.tag_text'),
       target: () => document.querySelector('#grandex-root .gx-bar-tagrow') || document.querySelector('#grandex-root .gx-bar'),
       inert: true
     },
     {
       onArrive: tutGrandExDemo,
-      title: 'Prep and the run',
-      text: '<b>⚒ Prep</b> is the shopping list: tablets, waystones, and the Atlas nodes to set before you sail. <b>⚗ Run guide</b> is the rune chain while you\'re in there.',
+      title: t('tutorial.grandex.prep_run_title'),
+      text: t('tutorial.grandex.prep_run_text'),
       target: () => document.querySelector('#grandex-root .gx-tools'),
       inert: true
     }
@@ -431,11 +431,11 @@ function tutDom() {
       '<div id="tut-title"></div><div id="tut-text"></div>' +
       '<div id="tut-action-row" class="hidden"><button id="tut-action" class="mini-btn"></button></div>' +
       '<div id="tut-foot">' +
-      '<span class="tut-left"><button id="tut-back" class="tut-nav" title="Back">←</button><span id="tut-dots"></span></span>' +
-      '<span class="tut-btns"><button id="tut-skip-step" class="hidden">skip step</button>' +
-      '<button id="tut-next" class="mini-btn">Next</button></span></div>' +
-      '<div id="tut-dismiss"><span id="tut-later">dismiss for now</span>' +
-      '<span id="tut-never">don\'t show again</span></div>';
+      `<span class="tut-left"><button id="tut-back" class="tut-nav" title="${t('tutorial.modal.back_button')}">←</button><span id="tut-dots"></span></span>` +
+      `<span class="tut-btns"><button id="tut-skip-step" class="hidden">${t('tutorial.modal.skip_step_button')}</button>` +
+      `<button id="tut-next" class="mini-btn">${t('tutorial.modal.next_button')}</button></span></div>` +
+      `<div id="tut-dismiss"><span id="tut-later">${t('tutorial.modal.dismiss_later')}</span>` +
+      `<span id="tut-never">${t('tutorial.modal.dismiss_never')}</span></div>`;
     document.body.appendChild(card);
     document.getElementById('tut-next').addEventListener('click', () => tutAdvance());
     document.getElementById('tut-skip-step').addEventListener('click', () => {
@@ -620,7 +620,7 @@ function tutShow(step, idx, total) {
   const backBtn = document.getElementById('tut-back');
   const handsOn = typeof step.until === 'function';
   nextBtn.classList.toggle('hidden', handsOn);
-  nextBtn.textContent = step.nextLabel || (idx === total - 1 ? 'Finish' : 'Next');
+  nextBtn.textContent = step.nextLabel || (idx === total - 1 ? t('tutorial.modal.finish_button') : t('tutorial.modal.next_button'));
   skipStepBtn.classList.toggle('hidden', !handsOn);
   backBtn.classList.toggle('hidden', idx === 0);
   if (step.action) {
@@ -857,11 +857,11 @@ function showTutItemTourOffer() {
   const m = document.createElement('div');
   m.id = 'tut-item-offer';
   m.innerHTML =
-    '<div class="tut-farewell-card"><div id="tut-title">See the other two tabs?</div>' +
-    '<div id="tut-text" class="tut-modal-text">A quick, hands-off look at <b>Price Check</b> and the <b>Desecrate</b> calculator on a sample item. Takes about a minute, and you can stop any time.</div>' +
+    `<div class="tut-farewell-card"><div id="tut-title">${t('tutorial.modal.item_offer_title')}</div>` +
+    `<div id="tut-text" class="tut-modal-text">${t('tutorial.modal.item_offer_text')}</div>` +
     '<div class="tut-modal-foot">' +
-    '<button class="tut-nav" id="tut-item-no">No thanks</button>' +
-    '<button class="mini-btn" id="tut-item-yes">Show me</button></div></div>';
+    `<button class="tut-nav" id="tut-item-no">${t('tutorial.modal.item_offer_no')}</button>` +
+    `<button class="mini-btn" id="tut-item-yes">${t('tutorial.modal.item_offer_yes')}</button></div></div>`;
   document.body.appendChild(m);
   const close = () => m.remove();
   m.querySelector('#tut-item-yes').addEventListener('click', () => { close(); startTutorial('pricecheck'); });
@@ -878,11 +878,11 @@ function showTutNewTabsOffer() {
   const m = document.createElement('div');
   m.id = 'tut-newtabs-offer';
   m.innerHTML =
-    '<div class="tut-farewell-card"><div id="tut-title">See the three newest tabs?</div>' +
-    '<div id="tut-text" class="tut-modal-text">A quick look at <b>Net Worth</b>, <b>Regex</b> and <b>Grand Expedition</b> - what each one is for and where its output lands. Under a minute, stop any time.</div>' +
+    `<div class="tut-farewell-card"><div id="tut-title">${t('tutorial.modal.newtabs_offer_title')}</div>` +
+    `<div id="tut-text" class="tut-modal-text">${t('tutorial.modal.newtabs_offer_text')}</div>` +
     '<div class="tut-modal-foot">' +
-    '<button class="tut-nav" id="tut-newtabs-no">No thanks</button>' +
-    '<button class="mini-btn" id="tut-newtabs-yes">Show me</button></div></div>';
+    `<button class="tut-nav" id="tut-newtabs-no">${t('tutorial.modal.newtabs_offer_no')}</button>` +
+    `<button class="mini-btn" id="tut-newtabs-yes">${t('tutorial.modal.newtabs_offer_yes')}</button></div></div>`;
   document.body.appendChild(m);
   const close = () => m.remove();
   m.querySelector('#tut-newtabs-yes').addEventListener('click', () => { close(); startTutorial('newtabs'); });
@@ -896,10 +896,9 @@ function showTutFarewell() {
     m = document.createElement('div');
     m.id = 'tut-farewell';
     m.innerHTML =
-      '<div class="tut-farewell-card"><div id="tut-title">Tutorial dismissed</div>' +
-      '<div id="tut-text" class="tut-modal-text">You can run it again any time from ' +
-      '<b>⚙ Settings → Replay tutorial</b>.</div>' +
-      '<div class="tut-modal-foot tut-modal-foot-end"><button class="mini-btn" id="tut-farewell-ok">Got it</button></div></div>';
+      `<div class="tut-farewell-card"><div id="tut-title">${t('tutorial.modal.farewell_title')}</div>` +
+      `<div id="tut-text" class="tut-modal-text">${t('tutorial.modal.farewell_text')}</div>` +
+      `<div class="tut-modal-foot tut-modal-foot-end"><button class="mini-btn" id="tut-farewell-ok">${t('tutorial.modal.farewell_ok')}</button></div></div>`;
     document.body.appendChild(m);
     m.querySelector('#tut-farewell-ok').addEventListener('click', () => m.remove());
     m.addEventListener('click', (e) => { if (e.target === m) m.remove(); });

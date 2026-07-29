@@ -38,7 +38,7 @@
     window.api.getConfig().then((c) => {
       state.buckets = Array.isArray(c && c.regexBuckets) && c.regexBuckets.length
         ? c.regexBuckets
-        : [{ id: 'default', name: 'My Regex', entries: [] }];
+        : [{ id: 'default', name: t('regex.drawer.default_bucket_name'), entries: [] }];
       state.saveBucket = state.buckets[0].id;
       render();
     }).catch(() => {});
@@ -75,7 +75,7 @@
     if (cls === 'waystone') {
       // section the tooltip's derived header lines (the "core 4" + tier that
       // players actually combine) away from the affix soup below them
-      if (!waystonePoolCache) waystonePoolCache = (P.waystone || []).map((m) => ({ ...m, group: m.prop ? 'Core stats' : 'Waystone mods' }));
+      if (!waystonePoolCache) waystonePoolCache = (P.waystone || []).map((m) => ({ ...m, group: m.prop ? t('regex.picker.group_core_stats') : t('regex.picker.group_waystone_mods') }));
       return waystonePoolCache;
     }
     if (cls === 'tablet') return tabletMerged();
@@ -115,9 +115,9 @@
     if (!pattern) return;
     const b = state.buckets.find((x) => x.id === state.saveBucket) || state.buckets[0];
     if (!b) return;
-    b.entries.push({ id: newId(), label: label || 'Unnamed regex', pattern });
+    b.entries.push({ id: newId(), label: label || t('regex.bar.default_entry_label'), pattern });
     persist();
-    state.notice = { kind: 'ok', msg: `Saved to ${b.name} - it's in your Saved regexes.` };
+    state.notice = { kind: 'ok', msg: t('regex.notice.saved_to_bucket', { bucket: b.name }) };
     render();
   }
 
@@ -136,7 +136,7 @@
       const imp = ((window.RegexPools || {}).tabletImplicits || []).find((i) => lines.some((l) => l.toLowerCase() === i.text.toLowerCase()));
       state.tabletType = imp ? imp.type : null;
     }
-    if (!cls) { state.notice = { kind: 'warn', msg: "That doesn't look like a waystone or tablet - copy one in game with Ctrl+C." }; render(); return false; }
+    if (!cls) { state.notice = { kind: 'warn', msg: t('regex.notice.not_recognized') }; render(); return false; }
     state.cls = cls;
     state.sel = new Map();
     const pool = poolFor(cls);
@@ -162,8 +162,8 @@
       }
     }
     state.notice = state.sel.size
-      ? { kind: 'ok', msg: `Read ${state.sel.size} mod${state.sel.size === 1 ? '' : 's'} from your item - adjust below; the pattern is in the bar.` }
-      : { kind: 'warn', msg: 'Recognized the item but none of its lines are in the mod pool yet.' };
+      ? { kind: 'ok', msg: t('regex.notice.read_mods', { count: state.sel.size, plural_suffix: state.sel.size === 1 ? '' : 's' }) }
+      : { kind: 'warn', msg: t('regex.notice.no_known_mods') };
     render();
     return true;
   }
@@ -172,8 +172,8 @@
   function toolbar() {
     const bar = el('div', 'rx-tools');
     const n = savedCount();
-    const chip = el('button', 'gx-tool' + (state.drawerOpen ? ' on' : ''), `🗂 Saved regexes${n ? ` (${n})` : ''}`);
-    chip.title = 'Your buckets - one click copies a saved regex';
+    const chip = el('button', 'gx-tool' + (state.drawerOpen ? ' on' : ''), n ? t('regex.toolbar.saved_chip', { count: n }) : t('regex.drawer.title'));
+    chip.title = t('regex.toolbar.saved_chip_tooltip');
     chip.onclick = () => { state.drawerOpen = !state.drawerOpen; render(); };
     bar.appendChild(chip);
     return bar;
@@ -190,14 +190,14 @@
       b.onclick = () => { if (state.cls !== v) { state.cls = v; state.tabletType = null; state.sel = new Map(); state.picker = null; state.notice = null; render(); } };
       return b;
     };
-    seg.appendChild(segBtn('waystone', 'Waystone', 'Build from the waystone mod pool'));
-    seg.appendChild(segBtn('tablet', 'Tablet', 'All tablet types - they share a stash tab, so one search covers them all'));
-    seg.appendChild(segBtn('custom', '✎ Custom', 'Write your own regex and save it under a label'));
+    seg.appendChild(segBtn('waystone', t('regex.builder.seg_waystone'), t('regex.builder.seg_waystone_tooltip')));
+    seg.appendChild(segBtn('tablet', t('regex.builder.seg_tablet'), t('regex.builder.seg_tablet_tooltip')));
+    seg.appendChild(segBtn('custom', t('regex.builder.seg_custom'), t('regex.builder.seg_custom_tooltip')));
     card.appendChild(seg);
 
     if (state.cls === 'custom') {
-      card.appendChild(el('div', 'rx-tip', 'Write any regex - it flows into the bar below to copy or save under a label.'));
-      const pat = el('textarea', 'rx-in rx-mono rx-custom-pattern'); pat.placeholder = 'Your regex, e.g. "rity: \\+(8[5-9]|9[0-9])"'; pat.value = state.customPattern;
+      card.appendChild(el('div', 'rx-tip', t('regex.builder.custom_tip')));
+      const pat = el('textarea', 'rx-in rx-mono rx-custom-pattern'); pat.placeholder = t('regex.builder.custom_placeholder'); pat.value = state.customPattern;
       pat.oninput = () => { const caret = pat.selectionStart; state.customPattern = pat.value; render(); keepCustomFocus(caret); };
       card.appendChild(pat);
       return card;
@@ -220,14 +220,14 @@
         b.onclick = () => { state.tabletType = v; state.picker = null; render(); };
         return b;
       };
-      sub.appendChild(subBtn(null, 'All', 'Every tablet type'));
-      for (const t of types) sub.appendChild(subBtn(t, t.replace(/ ?Tablet$/i, ''), `Generic mods + ${t}-only mods`));
+      sub.appendChild(subBtn(null, t('regex.builder.sub_all'), t('regex.builder.sub_all_tooltip')));
+      for (const ty of types) sub.appendChild(subBtn(ty, ty.replace(/ ?Tablet$/i, ''), t('regex.builder.sub_type_tooltip', { type: ty }))); // `ty`, not `t`: t() is the translator
       card.appendChild(sub);
     }
 
-    card.appendChild(el('div', 'rx-tip', 'Tip: copy a waystone or tablet in game (Ctrl+C) and paste it here (Ctrl+V) to pre-fill everything.'));
-    card.appendChild(modList('inc', 'Wanted mods', '+ Add mod'));
-    card.appendChild(modList('exc', 'Excluded mods', '+ Add exclusion'));
+    card.appendChild(el('div', 'rx-tip', t('regex.builder.paste_tip')));
+    card.appendChild(modList('inc', t('regex.list.wanted_title'), t('regex.list.add_mod')));
+    card.appendChild(modList('exc', t('regex.list.excluded_title'), t('regex.list.add_exclusion')));
     return card;
   }
 
@@ -236,13 +236,13 @@
     const mod = pool.find((m) => m.text === text);
     if (!mod) return null;
     const r = el('div', 'rx-sel');
-    const rng = mod.min != null && mod.max != null ? (mod.min === mod.max ? String(mod.max) : `${mod.min}-${mod.max}`) : mod.max != null ? `up to ${mod.max}` : '';
+    const rng = mod.min != null && mod.max != null ? (mod.min === mod.max ? String(mod.max) : `${mod.min}-${mod.max}`) : mod.max != null ? t('regex.list.range_up_to', { max: mod.max }) : '';
     r.appendChild(el('span', 'rx-sel-text', esc(mod.text) + (rng ? `<span class="rx-range">${esc(rng)}</span>` : '')));
     if (mode === 'inc' && mod.text.includes('#') && (mod.max == null || mod.max > 1)) {
       r.appendChild(el('span', 'rx-min-lab', '≥'));
       const min = el('input', 'rx-in rx-min'); min.type = 'text'; min.inputMode = 'numeric';
-      min.placeholder = mod.min != null ? String(mod.min) : 'any';
-      if (rng) min.title = `Rolls ${rng}`;
+      min.placeholder = mod.min != null ? String(mod.min) : t('regex.list.min_placeholder');
+      if (rng) min.title = t('regex.list.min_tooltip', { range: rng });
       if (s.min != null) min.value = s.min;
       min.onchange = () => {
         let v = parseInt(min.value, 10);
@@ -252,7 +252,7 @@
       };
       r.appendChild(min);
     }
-    const x = el('button', 'rx-mini', '✕'); x.title = 'Remove';
+    const x = el('button', 'rx-mini', '✕'); x.title = t('regex.list.remove_tooltip');
     x.onclick = () => { state.sel.delete(text); render(); };
     r.appendChild(x);
     return r;
@@ -279,7 +279,7 @@
     if (pickerIs(mode, null)) box.appendChild(pickerPanel(mode, null));
     else {
       const add = el('button', 'rx-ghost rx-add-mod', addLabel);
-      if (!pool.length) { add.disabled = true; add.title = 'Mod pool for this item type is on its way'; }
+      if (!pool.length) { add.disabled = true; add.title = t('regex.list.pool_pending_tooltip'); }
       add.onclick = () => { state.picker = { mode, group: null }; state.pickerQuery = ''; render(); };
       box.appendChild(add);
     }
@@ -290,9 +290,9 @@
       for (const gid of groupIds) {
         const gbox = el('div', 'rx-orgroup');
         const ghead = el('div', 'rx-orgroup-head');
-        ghead.appendChild(el('span', 'rx-orgroup-lab', 'Match ANY of'));
+        ghead.appendChild(el('span', 'rx-orgroup-lab', t('regex.orgroup.match_any_label')));
         ghead.appendChild(el('span', 'rx-flex'));
-        const dissolve = el('button', 'rx-mini', '✕'); dissolve.title = 'Remove this OR group and its mods';
+        const dissolve = el('button', 'rx-mini', '✕'); dissolve.title = t('regex.orgroup.dissolve_tooltip');
         dissolve.onclick = () => {
           for (const [text, s] of state.sel) if (s.group === gid) state.sel.delete(text);
           render();
@@ -305,14 +305,14 @@
         }
         if (pickerIs('inc', gid)) gbox.appendChild(pickerPanel('inc', gid));
         else {
-          const addOpt = el('button', 'rx-ghost rx-add-mod', '+ Add option');
+          const addOpt = el('button', 'rx-ghost rx-add-mod', t('regex.orgroup.add_option'));
           addOpt.onclick = () => { state.picker = { mode: 'inc', group: gid }; state.pickerQuery = ''; render(); };
           gbox.appendChild(addOpt);
         }
         box.appendChild(gbox);
       }
-      const addGroup = el('button', 'rx-ghost rx-add-or', '+ Add OR group');
-      addGroup.title = 'A set of mods where ANY one satisfies the search - "Rares OR Magic monsters"';
+      const addGroup = el('button', 'rx-ghost rx-add-or', t('regex.orgroup.add_group'));
+      addGroup.title = t('regex.orgroup.add_group_tooltip');
       if (!pool.length) addGroup.disabled = true;
       addGroup.onclick = () => {
         const gid = state.groupSeq++;
@@ -326,7 +326,7 @@
       // handle the empty-new-group case explicitly
       if (state.picker && state.picker.mode === 'inc' && state.picker.group != null && !groupIds.includes(state.picker.group)) {
         const gbox = el('div', 'rx-orgroup');
-        gbox.appendChild(el('div', 'rx-orgroup-head', '<span class="rx-orgroup-lab">Match ANY of</span>'));
+        gbox.appendChild(el('div', 'rx-orgroup-head', `<span class="rx-orgroup-lab">${t('regex.orgroup.match_any_label')}</span>`));
         gbox.appendChild(pickerPanel('inc', state.picker.group));
         box.appendChild(gbox);
       }
@@ -342,11 +342,11 @@
     const wrap = el('div', 'rx-picker');
     const row = el('div', 'rx-picker-row');
     const inp = el('input', 'rx-in rx-picker-in');
-    inp.placeholder = 'Type to filter…'; inp.value = state.pickerQuery;
+    inp.placeholder = t('regex.picker.filter_placeholder'); inp.value = state.pickerQuery;
     inp.oninput = () => { state.pickerQuery = inp.value; render(); setTimeout(() => { const n = document.querySelector('.rx-picker-in'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 0); };
     inp.onkeydown = (e) => { if (e.key === 'Escape') { state.picker = null; render(); } };
     row.appendChild(inp);
-    const close = el('button', 'rx-mini', '✕'); close.title = 'Done';
+    const close = el('button', 'rx-mini', '✕'); close.title = t('regex.picker.done_tooltip');
     close.onclick = () => { state.picker = null; render(); };
     row.appendChild(close);
     wrap.appendChild(row);
@@ -362,13 +362,13 @@
     }
     const badFirst = (arr) => mode === 'exc' ? [...arr.filter((m) => m.bad), ...arr.filter((m) => !m.bad)] : arr;
     const list = el('div', 'rx-picker-list');
-    if (!items.length) list.appendChild(el('div', 'rx-picker-none', q ? 'No mods match.' : 'Everything is already picked.'));
-    const rangeStr = (m) => m.min != null && m.max != null ? (m.min === m.max ? String(m.max) : `${m.min}-${m.max}`) : m.max != null ? `up to ${m.max}` : '';
+    if (!items.length) list.appendChild(el('div', 'rx-picker-none', q ? t('regex.picker.no_match') : t('regex.picker.all_picked')));
+    const rangeStr = (m) => m.min != null && m.max != null ? (m.min === m.max ? String(m.max) : `${m.min}-${m.max}`) : m.max != null ? t('regex.list.range_up_to', { max: m.max }) : '';
     const addItem = (m) => {
       const r = rangeStr(m);
       const it = el('div', 'rx-picker-item' + (m.bad ? ' rx-bad' : ''),
         esc(m.text) + (r ? `<span class="rx-range">${esc(r)}</span>` : ''));
-      if (m.bad) it.title = 'Player-hostile mod - the kind you usually exclude';
+      if (m.bad) it.title = t('regex.picker.bad_mod_tooltip');
       it.onclick = () => {
         state.sel.set(m.text, { mode, min: null, group: group == null ? null : group });
         state.pickerQuery = '';
@@ -381,21 +381,25 @@
       // merged tablet pool: section headers reflect the real mechanics - the
       // generic Precursor pool rolls on EVERY tablet type; subtype pools are
       // additive-only ("Breach only" etc.)
-      const gLabel = (g) => g === 'Tablet type' ? 'Tablet type (implicit)'
-        : /^precursor tablet$/i.test(g) ? 'All tablets'
-        : / tablet$/i.test(g) ? g.replace(/ ?Precursor ?/i, ' ').replace(/ ?Tablet$/i, '').trim() + ' only'
+      const gLabel = (g) => g === 'Tablet type' ? t('regex.picker.group_tablet_implicit')
+        : /^precursor tablet$/i.test(g) ? t('regex.picker.group_all_tablets')
+        : / tablet$/i.test(g) ? t('regex.picker.group_type_only', { type: g.replace(/ ?Precursor ?/i, ' ').replace(/ ?Tablet$/i, '').trim() })
         : g; // waystone sections pass through as-is
+      // Group by the RAW pool id and rank on that. Ranking on the displayed label
+      // worked only while the labels were English - translate them and every group
+      // falls to the default rank, quietly undoing the "X only above All tablets"
+      // ordering this sort exists to produce.
       const order = [], byG = new Map();
-      for (const m of items) { const g = gLabel(m.group || 'Other'); if (!byG.has(g)) { byG.set(g, []); order.push(g); } byG.get(g).push(m); }
+      for (const m of items) { const g = m.group || '__other'; if (!byG.has(g)) { byG.set(g, []); order.push(g); } byG.get(g).push(m); }
       // implicits first, "X only" uniques next, the big generic pool last
       order.sort((a, b) => {
-        const rank = (g) => g === 'Tablet type (implicit)' ? 0 : g === 'All tablets' ? 2 : 1;
+        const rank = (g) => g === 'Tablet type' ? 0 : /^precursor tablet$/i.test(g) ? 2 : 1;
         return rank(a) - rank(b);
       });
       let shown = 0;
       for (const g of order) {
         if (shown >= 80) break;
-        list.appendChild(el('div', 'rx-picker-group', esc(g)));
+        list.appendChild(el('div', 'rx-picker-group', esc(g === '__other' ? t('regex.picker.group_other') : gLabel(g))));
         for (const m of badFirst(byG.get(g))) { if (shown++ >= 80) break; addItem(m); }
       }
     } else {
@@ -414,34 +418,34 @@
     const bar = el('div', 'rx-bar');
     if (!pattern) {
       bar.appendChild(el('div', 'rx-bar-empty', state.cls === 'custom'
-        ? '<span class="gx-bar-arrow">↑</span> Type a regex above - it lands here to copy or save.'
-        : '<span class="gx-bar-arrow">↑</span> Add mods above - your regex forms here.'));
+        ? t('regex.bar.empty_custom')
+        : t('regex.bar.empty_builder')));
       return bar;
     }
     const row = el('div', 'rx-bar-row');
     const box = el('input', 'rx-in rx-mono rx-bar-pattern');
     box.readOnly = true; box.value = pattern;
-    box.title = 'Click to copy';
+    box.title = t('regex.bar.pattern_tooltip');
     row.appendChild(box);
     const count = el('span', 'rx-count' + (pattern.length > 250 ? ' rx-over' : ''), `${pattern.length}`);
-    count.title = pattern.length > 250 ? 'Long - the in-game search box may cap length' : 'Characters';
+    count.title = pattern.length > 250 ? t('regex.bar.count_tooltip_long') : t('regex.bar.count_tooltip');
     row.appendChild(count);
-    const cpy = el('button', 'rx-btn', '⧉ Copy');
+    const cpy = el('button', 'rx-btn', t('regex.bar.copy'));
     const flashBtn = () => copyFlash(pattern, cpy,
-      () => { cpy.textContent = '✓ Copied'; },
-      () => { cpy.textContent = '⧉ Copy'; });
+      () => { cpy.textContent = t('regex.bar.copied'); },
+      () => { cpy.textContent = t('regex.bar.copy'); });
     box.onclick = () => { box.select(); flashBtn(); };
     cpy.onclick = flashBtn;
     row.appendChild(cpy);
     bar.appendChild(row);
     const saveRow = el('div', 'rx-bar-row');
-    const lab = el('input', 'rx-in rx-save-label'); lab.placeholder = 'Label to save as, e.g. "high rarity, no slow"'; lab.value = state.saveLabel;
+    const lab = el('input', 'rx-in rx-save-label'); lab.placeholder = t('regex.bar.save_label_placeholder'); lab.value = state.saveLabel;
     lab.oninput = () => { state.saveLabel = lab.value; };
     lab.onkeydown = (e) => { if (e.key === 'Enter' && pattern) doSave(); };
     saveRow.appendChild(lab);
     if (state.buckets.length > 1) saveRow.appendChild(bucketSelect());
-    const sv = el('button', 'rx-btn rx-btn-quiet', '+ Save');
-    sv.title = state.buckets.length > 1 ? 'Save into the selected bucket' : `Saves into ${state.buckets[0] ? state.buckets[0].name : 'your bucket'}`;
+    const sv = el('button', 'rx-btn rx-btn-quiet', t('regex.bar.save'));
+    sv.title = state.buckets.length > 1 ? t('regex.bar.save_tooltip_multi') : t('regex.bar.save_tooltip_single', { bucket: state.buckets[0] ? state.buckets[0].name : 'your bucket' });
     sv.onclick = doSave;
     saveRow.appendChild(sv);
     bar.appendChild(saveRow);
@@ -462,7 +466,7 @@
       s.appendChild(op);
     }
     s.onchange = () => { state.saveBucket = s.value; };
-    s.title = 'Bucket to save into';
+    s.title = t('regex.bar.bucket_select_tooltip');
     return s;
   }
 
@@ -475,7 +479,7 @@
     wrap.onclick = (e) => { if (e.target === wrap) { state.drawerOpen = false; render(); } };
     const panel = el('div', 'gx-drawer');
     const head = el('div', 'gx-drawer-head');
-    head.appendChild(el('span', 'gx-drawer-title', '🗂 Saved regexes'));
+    head.appendChild(el('span', 'gx-drawer-title', t('regex.drawer.title')));
     head.appendChild(el('span', 'rx-flex'));
     const x = el('button', 'gx-mini gx-drawer-x', '✕');
     x.onclick = () => { state.drawerOpen = false; render(); };
@@ -483,9 +487,9 @@
     panel.appendChild(head);
     const b = el('div', 'gx-drawer-body');
     for (const bucket of state.buckets) b.appendChild(bucketCard(bucket));
-    const add = el('button', 'rx-ghost rx-add-bucket', '+ New bucket');
+    const add = el('button', 'rx-ghost rx-add-bucket', t('regex.drawer.add_bucket'));
     add.onclick = () => {
-      const nb = { id: newId(), name: `Bucket ${state.buckets.length + 1}`, entries: [] };
+      const nb = { id: newId(), name: t('regex.drawer.new_bucket_default_name', { number: state.buckets.length + 1 }), entries: [] };
       state.buckets.push(nb);
       state.editBucket = nb.id;
       persist(); render();
@@ -508,17 +512,17 @@
       setTimeout(() => { inp.focus(); inp.select(); }, 0);
     } else {
       const name = el('span', 'rx-bucket-name', esc(b.name));
-      name.title = 'Click to rename';
+      name.title = t('regex.drawer.rename_tooltip');
       name.onclick = () => { state.editBucket = b.id; render(); };
       head.appendChild(name);
     }
     head.appendChild(el('span', 'rx-flex'));
-    const del = el('button', 'rx-x' + (state.confirmDel === b.id ? ' rx-confirm' : ''), state.confirmDel === b.id ? 'Delete?' : '✕');
-    del.title = state.confirmDel === b.id ? 'Click again to delete this bucket and everything in it' : 'Delete bucket';
+    const del = el('button', 'rx-x' + (state.confirmDel === b.id ? ' rx-confirm' : ''), state.confirmDel === b.id ? t('regex.drawer.delete_confirm_label') : '✕');
+    del.title = state.confirmDel === b.id ? t('regex.drawer.delete_confirm_tooltip') : t('regex.drawer.delete_tooltip');
     del.onclick = () => {
       if (state.confirmDel !== b.id) { state.confirmDel = b.id; render(); return; }
       state.buckets = state.buckets.filter((x) => x.id !== b.id);
-      if (!state.buckets.length) state.buckets = [{ id: 'default', name: 'My Regex', entries: [] }];
+      if (!state.buckets.length) state.buckets = [{ id: 'default', name: t('regex.drawer.default_bucket_name'), entries: [] }];
       if (state.saveBucket === b.id) state.saveBucket = state.buckets[0].id;
       state.confirmDel = null;
       persist(); render();
@@ -530,8 +534,8 @@
 
     if (state.addingTo === b.id) card.appendChild(entryEditor(b, null));
     else {
-      const add = el('button', 'rx-ghost rx-add-entry', '+ Add regex');
-      add.title = 'Save a regex you already have - paste it in with a label';
+      const add = el('button', 'rx-ghost rx-add-entry', t('regex.drawer.add_entry'));
+      add.title = t('regex.drawer.add_entry_tooltip');
       add.onclick = () => { state.addingTo = b.id; state.editEntry = null; render(); };
       card.appendChild(add);
     }
@@ -547,17 +551,17 @@
     row.title = e.pattern;
     row.appendChild(el('span', 'rx-entry-lab', esc(e.label)));
     const tools = el('span', 'rx-entry-tools');
-    const edit = el('button', 'rx-mini', '✎'); edit.title = 'Edit';
+    const edit = el('button', 'rx-mini', '✎'); edit.title = t('regex.drawer.edit_tooltip');
     edit.onclick = (ev) => { ev.stopPropagation(); state.editEntry = e.id; state.addingTo = null; render(); };
     tools.appendChild(edit);
-    const del = el('button', 'rx-mini', '✕'); del.title = 'Delete';
+    const del = el('button', 'rx-mini', '✕'); del.title = t('regex.drawer.entry_delete_tooltip');
     del.onclick = (ev) => { ev.stopPropagation(); b.entries = b.entries.filter((x) => x.id !== e.id); persist(); render(); };
     tools.appendChild(del);
     row.appendChild(tools);
     const glyph = el('span', 'rx-copy-glyph', '⧉');
     row.appendChild(glyph);
     row.onclick = () => copyFlash(e.pattern, row,
-      () => { row.classList.add('rx-flash'); glyph.classList.add('on'); glyph.textContent = 'Copied ✓'; },
+      () => { row.classList.add('rx-flash'); glyph.classList.add('on'); glyph.textContent = t('regex.drawer.copied'); },
       () => { row.classList.remove('rx-flash'); glyph.classList.remove('on'); glyph.textContent = '⧉'; });
     return row;
   }
@@ -565,20 +569,20 @@
   // shared inline editor: edit an existing entry (e) or add a new one (e=null)
   function entryEditor(b, e) {
     const row = el('div', 'rx-entry-edit');
-    const lab = el('input', 'rx-in rx-edit-lab'); lab.placeholder = 'Label - what you’ll see in the list'; lab.value = e ? e.label : '';
-    const pat = el('input', 'rx-in rx-mono rx-edit-pat'); pat.placeholder = 'Regex'; pat.value = e ? e.pattern : '';
+    const lab = el('input', 'rx-in rx-edit-lab'); lab.placeholder = t('regex.drawer.edit_label_placeholder'); lab.value = e ? e.label : '';
+    const pat = el('input', 'rx-in rx-mono rx-edit-pat'); pat.placeholder = t('regex.drawer.edit_pattern_placeholder'); pat.value = e ? e.pattern : '';
     const close = () => { state.editEntry = null; state.addingTo = null; render(); };
     const done = () => {
       const label = lab.value.trim(), pattern = pat.value.trim();
       if (!pattern) { close(); return; }
-      if (e) { e.label = label || 'Unnamed regex'; e.pattern = pattern; }
-      else b.entries.push({ id: newId(), label: label || 'Unnamed regex', pattern });
+      if (e) { e.label = label || t('regex.bar.default_entry_label'); e.pattern = pattern; }
+      else b.entries.push({ id: newId(), label: label || t('regex.bar.default_entry_label'), pattern });
       persist(); close();
     };
     const key = (ev) => { if (ev.key === 'Enter') done(); if (ev.key === 'Escape') close(); };
     lab.onkeydown = key; pat.onkeydown = key;
-    const ok = el('button', 'rx-btn rx-btn-sm', e ? 'Save' : 'Add'); ok.onclick = done;
-    const cancel = el('button', 'rx-mini rx-cancel', '✕'); cancel.title = 'Cancel'; cancel.onclick = close;
+    const ok = el('button', 'rx-btn rx-btn-sm', e ? t('regex.drawer.entry_save') : t('regex.drawer.entry_add')); ok.onclick = done;
+    const cancel = el('button', 'rx-mini rx-cancel', '✕'); cancel.title = t('regex.drawer.entry_cancel_tooltip'); cancel.onclick = close;
     row.appendChild(lab); row.appendChild(pat); row.appendChild(ok); row.appendChild(cancel);
     setTimeout(() => lab.focus(), 0);
     return row;

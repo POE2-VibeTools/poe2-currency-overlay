@@ -63,6 +63,10 @@ contextBridge.exposeInMainWorld('api', {
   setTabShown: (which, shown) => ipcRenderer.invoke('set-tab-shown', which, shown),
   setTabOrder: (order) => ipcRenderer.invoke('set-tab-order', order),
   getSafeCommands: () => ipcRenderer.invoke('get-safe-commands'),
+  setLanguage: (code) => ipcRenderer.invoke('set-language', code),
+  // synchronous ON PURPOSE: i18n.js reads this at load, before anything renders
+  uiLang: (() => { try { return ipcRenderer.sendSync('get-ui-lang'); } catch { return 'en'; } })(),
+  debug: !!process.env.POE2_OVERLAY_DEBUG, // gates the QA pseudo-locale in the language list
   platform: process.platform, // renderer copy is read-only; used for platform caveats in Settings
   // Net Worth frames on platforms where main can't capture (see renderer/stash/linux-capture.js)
   onStashNeedFrame: (cb) => ipcRenderer.on('stash-need-frame', (_e, opts) => cb(opts)),

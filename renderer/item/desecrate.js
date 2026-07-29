@@ -20,10 +20,10 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   function ageStr(ts) {
     const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
-    if (s < 60) return `${s}s ago`;
-    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-    if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-    return `${Math.floor(s / 86400)}d ago`;
+    if (s < 60) return t('desecrate.history.age_seconds', { n: s });
+    if (s < 3600) return t('desecrate.history.age_minutes', { n: Math.floor(s / 60) });
+    if (s < 86400) return t('desecrate.history.age_hours', { n: Math.floor(s / 3600) });
+    return t('desecrate.history.age_days', { n: Math.floor(s / 86400) });
   }
 
   let pool = null;
@@ -358,7 +358,7 @@
   // HTML string ("N <icon-or-'ex'/'div'>") for a route/verdict cost or EV - only
   // for innerHTML sites, since it may contain an <img> tag.
   function fmtEx(v) {
-    if (v == null) return '?';
+    if (v == null) return t('desecrate.common.unknown_value');
     const div = window.currencyPriceOf ? window.currencyPriceOf('divine') : null;
     if (div > 0 && Math.abs(v) >= div) return `${(v / div).toFixed(1)} ${curUnit('divine', 'div')}`;
     return `${Math.round(v * 10) / 10} ${curUnit('exalted', 'ex')}`;
@@ -400,7 +400,7 @@
       const { floor } = await floorOf(state.model);
       if (floor != null) { state.currentValue = floor; setUnitFor('cur', floor); saveHistory(); }
     } catch (err) {
-      state.notice = `Couldn't auto-price the item: ${err.message}`;
+      state.notice = t('desecrate.notice.price_current_failed', { error: err.message });
     }
     state.curValueBusy = false;
     render();
@@ -435,11 +435,11 @@
       const { floor, total, priced } = await floorOf({ ...state.model, mods }, filters);
       if (floor != null) {
         state.hitValue = floor; setUnitFor('hit', floor); saveHistory();
-        if (priced < 4) state.notice = `Thin market: only ${priced} priced comp${priced === 1 ? '' : 's'} matched the hit set - treat the value as rough.`;
+        if (priced < 4) state.notice = t('desecrate.notice.thin_market', { count: priced, plural: priced === 1 ? '' : 's' });
       }
-      else state.notice = `No priced listings matched the hit set (${total} total) - loosen the accepted tiers or type a value.`;
+      else state.notice = t('desecrate.notice.no_listings', { total });
     } catch (err) {
-      state.notice = `Hit-set search failed: ${err.message}`;
+      state.notice = t('desecrate.notice.hitset_search_failed', { error: err.message });
     }
     state.hitValueBusy = false;
     render();
@@ -455,19 +455,16 @@
     root.innerHTML = '';
     if (!state.model || state.view === 'history') {
       if (state.model) {
-        const back = el('div', 'back-link', '&larr; back to this item');
+        const back = el('div', 'back-link', t('desecrate.nav.back_to_item'));
         back.onclick = () => { state.view = 'item'; render(); };
         root.appendChild(back);
       }
       if (!state.model) {
-        root.appendChild(el('div', 'des-empty-lead',
-          'Is re-rolling a <b>desecrated</b> mod with Omens of Light worth it? Load an item and this works out the odds, the routes and the verdict.'));
+        root.appendChild(el('div', 'des-empty-lead', t('desecrate.empty.lead')));
       }
-      root.appendChild(el('div', 'paste-prompt des-prompt',
-        'Copy an item in game (<b>Ctrl+C</b>) and paste it here with <b>Ctrl+V</b>.<br>'
-        + '<span class="pp-alt">Or load one on the Price Check tab and click <b>redesecrate?</b> in its corner.</span>'));
+      root.appendChild(el('div', 'paste-prompt des-prompt', t('desecrate.empty.paste_prompt')));
       if (!state.model && window.ItemTab && window.ItemTab.sampleModel) {
-        const sample = el('button', 'sample-btn', 'See a sample');
+        const sample = el('button', 'sample-btn', t('desecrate.empty.sample_button'));
         sample.onclick = async () => {
           const m = await window.ItemTab.sampleModel();
           if (m) window.Desecrate.open(m, { currentValue: 12 });
@@ -475,42 +472,42 @@
         root.appendChild(sample);
       }
       if (state.history.length) {
-        root.appendChild(el('div', 'history-title', 'Recent desecration checks'));
+        root.appendChild(el('div', 'history-title', t('desecrate.history.title')));
         const shown = Math.min(state.history.length, state.histShown || 10);
         state.history.slice(0, shown).forEach((rec) => {
           const it = el('div', 'hist-item');
           const hits = (rec.hits || []).length;
           it.innerHTML = `<span class="hist-base">${esc(rec.title || rec.base)}</span>`
-            + `<span class="hist-sum">${esc(rec.side || '')} &middot; ${hits} hit${hits === 1 ? '' : 's'}</span>`
+            + `<span class="hist-sum">${esc(rec.side || '')} &middot; ${tn('desecrate.history.hit_count', hits, { count: hits })}</span>`
             + `<span class="hist-age">${ageStr(rec.ts)}</span>`;
           it.onclick = () => restore(rec);
           root.appendChild(it);
         });
         if (state.history.length > shown) {
-          const more = el('button', 'load-more', `Load more (${state.history.length - shown} left)`);
+          const more = el('button', 'load-more', t('desecrate.history.load_more', { count: state.history.length - shown }));
           more.onclick = () => { state.histShown = shown + 10; render(); };
           root.appendChild(more);
         }
       }
       return;
     }
-    if (!pool) { root.appendChild(el('div', 'notice', 'Loading the desecration pool table…')); return; }
+    if (!pool) { root.appendChild(el('div', 'notice', t('desecrate.notice.loading_pool'))); return; }
     autofillPrices();
 
     const wrap = el('div');
     if (state.history.length) {
-      const back = el('div', 'back-link', '&larr; desecration checks');
-      back.title = 'Past items you evaluated';
+      const back = el('div', 'back-link', t('desecrate.nav.back_to_history'));
+      back.title = t('desecrate.history.back_tooltip');
       back.onclick = () => { state.view = 'history'; render(); };
       wrap.appendChild(back);
     }
     const head = el('div', 'item-head');
     head.appendChild(el('span', 'item-name rare', esc(state.model.title || state.model.base)));
     head.appendChild(el('span', 'item-base', esc(state.model.base)));
-    const meta = el('span', 'item-meta des-meta', 'item level ');
+    const meta = el('span', 'item-meta des-meta', t('desecrate.item.level_label'));
     const ilvlIn = el('input', 'des-inline-num');
     ilvlIn.type = 'number'; ilvlIn.min = 1; ilvlIn.max = 100; ilvlIn.value = state.ilvl;
-    ilvlIn.title = 'Item level caps which mod tiers desecration can offer - lower it to what-if';
+    ilvlIn.title = t('desecrate.item.level_tooltip');
     ilvlIn.onchange = () => {
       const n = parseInt(ilvlIn.value, 10);
       if (Number.isFinite(n) && n >= 1 && n <= 100) { state.ilvl = n; state.hitValue = null; render(); }
@@ -524,15 +521,15 @@
     // header carries the slot line (no separate banner - the highlighted mod
     // below already shows WHICH mod, and this says which SLOT)
     const head01 = el('div', 'des-item-head');
-    head01.innerHTML = '<span class="des-num">01</span> The item';
+    head01.innerHTML = `<span class="des-num">01</span> ${t('desecrate.section.item_title')}`;
     const h01r = el('span', 'des-right');
     if (state.curDesMod) {
-      h01r.innerHTML = `rerolling the <b>${esc(state.side)}</b> slot`;
-      h01r.title = `Each cycle: Omen of Light + Annulment strips the highlighted mod, then a bone offers 3 ${state.side} picks. Abyssal Echoes rerolls a whiffed set for 6 looks total.`;
+      h01r.innerHTML = t('desecrate.item.rerolling_slot', { side: esc(state.side) });
+      h01r.title = t('desecrate.item.reroll_tooltip', { side: state.side });
     } else {
-      h01r.innerHTML = `open <b>${esc(state.side)}</b> slot &middot; `;
-      h01r.title = 'No desecrated mod - assuming an open slot. The first bone needs no Omen of Light.';
-      const swap = el('span', 'notice-act', `reroll ${state.side === 'prefix' ? 'suffix' : 'prefix'} instead`);
+      h01r.innerHTML = t('desecrate.item.open_slot', { side: esc(state.side) });
+      h01r.title = t('desecrate.item.open_slot_tooltip');
+      const swap = el('span', 'notice-act', t('desecrate.item.swap_side_button', { other_side: state.side === 'prefix' ? 'suffix' : 'prefix' }));
       swap.onclick = () => { state.side = state.side === 'prefix' ? 'suffix' : 'prefix'; state.hits.clear(); state.hitValue = null; render(); };
       h01r.appendChild(swap);
     }
@@ -551,7 +548,7 @@
       // the head so the card shows it once, as its true desecrated/fractured self.
       if (m.foldHead && String(m.foldGroup || '').startsWith('scope-')) continue;
       const line = el('div', 'des-imod' + (m === state.curDesMod ? ' cur' : '') + (m.kind === 'rune' || m.kind === 'added-rune' || m.kind === 'enchant' ? ' aux' : ''));
-      line.innerHTML = esc(m.text) + (m === state.curDesMod ? ' <span class="des-imod-tag">annulled &amp; rerolled each cycle</span>' : '');
+      line.innerHTML = esc(m.text) + (m === state.curDesMod ? ` <span class="des-imod-tag">${t('desecrate.item.annulled_badge')}</span>` : '');
       imods.appendChild(line);
     }
     if (imods.childNodes.length) card.appendChild(imods);
@@ -565,12 +562,12 @@
     // routes - only the Altered route gives them a real hit chance).
     const { entries } = eligiblePool('altered');
     const sec = el('div', 'des-sec');
-    sec.appendChild(el('div', 'des-sec-head', `<span class="des-num">02</span> Pick your hits <span class="des-dim">tick what you'd keep, choose the worst tier you'd accept</span> <span class="des-right">${state.hits.size} of ${entries.length} kept</span>`));
+    sec.appendChild(el('div', 'des-sec-head', `<span class="des-num">02</span> ${t('desecrate.section.hits_title')} <span class="des-dim">${t('desecrate.section.hits_hint')}</span> <span class="des-right">${t('desecrate.section.hits_counter', { ticked: state.hits.size, total: entries.length })}</span>`));
     // a filter bar to jump to the outcomes you want (only worth showing on long lists)
     if (entries.length > 10) {
       const fin = el('input', 'des-hit-filter');
       fin.type = 'text';
-      fin.placeholder = 'filter outcomes (e.g. "critical", "fire chaos")…';
+      fin.placeholder = t('desecrate.outcomes.filter_placeholder');
       fin.value = state.hitFilter || '';
       fin.oninput = () => { state.hitFilter = fin.value; applyHitFilter(sec); };
       sec.appendChild(fin);
@@ -589,17 +586,17 @@
       };
       row.appendChild(cb);
       if (e.fam.d) {
-        const badge = el('span', 'des-lich' + (other ? ' des-other' : ''), other ? 'otherworldly' : esc(e.fam.name));
+        const badge = el('span', 'des-lich' + (other ? ' des-other' : ''), other ? t('desecrate.outcomes.otherworldly_badge') : esc(e.fam.name));
         badge.title = other
-          ? 'Otherworldly modifier - only an Altered bone can roll it'
-          : 'Desecrated-exclusive mod (Abyssal lich pool)';
+          ? t('desecrate.outcomes.otherworldly_tooltip')
+          : t('desecrate.outcomes.desecrated_exclusive_tooltip');
         row.appendChild(badge);
       }
       if (state.hits.has(e.fi)) {
         const sel = el('select', 'des-tier');
-        sel.title = 'Worst tier you would accept - this tier or better counts as a hit';
-        for (const t of e.tiers) {
-          const o = el('option', null, `T${t.ti + 1}${t.lo != null ? ` (${t.lo}-${t.hi})` : ''}`);
+        sel.title = t('desecrate.outcomes.tier_select_tooltip');
+        for (const tier of e.tiers) { // NOT `t`: a local named t shadows the translator
+          const o = el('option', null, `${t('desecrate.outcomes.tier_option_label', { tier: tier.ti + 1 })}${tier.lo != null ? ` (${tier.lo}-${tier.hi})` : ''}`);
           o.value = String(t.ti);
           sel.appendChild(o);
         }
@@ -608,7 +605,7 @@
         row.appendChild(sel);
       }
       const txt = el('span', 'des-text', esc(genericText(e.fam.text)));
-      txt.title = e.tiers.map((t) => `T${t.ti + 1}: lvl ${t.lvl}${t.lo != null ? ` (${t.lo}-${t.hi})` : ''} w${t.w}`).join('\n');
+      txt.title = e.tiers.map((tr) => t('desecrate.outcomes.tier_detail_tooltip', { tier: tr.ti + 1, level: tr.lvl, range: tr.lo != null ? ` (${tr.lo}-${tr.hi})` : '', weight: tr.w })).join('\n');
       row.appendChild(txt);
       row.dataset.f = `${genericText(e.fam.text)} ${e.fam.name || ''}`.toLowerCase(); // filter key
       return row;
@@ -624,7 +621,7 @@
     sec.appendChild(list);
     if (other.length) {
       const oh = el('div', 'des-subhead',
-        `Otherworldly <span class="des-dim">${other.length} - only an <b>Altered ${esc(boneKind())}</b> can roll these</span>`);
+        t('desecrate.outcomes.otherworldly_subhead', { count: other.length, bone: esc(boneKind()) }));
       sec.appendChild(oh);
       const olist = el('div', 'des-list des-list-other');
       other.forEach((e) => olist.appendChild(hitRow(e)));
@@ -648,7 +645,7 @@
       const i = el('input'); i.type = 'number'; i.min = 0; i.step = 'any';
       const exVal = getEx();
       i.value = exVal != null ? (u === 'div' ? Math.round((exVal / dr) * 10) / 10 : Math.round(exVal * 10) / 10) : '';
-      i.placeholder = busy ? '…' : '?';
+      i.placeholder = busy ? t('desecrate.common.busy_ellipsis') : t('desecrate.common.unknown_value');
       i.onchange = () => {
         const n = parseFloat(i.value);
         setEx(Number.isFinite(n) ? (u === 'div' ? n * dr : n) : null);
@@ -675,80 +672,82 @@
 
     // ----- 03: values & costs (one card) -----
     const vc = el('div', 'des-sec');
-    vc.appendChild(el('div', 'des-sec-head', `<span class="des-num">03</span> Values &amp; costs <span class="des-dim">costs autofilled from live exchange rates, edit freely; bone: ${esc(boneKind())}</span>`));
+    vc.appendChild(el('div', 'des-sec-head', `<span class="des-num">03</span> ${t('desecrate.section.values_title')} <span class="des-dim">${t('desecrate.section.values_hint', { bone: esc(boneKind()) })}</span>`));
     // outcomes: the two values the whole EV hinges on - given prominence
     const outc = el('div', 'des-outcomes');
-    outc.appendChild(moneyField('item now', 'cur',
+    outc.appendChild(moneyField(t('desecrate.values.item_now_label'), 'cur',
       () => state.currentValue, (v) => { state.currentValue = v; },
-      'What the item sells for as it stands - auto-priced with one search, edit freely.',
+      t('desecrate.values.item_now_tooltip'),
       state.curValueBusy));
-    const pbtn = el('button', 'mini-btn', state.hitValueBusy ? '…' : 'price it');
+    const pbtn = el('button', 'mini-btn', state.hitValueBusy ? t('desecrate.common.busy_ellipsis') : t('desecrate.values.price_it_button'));
     pbtn.disabled = state.hitValueBusy || !state.hits.size;
-    pbtn.title = state.hits.size ? 'One trade search: your item without its desecrated mod, plus any ticked hit (count 1).' : 'Tick at least one hit first';
+    pbtn.title = state.hits.size ? t('desecrate.values.price_it_tooltip_ready') : t('desecrate.values.price_it_tooltip_disabled');
     pbtn.onclick = (ev) => { ev.preventDefault(); priceHitSet(); };
-    const hv = moneyField('item with a hit', 'hit',
+    const hv = moneyField(t('desecrate.values.item_with_hit_label'), 'hit',
       () => state.hitValue, (v) => { state.hitValue = v; },
-      'What the item sells for WITH a hit - price it with one search over your ticked set (count 1), or type it.',
+      t('desecrate.values.item_with_hit_tooltip'),
       state.hitValueBusy, pbtn);
     outc.appendChild(hv);
     vc.appendChild(outc);
     // costs: live consumable prices - compact, editable assumptions under the outcomes
     const costs = el('div', 'des-costs');
-    costs.appendChild(priceField('Omen of Light', 'light', 'Makes your next Annulment remove only the desecrated mod.'));
-    costs.appendChild(priceField('Annulment', 'annul'));
-    costs.appendChild(priceField(boneKind() === 'cranium' ? 'Cranium' : 'Preserved bone', 'bone_preserved'));
-    if (boneTiers().includes('ancient')) costs.appendChild(priceField('Ancient bone', 'bone_ancient'));
+    costs.appendChild(priceField(t('desecrate.costs.omen_of_light_label'), 'light', t('desecrate.costs.omen_of_light_tooltip')));
+    costs.appendChild(priceField(t('desecrate.costs.annulment_label'), 'annul'));
+    costs.appendChild(priceField(boneKind() === 'cranium' ? t('desecrate.costs.cranium_label') : t('desecrate.costs.preserved_bone_label'), 'bone_preserved'));
+    if (boneTiers().includes('ancient')) costs.appendChild(priceField(t('desecrate.costs.ancient_bone_label'), 'bone_ancient'));
     // The Altered bone is the only way into the otherworldly pool and it's the
     // pricey one - show it for jewellery, auto-priced, and flag it the moment an
     // otherworldly outcome is ticked (you're now committed to Altered).
     if (boneKind() === 'collarbone') {
       const needsAltered = [...state.hits.keys()].some((fi) => pool && pool.families[fi] && pool.families[fi].d === 2);
-      const af = priceField('Altered bone', 'bone_altered',
-        'Altered Collarbone - the only bone that rolls the otherworldly pool. Auto-priced from live rates; edit with the in-game price.');
+      const af = priceField(t('desecrate.costs.altered_bone_label'), 'bone_altered',
+        t('desecrate.costs.altered_bone_tooltip'));
       if (needsAltered) af.classList.add('des-price-req');
       costs.appendChild(af);
     }
-    costs.appendChild(priceField('Abyssal Echoes', 'echoes',
-      'Assumed every cycle: active before the reveal and consumed with it - one per desecration, buying 6 looks instead of 3.'));
+    costs.appendChild(priceField(t('desecrate.costs.abyssal_echoes_label'), 'echoes',
+      t('desecrate.costs.abyssal_echoes_tooltip')));
     vc.appendChild(costs);
     wrap.appendChild(vc);
 
     // ----- routes -----
     const routes = el('div', 'des-sec');
-    routes.appendChild(el('div', 'des-sec-head', '<span class="des-num">04</span> Routes &amp; verdict'));
+    routes.appendChild(el('div', 'des-sec-head', `<span class="des-num">04</span> ${t('desecrate.section.routes_title')}`));
     const table = el('div', 'des-routes');
-    table.appendChild(el('div', 'des-rt-head', '<span>route</span><span>hit / reveal</span><span>bones needed</span><span>expected cost</span><span>net EV</span>'));
+    table.appendChild(el('div', 'des-rt-head', `<span>${t('desecrate.routes.col_route')}</span><span>${t('desecrate.routes.col_hit_reveal')}</span><span>${t('desecrate.routes.col_bones_needed')}</span><span>${t('desecrate.routes.col_expected_cost')}</span><span>${t('desecrate.routes.col_net_ev')}</span>`));
     const uplift = state.hitValue != null && state.currentValue != null ? state.hitValue - state.currentValue : null;
     const addRoute = (label, p, bonePrice, note) => {
       const m = routeMath(p, bonePrice);
       const row = el('div', 'des-rt');
       if (!m) {
-        row.innerHTML = `<span>${esc(label)}</span><span class="des-dim des-span4">${esc(note || 'no hits ticked, or none reachable on this route')}</span>`;
+        row.innerHTML = `<span>${esc(label)}</span><span class="des-dim des-span4">${esc(note || t('desecrate.routes.no_hits_note'))}</span>`;
         table.appendChild(row);
         return;
       }
       const ev = uplift != null ? uplift - m.cost : null;
       row.innerHTML =
         `<span>${esc(label)}</span>` +
-        `<span title="per bone: 3 picks + Abyssal Echoes reroll = 6 looks">${(m.pHit * 100).toFixed(1)}%</span>` +
-        `<span title="expected attempts until a hit">${m.attempts.toFixed(1)}</span>` +
+        `<span title="${t('desecrate.routes.hit_reveal_tooltip')}">${(m.pHit * 100).toFixed(1)}%</span>` +
+        `<span title="${t('desecrate.routes.bones_needed_tooltip')}">${m.attempts.toFixed(1)}</span>` +
         `<span>${fmtEx(m.cost)}</span>` +
-        `<span class="${ev == null ? 'des-dim' : ev >= 0 ? 'up' : 'down'}">${ev == null ? 'set both values' : (ev >= 0 ? '+' : '') + fmtEx(ev)}</span>`;
+        `<span class="${ev == null ? 'des-dim' : ev >= 0 ? 'up' : 'down'}">${ev == null ? t('desecrate.routes.ev_pending') : (ev >= 0 ? '+' : '') + fmtEx(ev)}</span>`;
       table.appendChild(row);
     };
-    addRoute('Preserved', pChoice('preserved'), priceOf('bone_preserved'));
-    if (boneTiers().includes('ancient')) addRoute('Ancient (mod lvl 40+)', pChoice('ancient'), priceOf('bone_ancient'));
+    addRoute(t('desecrate.routes.label_preserved'), pChoice('preserved'), priceOf('bone_preserved'));
+    if (boneTiers().includes('ancient')) addRoute(t('desecrate.routes.label_ancient'), pChoice('ancient'), priceOf('bone_ancient'));
     // Altered adds the OTHERWORLDLY pool to the reveal, so tick an otherworldly
     // outcome (or any regular one) and this route prices reaching it.
     if (boneKind() === 'collarbone') {
-      addRoute('Altered (+otherworldly)', pChoice('altered'), priceOf('bone_altered'),
-        'tick an outcome - only Altered can reach the otherworldly ones');
+      addRoute(t('desecrate.routes.label_altered'), pChoice('altered'), priceOf('bone_altered'),
+        t('desecrate.routes.altered_hint'));
     }
     routes.appendChild(table);
     if (uplift != null) {
-      const routeDefs = [['Preserved', 'preserved', 'bone_preserved']];
-      if (boneTiers().includes('ancient')) routeDefs.push(['Ancient', 'ancient', 'bone_ancient']);
-      if (boneTiers().includes('altered')) routeDefs.push(['Altered', 'altered', 'bone_altered']);
+      // label = what the user reads (translated, matching the routes table above);
+      // the id stays English - it keys bone data and prices
+      const routeDefs = [[t('desecrate.routes.label_preserved'), 'preserved', 'bone_preserved']];
+      if (boneTiers().includes('ancient')) routeDefs.push([t('desecrate.routes.label_ancient'), 'ancient', 'bone_ancient']);
+      if (boneTiers().includes('altered')) routeDefs.push([t('desecrate.routes.label_altered'), 'altered', 'bone_altered']);
       const best = routeDefs.map(([label, bone, priceKey]) => {
         const m = routeMath(pChoice(bone), priceOf(priceKey));
         return m ? { label, ev: uplift - m.cost } : null;
@@ -758,12 +757,12 @@
         const vd = el('div', 'des-verdict ' + (positive ? 'up' : 'down'));
         vd.innerHTML =
           '<div class="des-vtext">'
-          + `<div class="des-vtitle">${positive ? 'Worth it' : 'Not worth it'}</div>`
+          + `<div class="des-vtitle">${positive ? t('desecrate.verdict.worth_it') : t('desecrate.verdict.not_worth_it')}</div>`
           + (positive
-              ? `Best route is <b>${esc(best.label)}</b> - it expects to come out ahead.`
-              : `Best route (<b>${esc(best.label)}</b>) still expects to lose money. Sell as-is or loosen your accepted tiers.`)
+              ? t('desecrate.verdict.positive_detail', { route: esc(best.label) })
+              : t('desecrate.verdict.negative_detail', { route: esc(best.label) }))
           + '</div>'
-          + `<div class="des-ev">${positive ? '+' : '−'}${fmtEx(Math.abs(best.ev))}<small>expected</small></div>`;
+          + `<div class="des-ev">${positive ? '+' : '−'}${fmtEx(Math.abs(best.ev))}<small>${t('desecrate.verdict.expected_ev')}</small></div>`;
         routes.appendChild(vd);
       }
     }
@@ -778,7 +777,7 @@
     // tab is open, since state itself didn't change.
     refresh() { render(); },
     noticeBadPaste() {
-      state.notice = "Couldn't read that item text - copy the item in game with Ctrl+C and paste again.";
+      state.notice = t('desecrate.notice.bad_paste');
       render();
     },
     open(model, ctx) {

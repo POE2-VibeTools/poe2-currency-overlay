@@ -78,6 +78,11 @@
     { code: 'es', label: 'Español' },
   ];
 
+  // QA pseudo-locale: only offered when the app runs with POE2_OVERLAY_DEBUG set, so
+  // users never see it. Everything it renders is bracketed and padded - any plain
+  // English still on screen in this mode is a string the extraction missed.
+  try { if (window.api && window.api.debug && CATALOGS.qa) LANGS.push({ code: 'qa', label: 'QA pseudo-locale' }); } catch {}
+
   function setLang(code) {
     active = CATALOGS[code] ? code : 'en';
     return active;
@@ -91,6 +96,29 @@
     if (!total) return { done: 0, total: 0, pct: 100 };
     const done = Object.keys(en).filter((k) => c[k] !== undefined).length;
     return { done, total, pct: Math.round((done / total) * 100) };
+  }
+
+  // Currency names. The price feed only speaks English, but the player's stash and
+  // trade site are in their language, so "Exalted Orb" would make them translate in
+  // their head. game-names.js maps the English name to GGG's own name in that language
+  // (derived from the parser data, not translated by us), so it matches the game
+  // exactly. Anything without an entry - and every name in English - passes straight
+  // through unchanged.
+  function gameName(englishName) {
+    if (!englishName || active === 'en') return englishName;
+    const names = (window.I18N_NAMES || {})[active];
+    return (names && names[englishName]) || englishName;
+  }
+
+  // Rumour and island names for the Grand Expedition tab. The player reads these off
+  // their own screen in Uncharted Waters, so they have to match the client, not a guide.
+  // DISPLAY ONLY: the English name stays the identity everywhere - the picked set, the
+  // map-note tag's letter codes, and every data lookup key off it. Translating identity
+  // would break tags between players on different languages.
+  function rumorName(englishName) {
+    if (!englishName || active === 'en') return englishName;
+    const names = (window.I18N_RUMORS || {})[active];
+    return (names && names[englishName]) || englishName;
   }
 
   // Static markup (index.html) keeps its English text inline and carries the key in a
@@ -110,7 +138,26 @@
     scope.querySelectorAll('[data-i18n-aria]').forEach((el) => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
   }
 
+  // Adopt the language main resolved for us, before any other renderer script runs.
+  try { if (window.api && window.api.uiLang) setLang(window.api.uiLang); } catch {}
+  // The markup carries its English inline and its key in data-i18n; swap it once the
+  // DOM is parsed. In English this is a no-op that rewrites identical text.
+  if (typeof document !== 'undefined') {
+    // Reveal only after the static strings are swapped, so a language change (which
+    // applies via a window reload) never flashes the untranslated, unstyled document.
+    // The timer is a safety net: if anything above throws, the UI still appears.
+    const reveal = () => { try { document.getElementById('root').classList.add('ui-ready'); } catch {} };
+    document.addEventListener('DOMContentLoaded', () => {
+      try { applyStatic(); } catch {}
+      reveal();
+    });
+    window.addEventListener('load', reveal);
+    setTimeout(reveal, 1500);
+  }
+
   window.t = t;
   window.tn = tn;
-  window.I18N = { t, tn, setLang, lang, coverage, applyStatic, LANGS };
+  window.gameName = gameName;
+  window.rumorName = rumorName;
+  window.I18N = { t, tn, gameName, rumorName, setLang, lang, coverage, applyStatic, LANGS };
 })();

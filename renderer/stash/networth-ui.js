@@ -16,12 +16,12 @@
     }
     return name;
   };
-  const fmtEx = (n) => n == null ? '—' : Math.round(n).toLocaleString('en-US') + ' ' + unit('ex', 'exalted');
-  const fmtDiv = (n) => n == null ? null : (n >= 100 ? Math.round(n) : n.toFixed(1)).toLocaleString('en-US') + ' ' + unit('div', 'divine');
+  const fmtEx = (n) => n == null ? t('networth.value.none') : Math.round(n).toLocaleString('en-US') + ' ' + unit(t('networth.unit.ex_label'), 'exalted');
+  const fmtDiv = (n) => n == null ? null : (n >= 100 ? Math.round(n) : n.toFixed(1)).toLocaleString('en-US') + ' ' + unit(t('networth.unit.div_label'), 'divine');
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
   const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, showMissing: false, showConfidence: false, calibrated: false, hotkey: 'F7', dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
-  const TAB_LABEL = { currency: 'Currency', abyss: 'Abyss', essence: 'Essence', runes: 'Runes', 'runes-kalguuran': 'Kalguuran Runes', ritual: 'Ritual', soulcore: 'Soul Cores', idol: 'Idols', 'ancient-augment': 'Ancient Augments', delirium: 'Delirium', breach: 'Breach', expedition: 'Expedition' };
+  const TAB_LABEL = { currency: t('networth.tab.currency'), abyss: t('networth.tab.abyss'), essence: t('networth.tab.essence'), runes: t('networth.tab.runes'), 'runes-kalguuran': t('networth.tab.runes_kalguuran'), ritual: t('networth.tab.ritual'), soulcore: t('networth.tab.soulcore'), idol: t('networth.tab.idol'), 'ancient-augment': t('networth.tab.ancient_augment'), delirium: t('networth.tab.delirium'), breach: t('networth.tab.breach'), expedition: t('networth.tab.expedition') };
   const MIRROR_ICON = 'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lEdXBsaWNhdGUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/26bc31680e/CurrencyDuplicate.png';
 
   if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); state.showMissing = !!(c && c.stashShowMissing); state.showConfidence = !!(c && c.stashShowConfidence); state.calibrated = !!(c && c.stashCalibration); state.hotkey = (c && c.stashHotkey) || 'F7'; render(); }).catch(() => {});
@@ -30,7 +30,7 @@
   function labelFor(row) {
     const same = rowsOfType(row.tab);
     const base = TAB_LABEL[row.tab] || row.tab;
-    return same.length <= 1 ? base : `${base} #${same.indexOf(row) + 1}`;
+    return same.length <= 1 ? base : t('networth.row.label_with_index', { tabName: base, index: same.indexOf(row) + 1 });
   }
   function addRow(res) { const row = { id: state.nextId++, tab: res.tab, result: res, included: true }; state.rows.push(row); state.expanded[row.id] = false; return row; }
   function reorderRow(dragId, targetId, before) {
@@ -46,14 +46,14 @@
   function capture() {
     if (state.busy) return;
     state.notice = null;
-    try { window.api.stashCaptureStart(); } catch (e) { state.notice = { kind: 'err', msg: 'Capture unavailable.' }; render(); }
+    try { window.api.stashCaptureStart(); } catch (e) { state.notice = { kind: 'err', msg: t('networth.notice.capture_unavailable') }; render(); }
   }
 
   // Fold a capture result into the tally. Dedup-by-type unless the duplicate
   // setting is on, in which case ask what to do when the type already exists.
   function applyResult(res) {
-    if (!res || !res.ok) { state.notice = { kind: 'err', msg: `Capture failed: ${res && res.error || 'unknown error'}` }; return render(); }
-    if (res.mismatch) { state.notice = { kind: 'warn', msg: `Couldn't recognize this tab (${res.readCount || 0} slots read). Supported: ${Object.values(TAB_LABEL).join(', ')}. Make sure a supported tab is open and fully visible, then capture again.` }; return render(); }
+    if (!res || !res.ok) { state.notice = { kind: 'err', msg: t('networth.notice.capture_failed', { error: res && res.error || 'unknown error' }) }; return render(); }
+    if (res.mismatch) { state.notice = { kind: 'warn', msg: t('networth.notice.mismatch', { readCount: res.readCount || 0, supportedTabs: Object.values(TAB_LABEL).join(', ') }) }; return render(); }
     state.notice = null;
     const existing = rowsOfType(res.tab);
     if (!existing.length) { addRow(res); return render(); }
@@ -100,35 +100,35 @@
       return lab;
     };
     const toggles = el('div', 'nw-set-toggles');
-    toggles.appendChild(mkToggle(state.dup, 'Capture duplicate tabs as separate rows',
-      'Re-capturing a tab type asks whether to replace its row or add a new one.',
+    toggles.appendChild(mkToggle(state.dup, t('networth.settings.toggle_dup_label'),
+      t('networth.settings.toggle_dup_sub'),
       (v) => { state.dup = v; try { window.api.setStashDupTabs(v); } catch {} }));
-    toggles.appendChild(mkToggle(state.sortLayout, 'Sort items by stash layout',
-      'List items in stash reading order instead of by value.',
+    toggles.appendChild(mkToggle(state.sortLayout, t('networth.settings.toggle_sort_label'),
+      t('networth.settings.toggle_sort_sub'),
       (v) => { state.sortLayout = v; try { window.api.setStashSortLayout(v); } catch {} }));
-    toggles.appendChild(mkToggle(state.showMissing, 'Show missing / unread items',
-      'List empty or unread slots as editable ×0 lines, so you can fill in anything the scan missed.',
+    toggles.appendChild(mkToggle(state.showMissing, t('networth.settings.toggle_missing_label'),
+      t('networth.settings.toggle_missing_sub'),
       (v) => { state.showMissing = v; try { window.api.setStashShowMissing(v); } catch {} }));
-    toggles.appendChild(mkToggle(state.showConfidence, 'Show OCR confidence %',
-      'Show how sure the scan was of each count; low numbers are worth double-checking.',
+    toggles.appendChild(mkToggle(state.showConfidence, t('networth.settings.toggle_confidence_label'),
+      t('networth.settings.toggle_confidence_sub'),
       (v) => { state.showConfidence = v; try { window.api.setStashShowConfidence(v); } catch {} }));
     root.appendChild(toggles);
     // resolution calibration
     const cal = el('div', 'nw-set-cal');
     const head = el('div', 'nw-set-cal-head');
-    head.appendChild(el('div', 'nw-set-cal-title', 'Resolution'));
-    head.appendChild(el('div', 'nw-set-cal-badge' + (state.calibrated ? ' on' : ''), state.calibrated ? 'Calibrated' : 'Default 1920×1080'));
+    head.appendChild(el('div', 'nw-set-cal-title', t('networth.settings.cal_title')));
+    head.appendChild(el('div', 'nw-set-cal-badge' + (state.calibrated ? ' on' : ''), state.calibrated ? t('networth.settings.cal_badge_calibrated') : t('networth.settings.cal_badge_default')));
     cal.appendChild(head);
     cal.appendChild(el('div', 'nw-set-cal-desc', state.calibrated
-      ? 'Reads are scaled to your window. If a scan ever mismatches its tab, re-calibrate.'
-      : 'Assumes the game is fullscreen at 1920×1080. Any other size or a smaller window? Open a currency tab, then calibrate once.'));
+      ? t('networth.settings.cal_desc_calibrated')
+      : t('networth.settings.cal_desc_default')));
     const btns = el('div', 'nw-set-cal-btns');
-    const calBtn = el('button', 'nw-set-btn', state.calibrated ? 'Re-calibrate' : 'Calibrate for my resolution');
+    const calBtn = el('button', 'nw-set-btn', state.calibrated ? t('networth.settings.cal_button_recalibrate') : t('networth.settings.cal_button_calibrate'));
     calBtn.onclick = () => { try { window.api.stashCalibrateStart(); } catch {} };
     btns.appendChild(calBtn);
     if (state.calibrated) {
-      const clr = el('button', 'nw-set-btn nw-set-btn-ghost', 'Reset to default');
-      clr.title = 'Remove calibration and go back to the default 1920×1080 assumption';
+      const clr = el('button', 'nw-set-btn nw-set-btn-ghost', t('networth.settings.cal_reset_button'));
+      clr.title = t('networth.settings.cal_reset_title');
       clr.onclick = () => { try { window.api.clearStashCalibration(); } catch {} state.calibrated = false; renderSettings(root); render(); };
       btns.appendChild(clr);
     }
@@ -143,7 +143,7 @@
 
     const head = el('div', 'nw-card-head');
 
-    const grip = el('div', 'nw-grip', '⠿'); grip.title = 'Drag to reorder'; grip.draggable = true;
+    const grip = el('div', 'nw-grip', '⠿'); grip.title = t('networth.row.drag_title'); grip.draggable = true;
     grip.onclick = (e) => e.stopPropagation();
     grip.ondragstart = (e) => { state.dragId = row.id; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(row.id)); } catch {} };
     grip.ondragend = () => { state.dragId = null; render(); };
@@ -157,7 +157,7 @@
       state.dragId = null; render();
     };
 
-    const cb = el('input', 'nw-inc'); cb.type = 'checkbox'; cb.checked = row.included; cb.title = 'Include in total';
+    const cb = el('input', 'nw-inc'); cb.type = 'checkbox'; cb.checked = row.included; cb.title = t('networth.row.include_title');
     cb.onclick = (e) => { e.stopPropagation(); row.included = cb.checked; render(); };
     head.appendChild(cb);
 
@@ -174,7 +174,7 @@
     head.onclick = (e) => { if (e.target === cb) return; state.expanded[row.id] = !open; render(); };
 
     // per-row remove
-    const del = el('button', 'nw-del', '✕'); del.title = 'Remove this tab';
+    const del = el('button', 'nw-del', '✕'); del.title = t('networth.row.remove_title');
     del.onclick = (e) => { e.stopPropagation(); state.rows = state.rows.filter((x) => x !== row); render(); };
     head.appendChild(del);
     card.appendChild(head);
@@ -192,26 +192,26 @@
         + (ln.userCount != null ? ' nw-line-edited' : '')
         + (ln.excluded ? ' nw-line-off' : '')
         + (ln.missing ? ' nw-line-missing' : ''));
-      const tg = el('input', 'nw-line-inc'); tg.type = 'checkbox'; tg.checked = !ln.excluded; tg.title = 'Include in total';
+      const tg = el('input', 'nw-line-inc'); tg.type = 'checkbox'; tg.checked = !ln.excluded; tg.title = t('networth.row.include_title');
       tg.onclick = (e) => { e.stopPropagation(); ln.excluded = !tg.checked; render(); };
       line.appendChild(tg);
       if (ln.icon) { const img = el('img', 'nw-ic'); img.src = ln.icon; img.onerror = () => img.remove(); line.appendChild(img); }
       else line.appendChild(el('div', 'nw-ic nw-ic-none'));
-      line.appendChild(el('div', 'nw-name', esc(ln.name)));
+      line.appendChild(el('div', 'nw-name', esc(window.gameName(ln.name)))); // feed is English; show the client's own name
       if (state.showConfidence && ln.conf != null) {
         const pct = Math.round(ln.conf * 100);
         const cl = pct >= 88 ? 'ok' : (pct >= 80 ? 'mid' : 'low');
         const cf = el('div', 'nw-conf nw-conf-' + cl, pct + '%');
-        cf.title = 'OCR confidence - low numbers are worth double-checking';
+        cf.title = t('networth.line.confidence_title');
         line.appendChild(cf);
       }
       const cnt = el('div', 'nw-cnt'); cnt.innerHTML = `<span class="nw-x">×</span>${esc(fmtCount(effCount(ln)))}`;
-      cnt.title = 'Click to edit count';
+      cnt.title = t('networth.line.edit_count_title');
       cnt.onclick = (e) => { e.stopPropagation(); startEdit(ln, cnt); };
       line.appendChild(cnt);
-      line.appendChild(el('div', 'nw-val', ln.price == null ? '<span class="nw-noprice">no price</span>' : fmtEx(lineVal(ln))));
+      line.appendChild(el('div', 'nw-val', ln.price == null ? t('networth.line.no_price') : fmtEx(lineVal(ln))));
       const rb = el('button', 'nw-line-reset' + ((ln.userCount != null || ln.excluded) ? '' : ' nw-line-reset-off'), '↺');
-      rb.title = 'Reset this line to its scanned value';
+      rb.title = t('networth.line.reset_title');
       rb.onclick = (e) => { e.stopPropagation(); ln.userCount = undefined; ln.excluded = false; render(); };
       line.appendChild(rb);
       list.appendChild(line);
@@ -240,10 +240,10 @@
   function busyCard(tabId) {
     const card = el('div', 'nw-card nw-busy');
     const head = el('div', 'nw-card-head');
-    head.appendChild(el('div', 'nw-card-title', tabId ? esc(TAB_LABEL[tabId] || tabId) : 'Scanning…'));
+    head.appendChild(el('div', 'nw-card-title', tabId ? esc(TAB_LABEL[tabId] || tabId) : t('networth.status.scanning')));
     const st = el('div', 'nw-card-total');
     st.appendChild(el('span', 'nw-spin'));
-    st.appendChild(el('span', 'nw-busy-lab', tabId ? 'Calculating…' : 'Detecting tab…'));
+    st.appendChild(el('span', 'nw-busy-lab', tabId ? t('networth.status.calculating') : t('networth.status.detecting_tab')));
     head.appendChild(st);
     card.appendChild(head);
     return card;
@@ -254,18 +254,18 @@
     const m = state.modal;
     const back = el('div', 'nw-modal-back');
     const box = el('div', 'nw-modal');
-    box.appendChild(el('div', 'nw-modal-title', `You captured a ${esc(TAB_LABEL[m.res.tab] || m.res.tab)} tab`));
-    box.appendChild(el('div', 'nw-modal-sub', 'Replace one you already have, or add it as a new row?'));
+    box.appendChild(el('div', 'nw-modal-title', t('networth.modal.title', { tabName: esc(TAB_LABEL[m.res.tab] || m.res.tab) })));
+    box.appendChild(el('div', 'nw-modal-sub', t('networth.modal.subtitle')));
     for (const row of m.existing) {
       const b = el('button', 'nw-modal-opt');
-      b.innerHTML = `Replace <b>${esc(labelFor(row))}</b> <span class="nw-modal-tot">${fmtEx(row.result.totalEx)}</span>`;
+      b.innerHTML = t('networth.modal.replace_option', { rowLabel: esc(labelFor(row)), amount: fmtEx(row.result.totalEx) });
       b.onclick = () => { row.result = m.res; state.modal = null; render(); };
       box.appendChild(b);
     }
-    const addB = el('button', 'nw-modal-opt nw-modal-new', '+ Add as new row');
+    const addB = el('button', 'nw-modal-opt nw-modal-new', t('networth.modal.add_new'));
     addB.onclick = () => { addRow(m.res); state.modal = null; render(); };
     box.appendChild(addB);
-    const cancel = el('button', 'nw-modal-cancel', 'Cancel');
+    const cancel = el('button', 'nw-modal-cancel', t('networth.modal.cancel'));
     cancel.onclick = () => { state.modal = null; render(); };
     box.appendChild(cancel);
     back.appendChild(box);
@@ -283,18 +283,18 @@
     const included = state.rows.filter((r) => r.included).length;
     const header = el('div', 'nw-header');
     const totBox = el('div', 'nw-grand');
-    totBox.appendChild(el('div', 'nw-grand-lab', rows ? `${included}/${rows} tab${rows === 1 ? '' : 's'} included` : 'No tabs captured'));
+    totBox.appendChild(el('div', 'nw-grand-lab', rows ? tn('networth.header.tabs_included', rows, { included, total: rows }) : t('networth.header.no_tabs_captured')));
     const gline = el('div', 'nw-grand-val' + (rows && gt.edited ? ' nw-edited' : ''));
-    gline.appendChild(el('span', 'nw-total-lab', 'Total'));
+    gline.appendChild(el('span', 'nw-total-lab', t('networth.header.total_label')));
     gline.appendChild(el('span', 'nw-ex', fmtEx(rows ? gt.ex : null)));
     if (gt.div != null) gline.appendChild(el('span', 'nw-div', fmtDiv(gt.div)));
     if (rows && gt.mirrors != null) gline.appendChild(el('span', 'nw-mirror',
-      `(${gt.mirrors.toLocaleString('en-US')}<img class="nw-mirror-ic" src="${MIRROR_ICON}" alt="mirror">)`));
+      `(${gt.mirrors.toLocaleString('en-US')}<img class="nw-mirror-ic" src="${MIRROR_ICON}" alt="${t('networth.grand.mirror_alt')}">)`));
     totBox.appendChild(gline);
     header.appendChild(totBox);
     const controls = el('div', 'nw-controls');
-    if (state.busy) controls.appendChild(el('span', 'nw-scanning', 'Scanning…'));
-    const gear = el('button', 'nw-gear', '⚙'); gear.title = `Net Worth settings (capture hotkey: ${state.hotkey})`;
+    if (state.busy) controls.appendChild(el('span', 'nw-scanning', t('networth.status.scanning')));
+    const gear = el('button', 'nw-gear', '⚙'); gear.title = t('networth.header.settings_tooltip', { hotkey: state.hotkey });
     gear.onclick = () => { if (window.openNetWorthSettings) window.openNetWorthSettings(); };
     controls.appendChild(gear);
     header.appendChild(controls);
@@ -305,20 +305,20 @@
     const pending = state.busy && state.phase === 'detecting' ? state.pendingTab : null;
     if (!rows && !state.busy) {
       wrap.appendChild(el('div', 'nw-empty',
-        `Open a currency tab in game, keep it fully visible, and press <b>${esc(state.hotkey)}</b> (or Capture).<br>`
-        + 'It detects the tab, values it, and adds a row here plus a running grand total. Flip tabs and capture again.<br>'
-        + '<span style="color:var(--tx-faint)">Not at 1920&times;1080 fullscreen? Open <b>&#x2699; settings</b> and calibrate once.</span>'));
+        t('networth.empty.instructions', { hotkey: esc(state.hotkey) }) + '<br>'
+        + t('networth.empty.explain') + '<br>'
+        + '<span style="color:var(--tx-faint)">' + t('networth.empty.calibrate_hint') + '</span>'));
     } else {
       for (const row of state.rows) wrap.appendChild(rowCard(row));
       if (state.busy) wrap.appendChild(busyCard(pending));
       if (rows) {
         const footer = el('div', 'nw-footer');
-        const clear = el('button', 'nw-reset', 'Clear tally');
+        const clear = el('button', 'nw-reset', t('networth.footer.clear_tally'));
         clear.onclick = () => { state.rows = []; state.expanded = {}; state.notice = null; render(); };
         footer.appendChild(clear);
         if (anyEdits()) {
-          const re = el('button', 'nw-reset nw-reset-edits', 'Reset all edits');
-          re.title = 'Undo every manual count edit + row toggle across all tabs';
+          const re = el('button', 'nw-reset nw-reset-edits', t('networth.footer.reset_edits'));
+          re.title = t('networth.footer.reset_edits_title');
           re.onclick = () => { for (const r of state.rows) for (const ln of r.result.lines) { ln.userCount = undefined; ln.excluded = false; } render(); };
           footer.appendChild(re);
         }
@@ -345,12 +345,12 @@
       state.busy = false; state.phase = 'idle'; state.pendingTab = null; state.calibrated = true;
       const scale = res && typeof res.calScale === 'number' ? res.calScale : 1;
       const small = scale < 0.92;
-      const smallMsg = small ? ` Your panel is ${Math.round(scale * 100)}% of reference size - below 1920×1080, so some counts may misread. Play at 1920×1080 or larger for reliable reads, and edit any that are off.` : '';
+      const smallMsg = small ? t('networth.calibrate.small_panel_warning', { scalePercent: Math.round(scale * 100) }) : '';
       if (res && res.ok && !res.mismatch) {
         applyResult(res);
-        state.notice = { kind: small ? 'warn' : 'ok', msg: `Calibration saved ✓ - detected ${TAB_LABEL[res.tab] || res.tab}, read ${res.readCount}/${res.slotCount} items.${smallMsg}` };
+        state.notice = { kind: small ? 'warn' : 'ok', msg: t('networth.calibrate.success', { tabName: TAB_LABEL[res.tab] || res.tab, readCount: res.readCount, slotCount: res.slotCount, smallPanelWarning: smallMsg }) };
       } else {
-        state.notice = { kind: 'warn', msg: `Calibration saved ✓, but no tab was read. Open a currency tab (fully visible), make sure your box covered the coloured bounding box, then re-calibrate or press ${state.hotkey}.${smallMsg}` };
+        state.notice = { kind: 'warn', msg: t('networth.calibrate.no_tab_read', { hotkey: state.hotkey, smallPanelWarning: smallMsg }) };
       }
       render();
     });
