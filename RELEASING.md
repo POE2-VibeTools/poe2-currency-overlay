@@ -15,7 +15,12 @@ GitHub Pages serves `/docs` from `master`, so **pushing docs/ IS publishing**. N
 
 ## Steps
 
-1. **Bump version** in `package.json` (`"version"`).
+1. **Bump version** in `package.json` (`"version"`). **ASK DREW WHICH NUMBER.** Never infer it.
+   A version number is not bookkeeping - the roadmap groups planned work under a number, so
+   picking one silently spends a release Drew had already allocated to something else. That
+   happened with 2.6.0: multi-language was cut as 2.6 while 2.6 was the arb tab + in-app bug
+   reporting, and the number could not be recalled once it was public.
+   "Cut the release" is not an answer to "which version" - ask.
 2. **Notes:**
    - Add the new version to the TOP of `renderer/release-notes.js` (`{version, date, title?, notes:[...]}`) - drives the in-app what's-new popup + Settings viewer.
    - `docs/changelog.html`: add an entry at the top, move the `<span class="badge">latest</span>` off the previous version.
