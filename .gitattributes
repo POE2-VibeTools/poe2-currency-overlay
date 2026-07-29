@@ -1,0 +1,7 @@
+# The vendored parser's *.index.bin files store OFFSETS into the .ndjson text. Git
+# rewriting line endings on checkout shifts every offset by one byte per preceding line
+# and the parser then reads garbage - so these files must never be touched. (Seen as
+# "LF will be replaced by CRLF" warnings when the language data was first committed.)
+renderer/vendor/ee2/data/** -text
+*.ndjson -text
+*.bin binary
