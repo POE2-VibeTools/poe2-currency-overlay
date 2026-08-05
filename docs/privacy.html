@@ -45,24 +45,37 @@
     <li><b>Path of Exile official trade site (pathofexile.com)</b> - price checks and the currency exchange. These use your own pathofexile.com login, which is stored on your PC and used to talk to GGG directly. We never see your login, your searches, or your items.</li>
     <li><b>GitHub</b> - checking for app updates and fetching the currency feed file.</li>
     <li><b>Google (script.google.com)</b> - only when you submit the in-app Bug or Feedback form.</li>
+    <li><b>poe2-overlay-api.dbatchell.workers.dev</b> - only when you use the "Send my stash tabs" button in the Net Worth tab (see below). The app does not contact it otherwise.</li>
   </ul>
 
   <h2>Reading your stash tabs (Net Worth)</h2>
-  <p>The <b>Net Worth</b> tab reads a currency tab by taking a screenshot when you trigger a capture (its hotkey or the Capture button) and reading the item counts from it <b>on your PC</b>. The screenshot is processed locally and <b>never leaves your machine</b> - it is not saved, uploaded, or sent anywhere. To value what it read, it looks up prices from poe2scout and the public currency-exchange data the same way the rest of the app does: it sends item names and counts, never the screenshot, your account, or your session.</p>
+  <p>The <b>Net Worth</b> tab reads a stash tab by taking a screenshot when you trigger a capture (its hotkey or the Capture button) and reading the item counts from it <b>on your PC</b>. That screenshot is processed locally and is not saved, uploaded, or sent anywhere. To value what it read, it looks up prices from poe2scout and the public currency-exchange data the same way the rest of the app does: it sends item names and counts, never the screenshot, your account, or your session.</p>
+
+  <p><b>The one exception is if you choose to send one.</b> Net Worth is experimental and misreads some setups. The tab has a "Send my stash tabs" button so people it does not work for can help fix it. That button, and only that button, uploads an image. It is entirely optional - if your counts read correctly you never need to touch it, and nothing is captured or sent unless you press it.</p>
+
+  <p>When you use it, you pick each tab, <b>see a preview of exactly what will be sent</b>, and press Send. Each submission contains:</p>
+  <ul>
+    <li>a <b>cropped image of the stash panel itself</b> - not your whole screen, and nothing outside the panel border,</li>
+    <li>your screen resolution, display scale, and the calibration box you set,</li>
+    <li>what the reader made of that image: which tab it thinks it is, the count it read for each slot, and how confident it was,</li>
+    <li>the app version and your operating system.</li>
+  </ul>
+  <p>It does not include your character or account name, your login or session, your other stash tabs, anything else on your screen, or any way to identify you. Bear in mind the panel image shows the contents of that stash tab, because that is the thing being diagnosed.</p>
+  <p>Submissions are stored in a private Cloudflare R2 bucket that only the author can read. They are used solely to test and fix the stash reader, and are deleted once that work is done. There is a per-submitter limit; it is enforced using a <b>salted hash</b> of your IP address, not the address itself, so no visitor IP list is kept.</p>
 
   <h2>What we actually receive</h2>
-  <p>The only data that reaches us is the <b>bug and feedback reports you choose to send</b>. A report contains:</p>
+  <p>Two things, both of which you choose to send. The first is <b>bug and feedback reports</b> submitted from the in-app form. A report contains:</p>
   <ul>
     <li>what you type (your description, and an optional contact only if you add one),</li>
     <li>the app version and a timestamp,</li>
     <li>for bug reports only, a short <b>activity log</b>: the last 60 or so in-app actions (buttons clicked, settings toggled, currency and item type names, and any error messages), so the problem can be reproduced.</li>
   </ul>
-  <p>That is all. It does not include your account, your session, your stash, or anything personal beyond what you type. Reports are stored in a private Google Sheet.</p>
+  <p>Reports are stored in a private Google Sheet. The second is <b>stash panel captures</b>, only if you use "Send my stash tabs", exactly as described above. That is all - neither includes your account, your session, or anything personal beyond what you type.</p>
 
   <h2>About the Cloudflare Worker in the repo</h2>
-  <p>The repository includes a Cloudflare Worker that acts as a currency-price edge cache, with Cloudflare's standard request logging enabled. The current app <b>does not connect to it</b> - it fetches poe2scout directly - so it is not logging anyone. If a future build routes through it, it would only ever see currency-price requests (your IP and which league you are viewing), never item, account, or stash data.</p>
+  <p>The repository includes a Cloudflare Worker that acts as a currency-price edge cache and receives the optional stash captures described above, with Cloudflare's standard request logging enabled. For currency prices the current app <b>does not route through it</b> - it fetches poe2scout directly. If a future build does, it would only ever see currency-price requests (your IP and which league you are viewing), never item, account, or stash data.</p>
 
-  <div class="big">In short: we do not run analytics or telemetry, track usage, phone home in the background, use machine or device IDs, or read your account or session. The Net Worth tab reads your open stash tab from an on-screen screenshot processed on your PC only - the image never leaves your machine. The only data we receive is the bug and feedback reports you choose to send.</div>
+  <div class="big">In short: we do not run analytics or telemetry, track usage, phone home in the background, use machine or device IDs, or read your account or session. The Net Worth tab reads your open stash tab from an on-screen screenshot processed on your PC only - that image is never sent anywhere unless you deliberately choose to submit it with the "Send my stash tabs" button, having first seen a preview of it. The only data we receive is what you choose to send us.</div>
 
   <footer><a class="gh" href="./">Download</a> &middot; <a class="gh" href="faq.html">FAQ</a> &middot; <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay/blob/master/PRIVACY.md">PRIVACY.md</a> &middot; <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay">Source</a></footer>
 </main>
