@@ -232,6 +232,12 @@ function compileQuery(item, opts = {}) {
   }
 
   const query = { status: { option: status } };
+  // Listing age (GGG trade_filters.indexed, verified against /api/trade2/data/filters:
+  // 1hour|3hours|12hours|1day|3days|1week|2weeks|1month|2months). A month-old listing
+  // at a stale price drags the whole comp set up, which is what people mean when they
+  // say the suggestion looks inflated. Omitted entirely when unset = GGG's "Any Time".
+  const tradeFilters = {};
+  if (opts.indexed) tradeFilters.indexed = { option: String(opts.indexed) };
   if (item.name) query.name = item.name; // uniques: the name IS the search
   if (item.type) query.type = item.type; // tablets: the base type IS the tablet
   const tf = typeFilters(item); // { type_filters: { filters: {...} } } or {}
@@ -242,6 +248,24 @@ function compileQuery(item, opts = {}) {
   const miscFilters = {};
   for (const [k, v] of Object.entries(opts.misc || {})) {
     if (v === 'true' || v === 'false') miscFilters[k] = { option: v };
+  }
+  // Unidentified items price as the gamble, not as whatever they turn out to be, so the
+  // comps must also be unidentified (misc_filters.identified, verified against
+  // /api/trade2/data/filters). Without this an unidentified Sapphire priced against
+  // identified ones - the wrong market entirely. Tier only from 5, matching EE2, below
+  // which it does not separate the market.
+  // The Misc panel has its own Identified row now, and an explicit choice there always
+  // wins - this only fills it in when the user has not said otherwise.
+  if (item.isUnidentified) {
+    // Tablets are excluded on purpose. An item's tier only raises the MINIMUM mod ilevel
+    // it can roll, and every tablet mod shares one ilevel - so a tier 4 unidentified
+    // tablet rolls the exact same mod pool at the exact same odds as a tier 0. The tier
+    // is real but carries no value, and filtering on it would shrink the comp set for
+    // nothing. Uniques only, and only from tier 5, matching EE2.
+    if (item.unidentifiedTier != null && item.unidentifiedTier >= 5
+        && item.category !== 'map.tablet') {
+      miscFilters.unidentified_tier = { min: item.unidentifiedTier, max: item.unidentifiedTier };
+    }
   }
   // Item level + quality: min/max ranges living in type_filters (verified against
   // GGG's /api/trade2/data/filters - trade2 keeps them there, NOT in misc). Mins
@@ -268,11 +292,12 @@ function compileQuery(item, opts = {}) {
     miscFilters.gem_level = range(opts.gemLvlMin, opts.gemLvlMax);
   }
   if (tf.type_filters || Object.keys(propFilters).length || Object.keys(mapFilters).length
-      || Object.keys(miscFilters).length) {
+      || Object.keys(miscFilters).length || Object.keys(tradeFilters).length) {
     query.filters = { ...(tf.type_filters ? tf : {}) };
     if (Object.keys(propFilters).length) query.filters.equipment_filters = { filters: propFilters };
     if (Object.keys(mapFilters).length) query.filters.map_filters = { filters: mapFilters };
     if (Object.keys(miscFilters).length) query.filters.misc_filters = { filters: miscFilters };
+    if (Object.keys(tradeFilters).length) query.filters.trade_filters = { filters: tradeFilters };
   }
   if (stats.length) query.stats = stats;
   return { query, sort, notes };

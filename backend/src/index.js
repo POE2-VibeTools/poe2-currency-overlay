@@ -46,6 +46,36 @@ export default {
       catch (e) { return noCacheJson({ error: String(e) }, 500); }
     }
 
+    // Admin-only listing. Without it the bucket is WRITE-ONLY: keys are server-generated
+    // uuids, wrangler has no `r2 object list`, and there is no other read path - so the
+    // corpus we ask people to contribute to could not be retrieved at all. Never cached,
+    // and gated on a secret so submissions stay private.
+    if (url.pathname === '/v1/stash-sample/list') {
+      if (request.method !== 'GET') return noCacheJson({ error: 'GET only' }, 405);
+      const provided = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
+        || url.searchParams.get('key') || '';
+      const expected = env.SAMPLE_ADMIN_KEY || '';
+      // constant-time-ish: compare full length always, and fail closed if unset
+      let ok = expected.length > 0 && provided.length === expected.length;
+      for (let i = 0; ok && i < expected.length; i++) if (expected[i] !== provided[i]) ok = false;
+      if (!ok) return noCacheJson({ error: 'unauthorized' }, 401);
+      if (!env.STASH_SAMPLES) return noCacheJson({ error: 'sample storage not configured' }, 503);
+      try {
+        const listed = await env.STASH_SAMPLES.list({
+          limit: Math.min(1000, Number(url.searchParams.get('limit')) || 200),
+          cursor: url.searchParams.get('cursor') || undefined,
+          prefix: url.searchParams.get('prefix') || undefined,
+        });
+        return noCacheJson({
+          objects: listed.objects.map((o) => ({ key: o.key, size: o.size, uploaded: o.uploaded })),
+          truncated: listed.truncated,
+          cursor: listed.truncated ? listed.cursor : null,
+        });
+      } catch (e) {
+        return noCacheJson({ error: String((e && e.message) || e) }, 500);
+      }
+    }
+
     if (request.method !== 'GET') return json({ error: 'GET only' }, 405);
 
     // Serve from edge cache first.

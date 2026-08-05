@@ -45,6 +45,10 @@
     ['desecrated', t('item.misc.filter_desecrated')], ['fractured_item', t('item.misc.filter_fractured')],
     ['twice_corrupted', t('item.misc.filter_twice_corrupted')], ['sanctified', t('item.misc.filter_sanctified')],
     ['mirrored', t('item.misc.filter_mirrored')],
+    // GGG's misc_filters.identified. Without a control here there was no way to search
+    // for unidentified items at all unless you happened to be holding one - the filter
+    // only ever got set automatically off a parsed item.
+    ['identified', t('item.misc.filter_identified')],
   ];
 
   // GGG's own status_filters enum, their wording. 'securable' is the game's
@@ -56,10 +60,24 @@
     ['online', t('item.search.sale_type_online')],
     ['any', t('item.search.any_option')],
   ];
+  // GGG's trade_filters.indexed, their wording. A stale month-old listing at an old
+  // price pulls the whole comp set up, which is what "the results look inflated"
+  // means in practice. Default null = Any Time, i.e. unchanged from before.
+  const LISTED_WINDOWS = [
+    ['', t('item.search.listed_any')],
+    ['1hour', t('item.search.listed_1hour')],
+    ['3hours', t('item.search.listed_3hours')],
+    ['12hours', t('item.search.listed_12hours')],
+    ['1day', t('item.search.listed_1day')],
+    ['3days', t('item.search.listed_3days')],
+    ['1week', t('item.search.listed_1week')],
+    ['2weeks', t('item.search.listed_2weeks')],
+    ['1month', t('item.search.listed_1month')],
+  ];
 
   const KIND_LABEL = { 'added-rune': t('item.mods.kind_augment'), rune: t('item.mods.kind_rune'), implicit: t('item.mods.kind_implicit'), crafted: t('item.mods.kind_crafted'), desecrated: t('item.mods.kind_desecrated'), fractured: t('item.mods.kind_fractured'), enchant: t('item.mods.kind_enchant'), skill: t('item.mods.kind_skill'), sanctum: t('item.mods.kind_sanctum'), property: t('item.mods.kind_property'), pseudo: t('item.mods.kind_pseudo') };
   // compact status abbreviations shown right of the name in result rows
-  const LI_FLAG_ABBR = { 'Corrupted': t('item.listings.flag_corrupted_abbr'), 'Twice Corrupted': t('item.listings.flag_twice_corrupted_abbr'), 'Desecrated': t('item.listings.flag_desecrated_abbr'), 'Fractured': t('item.listings.flag_fractured_abbr'), 'Sanctified': t('item.listings.flag_sanctified_abbr'), 'Mirrored': t('item.listings.flag_mirrored_abbr'), 'Split': t('item.listings.flag_split_abbr'), 'Unmodifiable': t('item.listings.flag_unmodifiable_abbr') };
+  const LI_FLAG_ABBR = { 'Corrupted': t('item.listings.flag_corrupted_abbr'), 'Twice Corrupted': t('item.listings.flag_twice_corrupted_abbr'), 'Desecrated': t('item.listings.flag_desecrated_abbr'), 'Fractured': t('item.listings.flag_fractured_abbr'), 'Sanctified': t('item.listings.flag_sanctified_abbr'), 'Mirrored': t('item.listings.flag_mirrored_abbr'), 'Split': t('item.listings.flag_split_abbr'), 'Unmodifiable': t('item.listings.flag_unmodifiable_abbr'), 'Unidentified': t('item.listings.flag_unidentified_abbr') };
 
   // "Adds 27 to 45 Fire damage to Attacks" reads as two numbers you then have to
   // average in your head - and the average IS the value the search ranks on. So
@@ -279,7 +297,16 @@
     // header block: big item art spanning BOTH rows on the left, with the name
     // row and the search-ranges strip stacked to its right
     const head = el('div', 'item-head');
-    head.appendChild(el('span', 'item-name rare', esc(item.title || item.base)));
+    // The name is click-to-retype: clear it, autocomplete a different item, search that.
+    // Escape restores what was there. The mod filters below are deliberately left alone -
+    // searching a new name with the old item's mods is the user's call, and clearing them
+    // silently would be the more surprising behaviour.
+    const nameEl = el('span', 'item-name rare' + (h.onRename ? ' renamable' : ''), esc(item.title || item.base));
+    if (h.onRename) {
+      nameEl.title = t('item.header.rename_tooltip');
+      nameEl.onclick = () => h.onRename();
+    }
+    head.appendChild(nameEl);
     if (item.title) head.appendChild(el('span', 'item-base', esc(item.base)));
     // meta chip: rarity only - the searchable ranges (ilvl/quality/sockets) get
     // their own strip under the header, the pill was outgrown at two
@@ -358,6 +385,35 @@
       fl.title = t('item.header.charm_facts_tooltip');
       wrap.appendChild(fl);
     }
+    // Unidentified unique on a base that carries several: the text cannot say which one
+    // it is, but the player is looking at the art. Show the candidates and let them pick.
+    // Until they do, the search runs on the base, which prices the gamble rather than the
+    // item - fine for a 1ex club, badly wrong for a Voices.
+    if (item.unidCandidates && item.unidCandidates.length && h.onPickUnid) {
+      const box = el('div', 'unid-pick');
+      box.appendChild(el('div', 'unid-pick-lab', t('item.header.unid_which_one')));
+      const strip = el('div', 'unid-pick-strip');
+      for (const c of item.unidCandidates) {
+        const b = el('button', 'unid-cand' + (item.name === c.refName ? ' on' : ''));
+        if (c.icon) {
+          const im = document.createElement('img');
+          im.src = c.icon; im.alt = ''; im.loading = 'lazy';
+          b.appendChild(im);
+        }
+        b.appendChild(el('span', null, esc(c.name)));
+        b.title = t('item.header.unid_pick_tooltip', { name: esc(c.name) });
+        b.onclick = () => h.onPickUnid(c);
+        strip.appendChild(b);
+      }
+      box.appendChild(strip);
+      if (item.name) {
+        const clr = el('button', 'unid-clear', t('item.header.unid_any'));
+        clr.title = t('item.header.unid_any_tooltip');
+        clr.onclick = () => h.onPickUnid(null);
+        box.appendChild(clr);
+      }
+      wrap.appendChild(box);
+    }
     if (state.notice) wrap.appendChild(el('div', 'notice', esc(state.notice)));
     if (state.loginHint) {
       const n = el('div', 'notice', t('item.misc.login_hint'));
@@ -421,6 +477,21 @@
     // the list just before "+ Add a mod"
     if (bracketRows.length) {
       const open = !!state.bracketOpen;
+      // When EVERY searchable mod ended up in the bracket - which is what a unique
+      // does, since its rolls default off and the name is treated as pinning the item -
+      // the search is running on name alone. The quiet collapsed row reads as "some
+      // detail is tucked away" rather than "none of your rolls are being filtered", so
+      // people conclude their item is worth 1ex when they are looking at the cheapest
+      // rolls of that unique. Say it out loud instead.
+      const nothingInline = !mods.querySelector('.mod');
+      if (nothingInline && !open) {
+        const warn = el('div', 'mod-bracket-warn', t('item.mods.bracket_name_only'));
+        warn.onclick = () => {
+          state.bracketOpen = true;
+          h.onRerender ? h.onRerender() : render(document.getElementById('item-root'), state, h);
+        };
+        mods.appendChild(warn);
+      }
       const bhead = el('div', 'mod-bracket-head' + (open ? ' open' : ''),
         `<span class="mb-caret">${open ? '&#9662;' : '&#9656;'}</span><span class="mb-lab">${tn('item.mods.bracket_count_label', bracketRows.length, { count: bracketRows.length })}</span><span class="mb-hint">${t('item.mods.bracket_hint', { action: open ? t('item.mods.bracket_action_collapse') : t('item.mods.bracket_action_expand') })}</span>`);
       bhead.title = t('item.mods.bracket_tooltip');
@@ -484,6 +555,23 @@
           sel.onchange = () => h.onOpt('status', sel.value);
           sale.appendChild(sel);
           acc.appendChild(sale);
+
+          // how far back to accept listings - sits with sale type because both narrow
+          // WHICH listings count rather than what the item is
+          const listed = el('div', 'sale-row');
+          listed.appendChild(el('span', null, t('item.search.listed_label')));
+          const lsel = el('select');
+          for (const [v, lbl] of LISTED_WINDOWS) {
+            const o = el('option', null, lbl);
+            o.value = v;
+            lsel.appendChild(o);
+          }
+          lsel.value = state.opts.indexed || '';
+          if (lsel.value) lsel.classList.add('set');
+          lsel.title = t('item.search.listed_tooltip');
+          lsel.onchange = () => h.onOpt('indexed', lsel.value || null);
+          listed.appendChild(lsel);
+          acc.appendChild(listed);
         }
         const grid = el('div', 'misc-grid');
         for (const [key, label] of MISC_FILTERS) {
@@ -639,11 +727,15 @@
       return `<div class="pk-cmp" title="${esc(title)}"><span class="pk-cmp-lab">${lab}</span>`
         + `<b>${c.val}</b>${dl}</div>`;
     };
-    const cmp = cmpRow(`${t('item.listings.cmp_quality_label')}${t.qualKind ? ` (${esc(t.qualKind)})` : ''}`, t.qual, t('item.listings.cmp_quality_tooltip'))
-      + cmpRow(t('item.listings.cmp_es_label'), t.es, t('item.listings.cmp_es_tooltip'))
-      + cmpRow(t('item.listings.cmp_armour_label'), t.ar, t('item.listings.cmp_armour_tooltip'))
-      + cmpRow(t('item.listings.cmp_evasion_label'), t.ev, t('item.listings.cmp_evasion_tooltip'))
-      + cmpRow(t('item.listings.cmp_ward_label'), t.ward, t('item.listings.cmp_ward_tooltip'))
+    // every value here reads from `tot`, never `t` - `t` is the translator, so `t.es`
+    // and friends are undefined and cmpRow drops the row silently. That is exactly how
+    // Quality/ES/Armour/Evasion/Ward disappeared from this panel in 2.6.0: the i18n
+    // rename took the three `tot.*` rows below and missed these five.
+    const cmp = cmpRow(`${t('item.listings.cmp_quality_label')}${tot.qualKind ? ` (${esc(tot.qualKind)})` : ''}`, tot.qual, t('item.listings.cmp_quality_tooltip'))
+      + cmpRow(t('item.listings.cmp_es_label'), tot.es, t('item.listings.cmp_es_tooltip'))
+      + cmpRow(t('item.listings.cmp_armour_label'), tot.ar, t('item.listings.cmp_armour_tooltip'))
+      + cmpRow(t('item.listings.cmp_evasion_label'), tot.ev, t('item.listings.cmp_evasion_tooltip'))
+      + cmpRow(t('item.listings.cmp_ward_label'), tot.ward, t('item.listings.cmp_ward_tooltip'))
       + cmpRow(t('item.listings.cmp_res_label'), tot.res, t('item.listings.cmp_res_tooltip'))
       + cmpRow(t('item.listings.cmp_dmg_label'), tot.dmg, t('item.listings.cmp_dmg_tooltip'))
       + cmpRow(t('item.listings.cmp_sockets_label'), tot.sockets, t('item.listings.cmp_sockets_tooltip'));
@@ -989,6 +1081,15 @@
     const hk = (state.itemHotkey || 'Ctrl+F').replace(/Control|CommandOrControl/g, 'Ctrl')
       .split('+').map((k) => `<kbd>${esc(k)}</kbd>`).join('+');
     wrap.appendChild(el('div', 'paste-prompt', `${t('item.history.paste_prompt_main', { hotkey: hk })}<br><span class="pp-alt">${t('item.history.paste_prompt_alt')}</span>`));
+    // Search by NAME, for the things Ctrl+C cannot reach: runestones and Verisium
+    // gems inside the rune-combination dialogue, and Ritual remnant reward choices.
+    // Three separate people asked for this, each about a different dialogue.
+    if (h.onNameSearch) {
+      const byName = el('button', 'sample-btn name-search-btn', t('item.history.search_by_name_button'));
+      byName.title = t('item.history.search_by_name_tooltip');
+      byName.onclick = () => h.onNameSearch();
+      wrap.appendChild(byName);
+    }
     if (h.onLoadSample) {
       const sample = el('button', 'sample-btn', t('item.history.see_example_button'));
       sample.onclick = () => h.onLoadSample();
@@ -1092,6 +1193,9 @@
     const inp = el('input');
     inp.placeholder = opts.placeholder || t('item.picker.default_placeholder');
     inp.autocomplete = 'off';
+    // seeded (renaming an item rather than searching fresh): pre-select it so the first
+    // keystroke replaces the old name, and Escape closes without picking = unchanged
+    if (opts.value) inp.value = opts.value;
     const x = el('button', 'icon-btn', '&#x2715;');
     head.append(el('div', 'ipicker-title', esc(opts.title || t('item.picker.default_title'))), inp, x);
     const list = el('div', 'ipicker-list');
@@ -1128,9 +1232,14 @@
       // a typed scope word ("frac") overrides the chip - mirror it in the chip row
       const eff = entries.scope || scope;
       if (scopeRow) scopeRow.querySelectorAll('.scope-chip').forEach((c) => c.classList.toggle('on', c.dataset.scope === eff));
-      if (!entries.length) { list.appendChild(el('div', 'ipicker-empty', t('item.picker.no_matches'))); return; }
+      if (!entries.length) { list.appendChild(el('div', 'ipicker-empty', opts.emptyText || t('item.picker.no_matches'))); return; }
       for (const e of entries) {
-        const row = el('div', 'ipicker-item' + (e.picked ? ' picked' : ''), hlNums(e.text) + (e.picked ? ' <span class="pick-mark">&#10003;</span>' : ''));
+        // `text` is PLAIN text - hlNums escapes it. Callers that need a trailing tag pass
+        // `tag`, they must not smuggle markup through `text` (it comes out double-escaped).
+        const row = el('div', 'ipicker-item' + (e.picked ? ' picked' : ''),
+          hlNums(e.text)
+          + (e.tag ? ` <span class="ipick-ns">${esc(e.tag)}</span>` : '')
+          + (e.picked ? ' <span class="pick-mark">&#10003;</span>' : ''));
         row.onclick = () => { opts.onPick(e); refresh(); };
         list.appendChild(row);
       }
@@ -1144,6 +1253,7 @@
     ov._cleanup = () => document.removeEventListener('keydown', esc2, true);
     refresh();
     inp.focus();
+    if (opts.value) inp.select();
   }
   function closePicker() {
     const p = document.querySelector('.ipicker');

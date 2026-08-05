@@ -84,7 +84,7 @@ html, body {
 .app-version:hover { color: var(--am); }
 .league {
   color: var(--tx-dim); font-size: 10px;
-  background: var(--bd-06); border: 1px solid var(--bd-08);
+  background: var(--bd-12); /* label, not a button: fill only, no outline */
   border-radius: 999px; padding: 2px 9px;
   white-space: nowrap; flex-shrink: 0;
 }
@@ -240,7 +240,7 @@ html, body {
 .set-slab { display: flex; align-items: baseline; justify-content: space-between; }
 .set-slab label { font-size: 11px; color: var(--tx-dim); }
 
-.kb-mode { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tx-faint); border: 1px solid var(--bd-08); border-radius: 999px; padding: 1px 6px; }
+.kb-mode { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tx-faint); background: var(--bd-08); border-radius: 999px; padding: 1px 6px; }
 .kb-field { display: flex; align-items: center; gap: 8px; }
 .kb-input { flex: 1; min-width: 0; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 11px; letter-spacing: 0.03em; color: var(--tx-hi) !important; background: var(--in-bg) !important; border: 1px solid var(--in-bd) !important; border-radius: 6px; padding: 5px 8px; cursor: pointer; text-align: center; }
 .kb-input.recording { border-color: var(--am) !important; color: var(--tx-gold) !important; }
@@ -1476,7 +1476,7 @@ footer {
 .gx-buy-btn:hover { filter: brightness(1.08); }
 .gx-master-name { font-size: 14px; font-weight: 700; color: var(--tx-hi); margin-bottom: 8px; }
 .gx-node-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-.gx-node-chip { border: 1px solid var(--bd-12); border-radius: 999px; padding: 4px 12px; font-size: 11.5px; color: var(--am-hi); background: rgba(232,160,76,.07); }
+.gx-node-chip { border-radius: 999px; padding: 4px 12px; font-size: 11.5px; color: var(--am-hi); background: rgba(232,160,76,.14); }
 .gx-check { display: flex; align-items: center; gap: 10px; text-align: left; background: rgba(0,0,0,.16); border: 1px solid var(--bd-08); border-radius: 8px; padding: 9px 12px; font-size: 12.5px; color: var(--tx-body); cursor: pointer; margin-bottom: 7px; width: 100%; }
 .gx-check:hover { border-color: var(--bd-16); }
 .gx-check.done { color: var(--tx-faint); text-decoration: line-through; }
@@ -1668,3 +1668,17 @@ footer {
 .nw-sample-drop:hover { color: #e08b8b; border-color: #e08b8b; }
 .nw-sample-note { font-size: 11px; color: var(--tx-faint); line-height: 1.4; margin-bottom: 8px; }
 .nw-empty-hint { color: var(--tx-faint); }
+
+/* arbitrage gold estimate: size box + running bill (Ange charges per item received) */
+.tip-gold { display: flex; align-items: center; gap: 6px; margin: 6px 0 2px; font-size: 12px; }
+.tip-gold-lab { color: var(--tx-faint); }
+.tip-gold-qty { width: 68px; background: rgba(0,0,0,.3); border: 1px solid var(--bd-16); border-radius: 4px;
+  color: var(--tx-hi); font: inherit; padding: 2px 5px; text-align: right; }
+.tip-gold-qty:focus { outline: none; border-color: var(--am-60, #d8a24a); }
+.tip-gold-unit { color: var(--tx-faint); margin-right: 2px; }
+.tip-gold-cost { color: var(--tx-mid); }
+
+/* release-notes section heading (a note line ending in ":") */
+.notes-list li.notes-sec { list-style: none; margin-left: -1.1em; margin-top: 10px; font-weight: 600;
+  color: var(--tx-hi); letter-spacing: .01em; }
+.notes-list li.notes-sec:first-child { margin-top: 0; }

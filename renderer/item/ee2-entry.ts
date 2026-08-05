@@ -14,6 +14,7 @@ import {
   STAT_BY_MATCH_STR,
   STAT_BY_REF,
   STATS_ITERATOR,
+  ITEMS_ITERATOR,
   ITEM_BY_REF,
   AUGMENT_DATA_BY_AUGMENT,
   setLocalAugmentFilter,
@@ -70,6 +71,88 @@ const EE2 = {
   statByMatchStr: (s: string) => STAT_BY_MATCH_STR(s),
   statByRef: (ref: string) => STAT_BY_REF(ref),
   itemByRef: (ns: "ITEM" | "GEM" | "UNIQUE", name: string) => ITEM_BY_REF(ns, name),
+  /**
+   * Substring scan over item NAMES, for price checking something you cannot put on the
+   * clipboard: runestones and Verisium gems inside the rune-combination dialogue, and
+   * Ritual remnant reward choices, neither of which Ctrl+C will copy.
+   *
+   * Matches the player's own language (`name`) but returns `refName` alongside, because
+   * trade indexes in English - searching the localised name finds nothing on a
+   * translated client. Prefix matches sort first so typing "vo" reaches Voices before
+   * every item merely containing those letters.
+   */
+  itemsSearch(
+    includes: string,
+    limit = 30,
+  ): Array<{ name: string; refName: string; namespace: string; icon?: string; category?: string }> {
+    const q = String(includes || "").trim().toLowerCase();
+    if (q.length < 2) return [];
+    type Hit = {
+      name: string;
+      refName: string;
+      namespace: string;
+      icon?: string;
+      category?: string;
+    };
+    const seen = new Set<string>();
+    const exact: Hit[] = [];
+    const prefix: Hit[] = [];
+    const out: Hit[] = [];
+    // The ndjson is written with a SPACE after each colon ('"namespace": "GEM"'), so the
+    // line filter must include it - '"namespace":"GEM"' matches zero lines and the whole
+    // search silently returns nothing. Same form the data module uses for its name lists.
+    for (const ns of ["UNIQUE", "GEM", "ITEM"]) {
+      for (const item of ITEMS_ITERATOR(`": "${ns}"`)) {
+        const nm = item.name || item.refName;
+        if (!nm) continue;
+        const low = nm.toLowerCase();
+        const at = low.indexOf(q);
+        if (at < 0) continue;
+        const key = `${ns}:${item.refName}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const row = {
+          name: nm,
+          refName: item.refName || nm,
+          namespace: ns,
+          icon: item.icon,
+          // craftable.category separates gear that ROLLS mods (Ring, Bow, Body Armour)
+          // from things whose contents are fixed (Currency, Omen, SoulCore)
+          category: (item as { craftable?: { category?: string } }).craftable?.category,
+        };
+        if (low === q) exact.push(row);
+        else if (at === 0) prefix.push(row);
+        else out.push(row);
+        if (exact.length + prefix.length + out.length >= limit * 4) break;
+      }
+    }
+    return [...exact, ...prefix, ...out].slice(0, limit);
+  },
+
+  /**
+   * Every unique printed on a given base ("Sapphire" -> Grand Spectrum, Voices).
+   *
+   * An unidentified unique's clipboard text carries the BASE only, never the unique's
+   * name, so this is the only way to tell what it might be. 91% of bases carry exactly
+   * one unique and resolve outright; the rest are genuinely ambiguous from text alone
+   * (Diamond has 7) and the app says so rather than guessing.
+   */
+  uniquesOnBase(base: string): Array<{ name: string; refName: string; icon?: string }> {
+    const want = String(base || "").trim().toLowerCase();
+    if (!want) return [];
+    const seen = new Set<string>();
+    const out: Array<{ name: string; refName: string; icon?: string }> = [];
+    for (const item of ITEMS_ITERATOR('": "UNIQUE"')) {
+      const b = (item as { unique?: { base?: string } }).unique?.base;
+      if (!b || b.toLowerCase() !== want) continue;
+      const ref = item.refName || item.name;
+      if (!ref || seen.has(ref)) continue; // the db repeats a unique per variant
+      seen.add(ref);
+      out.push({ name: item.name || ref, refName: ref, icon: item.icon });
+    }
+    return out;
+  },
+
   /** Substring scan over all stats (feeds the add-mod / make-fungible pickers). */
   statsSearch(includes: string, limit = 50): Stat[] {
     const out: Stat[] = [];

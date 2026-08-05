@@ -26,7 +26,7 @@
     searching: false,
     notice: null,        // e.g. "cached 2h ago - Search re-runs it live"
     history: [],
-    opts: { defaultLowerPct: 15, weightedMode: 'client', misc: {}, status: 'securable' },
+    opts: { defaultLowerPct: 15, weightedMode: 'client', misc: {}, status: 'securable', indexed: null },
     league: null,
     active: false,       // items tab visible?
     ranges: {},          // learned per-stat roll bounds: { statId: {min, max} }
@@ -44,7 +44,16 @@
   // full searchable-stat catalog for the pickers (built once after parser init);
   // each entry carries its trade id per scope so pickers can offer crafted /
   // implicit / rune / fractured / ... variants, not just explicit
-  const PICKER_SCOPES = ['explicit', 'crafted', 'implicit', 'rune', 'enchant', 'fractured', 'desecrated', 'skill'];
+  // 'sanctum' = Trial of the Sekhemas relic mods (Resolve, Honour, Afflictions, Keys).
+  // It exists in the stat data and relics are tradeable, but it was missing here, so
+  // all 164 of those stats were unreachable in every picker.
+  // 'pseudo' is LAST deliberately: buildStatCatalog keys its dedupe on the first scope
+  // present, and a stat that is both explicit and pseudo must key on its explicit id.
+  // Listing it at all is what makes the 33 pseudo-only stats (modifier counts, empty
+  // prefix/suffix, attribute totals, tablet uses) addable by hand. This does NOT change
+  // what gets auto-added to a parsed item - that is still only total resistance plus
+  // the empty chaos row; total life/mana stay baits and stay off by default.
+  const PICKER_SCOPES = ['explicit', 'crafted', 'implicit', 'rune', 'enchant', 'fractured', 'desecrated', 'skill', 'sanctum', 'pseudo'];
   // Two curated pools surfaced as picker pills, filtering the catalog down to the
   // mods a special context grants (with the trade scope they read as on an item):
   //   Greater Runes  = the "soul" pool (Medved's Tending & co) -> read as explicit
@@ -72,10 +81,28 @@
       const ids = {};
       for (const sc of PICKER_SCOPES) if (tradeIds[sc] && tradeIds[sc].length) ids[sc] = tradeIds[sc]; // ALL ids per scope
       if (!Object.keys(ids).length) continue;
-      const key = Object.values(ids)[0][0];
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const text = cleanBrackets((stat.matchers && stat.matchers[0] && stat.matchers[0].string) || stat.ref);
+      const baseKey = Object.values(ids)[0][0];
+      // OPTION stats ("Legacy of #", "Allocates #") carry one matcher PER CHOICE, and the
+      // choice is the whole point - a Mageblood's Legacy of Topaz is a different item from
+      // Legacy of Gold. Taking matchers[0] published exactly one of them and hid the other
+      // thirteen, so they could not be searched at all. Emit one entry per choice, keyed by
+      // its option value so they do not dedupe into each other.
+      const isOption = !!(stat.trade && stat.trade.option);
+      const matchers = (stat.matchers || []).filter((m) => m && m.string);
+      if (isOption && matchers.length > 1) {
+        for (const m of matchers) {
+          if (m.value == null) continue;
+          const key = `${baseKey}|${m.value}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const text = cleanBrackets(m.string);
+          statCatalog.push({ ids, ref: stat.ref, text, lower: text.toLowerCase(), option: m.value });
+        }
+        continue;
+      }
+      if (seen.has(baseKey)) continue;
+      seen.add(baseKey);
+      const text = cleanBrackets((matchers[0] && matchers[0].string) || stat.ref);
       statCatalog.push({ ids, ref: stat.ref, text, lower: text.toLowerCase() });
     }
     return statCatalog;
@@ -112,9 +139,27 @@
     }
     // more word-start hits first; shorter = more canonical ("# to maximum Life"
     // above "...per 100 maximum Life")
-    found.sort((a, b) => b.boundary - a.boundary || a.s.text.length - b.s.text.length);
+    // With a query, word-start hits rank first and shorter = more canonical
+    // ("# to maximum Life" above "...per 100 maximum Life").
+    // With NO query there is nothing to rank, and shortest-first fills the whole list
+    // with the shortest names in the scope - in `sanctum` that is every cryptic boon
+    // ("Has Golden Smoke") while the readable numeric mods sit below the fold. So when
+    // the box is empty, parameterised stats (the ones with a # you can put a number in)
+    // come first, and the bare named ones follow.
+    const noQuery = !tokens.length;
+    found.sort((a, b) =>
+      b.boundary - a.boundary
+      || (noQuery ? (b.s.text.includes('#') - a.s.text.includes('#')) : 0)
+      || a.s.text.length - b.s.text.length);
     const res = found.slice(0, 40)
-      .map(({ s }) => ({ id: s.ids[effScope][0], altIds: s.ids[effScope].slice(1), scope: effScope, ref: s.ref, text: s.text, picked: pickedIds.has(s.ids[effScope][0]) }));
+      .map(({ s }) => ({
+        id: s.ids[effScope][0], altIds: s.ids[effScope].slice(1), scope: effScope,
+        ref: s.ref, text: s.text,
+        // option stats share one trade id across every choice, so "already picked" has
+        // to compare the CHOICE too, not just the id
+        option: s.option != null ? s.option : null,
+        picked: pickedIds.has(s.option != null ? `${s.ids[effScope][0]}|${s.option}` : s.ids[effScope][0]),
+      }));
     res.scope = scope; // effective pill (may differ from the chip if a scope word was typed)
     return res;
   }
@@ -463,22 +508,30 @@
         // ("Destroys all Augment Sockets...") which as presence filters poison searches,
         // Grants-Skill lines (probed live: the trade2 API's skill filters fail to match
         // listings that visibly have the skill - even exact level bounds return zero),
-        // uniques (the name pins the item; numeric rolls are opt-in, but variant
-        // OPTION stats stay ON - see below), armour's defence recipe lines and
-        // martial weapons' damage prefixes (the computed totals in
-        // equipment_filters are what price the item)
+        // a unique's FIXED rolls (see below - the variable ones stay ON), armour's
+        // defence recipe lines and martial weapons' damage prefixes (the computed
+        // totals in equipment_filters are what price the item)
         mode: (!tradeId || isGarbage || (roll == null && sc.type === 'rune') || sc.type === 'skill'
           || (isArmourPiece && DEF_REFS.has(ref))
           || (isMartial && DPS_REFS.has(ref))
           // socketed runes / anvil augments: off by default - turn back on to find
           // items socketed exactly like yours
           || sc.type === 'rune' || sc.type === 'added-rune')
+          // A unique's FIXED rolls (min == max: the same on every copy ever printed)
+          // are dead weight as filters - every listing matches them - so they fold
+          // away, which is what EE2 does too (hideNotVariableStat: hidden unless
+          // roll.min !== roll.max). Its VARIABLE rolls are the opposite: they are the
+          // whole reason one Mageblood is 1ex and another is 200div, so they stay on.
+          // Defaulting the lot to off (what this used to do, on the theory that the
+          // name pins the item) pinned the item but not its price - the search came
+          // back full of the cheapest rolls and read as "yours is worthless".
+          // Bounds unknown (simple Ctrl+C rather than advanced copy) defaults ON: if
+          // the roll turns out to be fixed the filter matches everything anyway, so
+          // it costs nothing, while guessing "off" is what caused the bad reads.
+          || (parsed.rarity === 'Unique' && rangesKnown && roll
+            && roll.min != null && roll.max != null && roll.min === roll.max
+            && optionVal == null)
           ? 'off'
-          // uniques: numeric rolls default OFF (name pins the item), but a variant
-          // OPTION stat (which mageblood legacies, which allocated passive) IS the
-          // distinguishing feature - default it ON
-          : parsed.rarity === 'Unique'
-          ? (optionVal != null ? 'strict' : 'off')
           : (tag.damage && tag.form === 'flat' ? 'pseudo' : 'strict'),
         damage: tag.damage,
         form: tag.form,
@@ -797,6 +850,18 @@
       if (shownLevel == null || gemLevel == null) return 0;
       return shownLevel > gemLevel ? shownLevel - gemLevel : 0;
     })();
+    // An unidentified unique prints its BASE where the name goes, so the name is simply
+    // not in the text. Most bases carry exactly one unique, and those resolve outright -
+    // an unidentified "Time-Lost Diamond" can only be Against the Darkness, so we search
+    // it by name like any identified unique. The rest are genuinely ambiguous (Sapphire
+    // is Grand Spectrum or Voices; Diamond is one of seven) and get searched as the base,
+    // with the UI saying so - guessing there would price a 2000-divine Voices against
+    // Grand Spectrums.
+    const unidCandidates = (parsed.isUnidentified && parsed.rarity === 'Unique' && baseType
+      && window.EE2 && window.EE2.uniquesOnBase)
+      ? window.EE2.uniquesOnBase(baseType) : [];
+    const unidResolved = unidCandidates.length === 1 ? unidCandidates[0] : null;
+
     // a gem searches by its own name as the base type ("Powered by Verisium"). trade2
     // indexes gems by their ENGLISH name, so the db's refName is the identity to search
     // with - the raw text carries whatever language the player's client is in.
@@ -820,14 +885,31 @@
     return {
       title,
       base: baseType || '?',
-      // uniques search by NAME - that alone finds the item; mod filters refine rolls
-      name: parsed.rarity === 'Unique' ? (title || (parsed.info && parsed.info.name)) : null,
+      // uniques search by NAME - that alone finds the item; mod filters refine rolls.
+      // Unidentified ones print the BASE where the name goes, so the name has to come
+      // from the base instead: resolved outright when the base carries one unique, left
+      // null (search the base + identified=No) when it carries several.
+      name: parsed.rarity === 'Unique'
+        ? (parsed.isUnidentified
+          ? (unidResolved ? unidResolved.refName : null)
+          : (title || (parsed.info && parsed.info.name)))
+        : null,
+      // >1 unique on this base, so which one it is cannot be known from the TEXT - but the
+      // player can see the art. The UI shows the candidates and lets them say which, which
+      // is the only way to price a 2000-divine unidentified Voices as a Voices instead of
+      // averaging it against Grand Spectrums.
+      unidCandidates: unidCandidates.length > 1 ? unidCandidates : null,
+      unidResolvedName: unidResolved ? unidResolved.name : null,
       // Tablets: pin the BASE TYPE ("Delirium Tablet"). Tablet-type-specific mods
       // and generic ones (effectiveness) mix freely, so without this a search can
       // return the wrong tablet type entirely. With the type pinned, uses
       // remaining only has to carry the count - the pseudo is then as safe as the
       // type-specific implicit.
-      type: categoryId === 'map.tablet' ? baseType : (isGem ? gemName : null),
+      type: (categoryId === 'map.tablet' || parsed.isUnidentified) ? baseType : (isGem ? gemName : null),
+      // unidentified: drives misc_filters.identified=false, and the tier when the
+      // item carries one (EE2 only searches the tier at 5+, where it starts mattering)
+      isUnidentified: !!parsed.isUnidentified,
+      unidentifiedTier: parsed.unidentifiedTier != null ? Number(parsed.unidentifiedTier) : null,
       rarity: parsed.rarity || null,
       itemLevel: parsed.itemLevel || null,
       // gem facts: level drives misc_filters.gem_level, and isGem switches the
@@ -1170,6 +1252,10 @@
         const f = STATUS.filter(([k]) => item[k]).map(([, lab]) => lab);
         const eh = (item.extended && item.extended.hashes) || {};
         if ((eh.fractured || []).length) f.push(t('itemtab.property.status_fractured'));
+        // `identified` is the one status sent as FALSE rather than omitted-unless-true.
+        // Without it an unidentified search returned rows that looked like ordinary
+        // items, with nothing saying the whole comp set is unidentified.
+        if (item.identified === false) f.push(t('itemtab.property.status_unidentified'));
         return f;
       })(),
       totals, // res / dmg / sockets, each { val, delta } or null - peek card
@@ -1411,6 +1497,15 @@
       state.excAssume = null;
       if (state.autoCorrupted) { delete misc.corrupted; state.autoCorrupted = false; }
     }
+    // An unidentified item searches unidentified comps - but that has to be VISIBLE in the
+    // Misc panel, not applied behind the query builder's back. The dropdown said "Any"
+    // while the search sent "No", which is the app lying about what it just did. Seeded
+    // like corrupted: shown as No, yours the moment you touch it, cleared on a normal item.
+    if (state.item && state.item.isUnidentified) {
+      if (!misc.identified || state.autoIdentified) { misc.identified = 'false'; state.autoIdentified = true; }
+    } else if (state.autoIdentified) {
+      delete misc.identified; state.autoIdentified = false;
+    }
     state.opts.misc = misc;
   }
 
@@ -1486,9 +1581,12 @@
     onMisc(key, value) {
       // once the user picks a Corrupted value, it is theirs - stop auto-managing it
       if (key === 'corrupted') state.autoCorrupted = false;
+      if (key === 'identified') state.autoIdentified = false;
       state.opts.misc = { ...(state.opts.misc || {}) };
-      if (value) state.opts.misc[key] = value;
-      else delete state.opts.misc[key];
+      // Keep the key on "Any" ('') rather than deleting it. Deleting made an explicit Any
+      // indistinguishable from never-touched, so a filter the app seeds itself (identified
+      // on an unidentified item) silently re-applied the moment you chose Any.
+      state.opts.misc[key] = value || '';
       markStale();
     },
     // live q20 / filled-rune assumption toggle: recompute THIS item and re-search,
@@ -1549,6 +1647,10 @@
       if (key === 'defaultLowerPct' && window.api.setItemSearchOpts) {
         window.api.setItemSearchOpts({ statRange: val }).catch(() => {});
       }
+      // listing-age window is a standing preference too, not per-item state
+      if (key === 'indexed' && window.api.setItemSearchOpts) {
+        window.api.setItemSearchOpts({ indexed: val }).catch(() => {});
+      }
       markStale();
     },
     // item-level search range (min/max). null clears that bound. Kept on state so
@@ -1604,11 +1706,14 @@
         title: t('itemtab.search.add_mod_title'),
         placeholder: t('itemtab.search.add_mod_placeholder'),
         scopes: [...PICKER_SCOPES, ...SPECIAL_SCOPES],
-        query: (q, scope) => filterStats(q, new Set(state.item.mods.map((m) => m.id)), scope || 'explicit'),
+        query: (q, scope) => filterStats(q, new Set(state.item.mods.map((m) => (m.option != null ? `${m.id}|${m.option}` : m.id))), scope || 'explicit'),
         onPick(e) {
-          if (state.item.mods.some((m) => m.id === e.id)) return;
+          if (state.item.mods.some((m) => m.id === e.id && m.option === (e.option != null ? e.option : undefined))) return;
           state.item.mods.push({
             id: e.id, kind: e.scope || 'explicit', ref: e.ref, text: e.text,
+            // option stats ride their choice in the id (id|value) - without this every
+            // Legacy searched as the same one
+            ...(e.option != null ? { option: e.option } : {}),
             value: null, min: null, max: null, tier: null, searchMin: null,
             // an added mod has no roll of its own to lower, so its min is typed
             // rather than derived: blank = "just has to be present"
@@ -1707,6 +1812,37 @@
     onHistoryMore() { state.histShown = (state.histShown || 10) + 10; render(); },
     // "See an example" on the empty landing: load the sample ring as a normal
     // item (local synth comps, no API), decoupled from the tutorial demo path
+    // Price check something the clipboard cannot reach - runestones and Verisium gems
+    // in the rune-combination dialogue, Ritual remnant choices. There is no item text to
+    // parse, so this builds the minimum model a search needs: an identity and no mods.
+    // Uniques search by NAME, everything else by TYPE, which is the same split
+    // compileQuery already makes for parsed items.
+    async onNameSearch() {
+      // the parser data can still be cold if no item has been price checked yet
+      try { await ensureInit(''); } catch { /* picker shows its own empty state */ }
+      showItemNamePicker((hit) => applyNamePick(hit));
+    },
+
+    // Click the item name on the search screen to retype it - same picker, same rules.
+    // Escape closes without picking, so the name stays put.
+    // The player told us which unique their unidentified item actually is (or cleared it
+    // back to "any"). Only the searched NAME changes; it stays unidentified either way.
+    async onPickUnid(cand) {
+      if (!state.item) return;
+      state.item.name = cand ? cand.refName : null;
+      if (cand && cand.icon) state.item.icon = cand.icon;
+      state.notice = null;
+      state.stale = false;
+      state.results = null;
+      render();
+      await doSearch();
+    },
+
+    async onRename() {
+      if (!state.item) return;
+      try { await ensureInit(''); } catch { /* picker shows its own empty state */ }
+      showItemNamePicker((hit) => applyNamePick(hit), state.item.title || state.item.base);
+    },
     async onLoadSample() {
       const model = await modelFromText(SAMPLE_TEXT);
       if (!model) return;
@@ -1721,6 +1857,103 @@
   };
 
   // ---------- mod actions ----------
+  // Name picker for onNameSearch. Queries the vendored item db by NAME in the player's
+  // own language, and hands back refName for the trade query. The db has to be loaded
+  // first - normally the parser warms it up on the first item, and here there may not
+  // have been one yet.
+  // Base categories whose items roll their OWN random mods, from the vendored item db's
+  // craftable.category. Anything NOT here has fixed contents (Currency, Omen, SoulCore,
+  // UncutSkillGem, keys, fragments, quest items) and is treated as a clean search.
+  // Listed positively rather than as an exclusion list so a category we have not seen
+  // defaults to "clean search", which is the safe direction for a fixed item.
+  const ROLLS_OWN_MODS = new Set([
+    'Ring', 'Amulet', 'Belt', 'Talisman', 'Jewel', 'Charm', 'Flask', 'Relic',
+    'Body Armour', 'Helmet', 'Gloves', 'Boots', 'Shield', 'Buckler', 'Focus', 'Quiver',
+    'One Hand Mace', 'Two Hand Mace', 'One Hand Axe', 'Two Hand Axe',
+    'One Hand Sword', 'Two Hand Sword', 'Dagger', 'Claw', 'Flail',
+    'Bow', 'Crossbow', 'Wand', 'Sceptre', 'Staff', 'Warstaff', 'Spear',
+    'Map', 'TowerAugment',
+  ]);
+
+  // Both Search-by-name entry points (the history screen and clicking the item name on
+  // the search screen) run THIS - same picker, same rules, so the two surfaces cannot
+  // drift apart. A unique or gem has a defined mod set, so the mods on screen belong to
+  // whatever was there before and get cleared. A plain base is a random rare: no
+  // canonical mods to reset to, so the user's filters are left exactly as they were.
+  async function applyNamePick(hit) {
+    if (!hit) return;
+    const isUnique = hit.namespace === 'UNIQUE';
+    const isGem = hit.namespace === 'GEM';
+    // Keep the existing mod filters ONLY when the new pick is gear that rolls its own
+    // mods - swapping one rare ring base for another, where the filters still mean
+    // something. Everything with fixed contents (a Mirror, an Omen, a Soul Core, a
+    // unique, a named gem) starts clean: carrying a weapon's mods onto a Mirror of
+    // Kalandra would search for a currency item with weapon stats and find nothing.
+    const rolls = hit.namespace === 'ITEM' && ROLLS_OWN_MODS.has(hit.category || '');
+    const fresh = !rolls || !state.item;
+    state.item = fresh
+      ? {
+          title: hit.name,
+          base: hit.name,
+          // trade indexes in English, so the identity sent is always refName - the
+          // localised name is display only
+          name: isUnique ? hit.refName : null,
+          type: isUnique ? null : hit.refName,
+          icon: hit.icon || null,
+          rarity: isUnique ? 'Unique' : null,
+          mods: [], props: [],
+          itemLevel: null, isGem, gemLevel: null,
+          nameOnly: true, // marks a model with no parsed item behind it
+        }
+      : {
+          ...state.item,
+          title: hit.name,
+          base: hit.name,
+          name: null,
+          type: hit.refName,
+          icon: hit.icon || state.item.icon || null,
+        };
+    if (fresh) {
+      state.itemOriginal = JSON.parse(JSON.stringify(state.item));
+      state.ilvlMin = null; state.ilvlMax = null;
+      state.qualMin = null; state.qualMax = null;
+      state.sockMin = null; state.sockMax = null;
+      state.gemLvlMin = null; state.gemLvlMax = null;
+    }
+    state.notice = null;
+    state.stale = false;
+    state.view = 'item';
+    state.results = null;
+    render();
+    await doSearch();
+  }
+
+  function showItemNamePicker(onPick, seed) {
+    const NS_LABEL = {
+      UNIQUE: t('itemtab.namesearch.ns_unique'),
+      GEM: t('itemtab.namesearch.ns_gem'),
+      ITEM: t('itemtab.namesearch.ns_item'),
+    };
+    const query = (q) => {
+      if (!window.EE2 || !window.EE2.ready || !window.EE2.itemsSearch) return [];
+      let hits = [];
+      try { hits = window.EE2.itemsSearch(q, 40) || []; } catch { return []; }
+      return hits.map((hit) => ({
+        text: hit.name,
+        tag: NS_LABEL[hit.namespace] || hit.namespace,
+        hit,
+      }));
+    };
+    window.ItemUI.showPicker({
+      title: t('itemtab.namesearch.picker_title'),
+      placeholder: t('itemtab.namesearch.picker_placeholder'),
+      emptyText: t('itemtab.namesearch.no_matches'),
+      value: seed || '',
+      query,
+      onPick: (e) => { window.ItemUI.closePicker(); onPick(e.hit); },
+    });
+  }
+
   function openFungiblePicker(i) {
     const host = state.item.mods[i];
     const groupId = host.group || (host.group = 'fg' + i);
@@ -2001,7 +2234,7 @@
       // (object {amount,currency} when priced; may be a string/null otherwise)
       floor: (state.results && state.results.suggested) || null,
       model: state.item,
-      opts: { defaultLowerPct: state.opts.defaultLowerPct, misc: { ...(state.opts.misc || {}) }, status: state.opts.status },
+      opts: { defaultLowerPct: state.opts.defaultLowerPct, misc: { ...(state.opts.misc || {}) }, status: state.opts.status, indexed: state.opts.indexed },
       // cache the RAW API listings; presentation is rebuilt on restore so cached
       // results always render in the current format
       cachedRaw: { raw: rawListings.slice(0, 20), total },
@@ -2520,6 +2753,7 @@
       state.assume = { q20: cfg.itemQ20 !== false, fillRunes: cfg.itemFillRunes !== false };
       state.showSliders = cfg.itemSliders !== false;
       state.opts.defaultLowerPct = typeof cfg.itemStatRange === 'number' ? cfg.itemStatRange : 15;
+      state.opts.indexed = cfg.itemIndexed || null;
     } catch {}
   });
 })();

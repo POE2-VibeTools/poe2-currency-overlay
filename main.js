@@ -238,6 +238,7 @@ const DEFAULT_CONFIG = {
   itemFillRunes: true, // search as if empty rune sockets held Greater Iron Runes
   itemSliders: true,   // show per-mod range sliders in Price Check
   itemStatRange: 15,   // Price Check "stat range +/-%" - remembered between sessions
+  itemIndexed: null,   // Price Check "Listed" window (trade_filters.indexed); null = any time
   itemHistory: [], // cached item price-check searches (capped, newest first)
   desecHistory: [], // Desecrate tab: items evaluated for Omen of Light rerolling
   regexBuckets: [{ id: 'default', name: 'My Regex', entries: [] }], // Regex tab: saved regexes in named buckets ({id,label,pattern} entries)
@@ -2005,6 +2006,9 @@ ipcMain.handle('set-item-search-opts', (_e, o) => {
     if ('sliders' in o) config.itemSliders = !!o.sliders;
     // negative = mins above the roll (strictly-better comps) - deliberately allowed
     if ('statRange' in o) { const n = Number(o.statRange); if (Number.isFinite(n)) config.itemStatRange = Math.max(-100, Math.min(100, n)); }
+    // how far back to accept listings (GGG trade_filters.indexed). Sticky, because
+    // "ignore anything older than a week" is a standing preference, not a per-item one.
+    if ('indexed' in o) config.itemIndexed = o.indexed == null ? null : String(o.indexed);
     saveConfig();
   }
   return true;

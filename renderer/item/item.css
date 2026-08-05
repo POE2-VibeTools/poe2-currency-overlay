@@ -226,7 +226,10 @@
 .item-tab .item-facts { font-size: 10px; color: var(--tx-faint); margin: -4px 0 8px; }
 .item-tab .item-facts b { color: var(--tx-body); font-weight: 600; }
 .item-tab .if-dot { opacity: 0.5; }
-.item-tab .item-meta { margin-left: auto; font-size: 10px; color: #d8c48e; background: rgba(232, 200, 138, 0.08); border: 1px solid rgba(232, 200, 138, 0.2); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+/* Static label, NOT a control: flat fill and no outline. An outlined pill in this app
+   means "you can click this" (.des-corner, .gtoggle, .scope-chip, .chip-add), and this
+   one sat right beside the redesecrate button wearing the identical costume. */
+.item-tab .item-meta { margin-left: auto; font-size: 10px; color: #d8c48e; background: rgba(232, 200, 138, 0.14); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
 /* header controls strip: the item-level search ranges (ilvl / quality /
    sockets), each min defaulting to the item's own value */
 .item-tab .hdr-ctrls { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 8px; }
@@ -613,6 +616,8 @@
 .listing .li-flag-sanctified { color: #e0c060; }
 .listing .li-flag-mirrored { color: #8db4d0; }
 .listing .li-flag-unrevealed { color: #a77fdf; }
+/* unidentified: teal, the one hue not already taken by another status */
+.listing .li-flag-unidentified { color: #6fc6c0; }
 .listing .li-age { color: var(--tx-faint); font-size: 10px; white-space: nowrap; flex-shrink: 0; }
 .listing.flash { animation: li-flash 1.3s ease-out; }
 @keyframes li-flash {
@@ -788,3 +793,28 @@
 .hist-right .hist-age { margin-left: 0; } /* column context: no auto-push needed */
 .hist-floor { color: #e8c88a; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .hist-floor .cur-icon-inline { width: 15px; height: 15px; }
+.mod-bracket-warn { border: 1px solid rgba(216,162,74,.35); border-radius: 6px; background: rgba(216,162,74,.08);
+  color: var(--tx-mid); font-size: 11.5px; line-height: 1.4; padding: 7px 10px; margin: 6px 0 2px; cursor: pointer; }
+.mod-bracket-warn:hover { border-color: var(--am-60, #d8a24a); background: rgba(216,162,74,.14); }
+.ipick-ns { color: var(--tx-faint); font-size: 10px; margin-left: 6px; text-transform: lowercase; }
+.name-search-btn { margin-right: 8px; }
+
+/* the item name doubles as a search box: hint it without shouting */
+.item-name.renamable { cursor: pointer; }
+.item-name.renamable:hover { text-decoration: underline dotted rgba(232,200,138,.5); text-underline-offset: 3px; }
+
+/* Unidentified unique on a shared base: the text can't say which, the art can.
+   Picking one switches the search from "any unidentified Sapphire" to "a Voices". */
+.unid-pick { border: 1px solid rgba(216,162,74,.3); background: rgba(216,162,74,.06);
+  border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; }
+.unid-pick-lab { font-size: 11px; color: var(--tx-mid); margin-bottom: 6px; }
+.unid-pick-strip { display: flex; flex-wrap: wrap; gap: 6px; }
+.unid-cand { display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  background: rgba(0,0,0,.25); border: 1px solid var(--bd-16); border-radius: 6px;
+  padding: 4px 9px 4px 5px; color: var(--tx-mid); font-size: 11.5px; }
+.unid-cand img { width: 22px; height: 22px; object-fit: contain; }
+.unid-cand:hover { border-color: var(--am-60, #d8a24a); color: var(--tx-hi); }
+.unid-cand.on { border-color: var(--am-60, #d8a24a); background: rgba(216,162,74,.16); color: var(--tx-hi); }
+.unid-clear { margin-top: 7px; background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--tx-faint); font-size: 11px; text-decoration: underline dotted; }
+.unid-clear:hover { color: var(--tx-mid); }

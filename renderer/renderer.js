@@ -436,8 +436,40 @@ function pairVal(a, b) {
   return marketPairVal(a, b);
 }
 
+// Ange trades WHOLE items - there is no way to spend 1.3 divine - so a leg quoted as
+// "1 divine -> 2.4 exalted" is not an instruction anyone can follow. Express the rate as
+// the smallest whole-number ratio that still matches it, via continued-fraction
+// convergents: 2.4 becomes "5 divine -> 12 exalted". Bounded by `maxDen` so the answer
+// stays a tradeable size, and by `tol` so scaling up never quietly changes the rate.
+function wholeRatio(rate, maxDen = 999, tol = 0.005) {
+  if (!(rate > 0) || !Number.isFinite(rate)) return null;
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, x = rate;
+  let bestP = null, bestQ = null;
+  for (let i = 0; i < 24; i++) {
+    const a = Math.floor(x);
+    const h2 = a * h1 + h0, k2 = a * k1 + k0;
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    if (k1 > maxDen) break;
+    if (h1 >= 1 && k1 >= 1) {
+      bestP = h1; bestQ = k1;
+      if (Math.abs(h1 / k1 - rate) / rate <= tol) break;
+    }
+    const frac = x - a;
+    if (frac < 1e-9) break;
+    x = 1 / frac;
+  }
+  if (!(bestP >= 1) || !(bestQ >= 1)) return null;
+  // never return a ratio we could not actually hit: quoting "1 -> 1" for a rate of
+  // 1.0101 is a 1% lie in the user's favour, and they trade on it
+  const err = Math.abs(bestP / bestQ - rate) / rate;
+  if (err > tol) return null;
+  return { from: bestQ, to: bestP, err };
+}
+
 function legStr(fromText, toText, ratePerFrom) {
-  // ratePerFrom = how many `to` you get for 1 `from`; render with both sides >= 1
+  const r = wholeRatio(ratePerFrom);
+  if (r) return `${fmtQty(r.from)} ${fromText} → ${fmtQty(r.to)} ${toText}`;
+  // unrepresentable as a sane whole ratio - fall back to the old one-sided form
   if (ratePerFrom >= 1) return `1 ${fromText} → ${fmt(ratePerFrom)} ${toText}`;
   return `${fmt(1 / ratePerFrom)} ${fromText} → 1 ${toText}`;
 }
@@ -456,6 +488,29 @@ function pairVol(a, b) {
 // Build the best 3-trade loop for an arb row. base/item are apiIds; direct = item's value in base.
 // Middle currency chosen by LIQUIDITY (the thinnest leg's volume), not by paper ROI  - 
 // stale illiquid pairs produce fantasy ROIs that no real order will ever fill.
+// Ange charges a flat gold fee per ITEM RECEIVED, regardless of what you paid for it:
+// buying 10 exalted costs 1,200g whether it cost you 10 divine or 10,000. So a loop's
+// gold bill scales with the UNIT COUNT flowing through it, which is why routing size
+// through a low-value currency drains gold - 37k exalted is ~4.4M gold on that leg
+// alone. (Drew, in-game, 2026-08-04.)
+const GOLD_PER_ITEM = 120;
+
+// Gold + per-leg quantities for a route, starting from `qty` units of the base.
+// Returns null when the route has no numeric rates (nothing to size).
+function arbGoldPlan(route, qty) {
+  if (!route || !route.legRates || !(qty > 0)) return null;
+  const legs = [];
+  let held = qty, gold = 0;
+  for (let i = 0; i < route.legRates.length; i++) {
+    const got = held * route.legRates[i];
+    const g = Math.ceil(got) * GOLD_PER_ITEM; // you pay per whole item received
+    gold += g;
+    legs.push({ spent: held, got, gold: g, pair: route.legPairs[i] });
+    held = got;
+  }
+  return { legs, gold, endsWith: held, profit: held - qty };
+}
+
 function buildArbRoute(baseId, itemId, direct, cross) {
   const below = direct < cross; // item cheap on the direct pair
   let best = null;
@@ -509,7 +564,13 @@ function buildArbRoute(baseId, itemId, direct, cross) {
         { have: best.m, want: itemId },
         { have: itemId, want: baseId }
       ];
-  return { below, middle: M, steps, legPairs, loopRoi: (best.final - 1) * 100 };
+  // Per-leg multiplier: units RECEIVED per unit spent on that leg. The product is
+  // best.final, i.e. what 1 unit in becomes after the loop. Kept numeric (the `steps`
+  // strings are display) so the gold estimate can size each leg.
+  const legRates = below
+    ? [1 / direct, best.vXM, best.vMB]
+    : [1 / best.vMB, 1 / best.vXM, direct];
+  return { below, middle: M, steps, legPairs, legRates, loopRoi: (best.final - 1) * 100 };
 }
 
 // ---------- live rates (GGG trade-site bulk listings) ----------
@@ -568,6 +629,7 @@ function volumeTooltipHtml(baseId, itemId, liq) {
   );
 }
 
+let arbQty = 100; // starting size for the gold estimate; session-only, per-tooltip edit
 let lastArbCopyText = ''; // plain-text version of the last-shown route, for the copy button
 let lastArbCtx = null; // route context for the live check button
 
@@ -607,6 +669,29 @@ function arbTooltipHtml(baseId, itemId, direct, cross, gapPct) {
     html +=
       `<div class="tip-roi">${t('currency.arb.loop_roi', roiVars).replace('<b>', `<b class="${route.loopRoi >= 0 ? 'up' : 'down'}">`)}</div>`;
     lines.push(roiLine);
+
+    // Gold cost. A route can be +12% and still stall halfway because the gold ran out,
+    // which is exactly what one user hit: ~5M gold to move 37k exalted. The size box
+    // lets you check the bill BEFORE starting rather than discovering it mid-loop.
+    const plan = arbGoldPlan(route, arbQty);
+    if (plan) {
+      const goldClass = plan.gold >= 1000000 ? 'down' : '';
+      html += `<div class="tip-gold">`
+        + `<span class="tip-gold-lab">${esc(t('currency.arb.gold_size_label'))}</span>`
+        + `<input class="tip-gold-qty" type="text" inputmode="numeric" value="${esc(String(arbQty))}" `
+        + `title="${esc(t('currency.arb.gold_size_tooltip'))}">`
+        + `<span class="tip-gold-unit">${esc(abbr(nameOf(baseId)) || nameOf(baseId))}</span>`
+        + `<span class="tip-gold-cost">${t('currency.arb.gold_cost', { gold: fmtQty(plan.gold) }).replace('<b>', `<b class="${goldClass}">`)}</span>`
+        + `</div>`;
+      html += `<div class="tip-step"><span>·</span><span class="tip-dim2 tip-gold-ret">`
+        + esc(t('currency.arb.gold_returns', {
+            end: fmtQty(Math.round(plan.endsWith)),
+            unit: abbr(nameOf(baseId)) || nameOf(baseId),
+            profit: (plan.profit >= 0 ? '+' : '') + fmtQty(Math.round(plan.profit)),
+          }))
+        + `</span></div>`;
+      lines.push(t('currency.arb.gold_cost', { gold: fmtQty(plan.gold) }).replace(/<\/?b>/g, ''));
+    }
     // The loop is only as executable as its THINNEST leg - the rate on a pair
     // that barely trades is a couple of fills, not a market you can move size
     // into. (Volume, not GGG's ratio extremes: one misclicked fill distorts
@@ -2278,7 +2363,11 @@ const RELEASE_NOTES = Array.isArray(window.RELEASE_NOTES) ? window.RELEASE_NOTES
 
 function noteAnchorId(version) { return 'notes-v-' + String(version).replace(/\./g, '-'); }
 function renderNoteEntry(rel) {
-  const lis = (rel.notes || []).map((n) => `<li>${esc(n)}</li>`).join('');
+  // A note ending in ':' is a SECTION HEADING, not a bullet - lets an entry group its
+  // lines ("User feedback changes:" / "Bug fixes:") without them rendering as stray bullets.
+  const lis = (rel.notes || [])
+    .map((n) => (/:\s*$/.test(n) ? `<li class="notes-sec">${esc(n)}</li>` : `<li>${esc(n)}</li>`))
+    .join('');
   const date = rel.date ? `<span class="notes-rel-date">${esc(rel.date)}</span>` : '';
   const sub = rel.title ? `<div class="notes-rel-sub">${esc(rel.title)}</div>` : '';
   return `<div class="notes-rel" id="${noteAnchorId(rel.version)}"><div class="notes-rel-head"><span class="notes-rel-ver">v${esc(rel.version)}</span>${date}</div>${sub}<ul class="notes-list">${lis}</ul></div>`;
@@ -2601,8 +2690,36 @@ async function main() {
     if (!pinnedTipEl) tipEl.classList.add('hidden');
   });
   tipEl.addEventListener('mousedown', (e) => e.stopPropagation());
+  // Re-price the route as the size is typed. Rebuilding the whole tooltip would blow
+  // away focus mid-keystroke, so only the two gold lines are patched in place.
+  tipEl.addEventListener('input', (e) => {
+    const box = e.target.closest('.tip-gold-qty');
+    if (!box) return;
+    const n = parseInt(String(box.value).replace(/[^0-9]/g, ''), 10);
+    arbQty = Number.isFinite(n) && n > 0 ? Math.min(n, 10000000) : 0;
+    const ctx = lastArbCtx;
+    const plan = arbQty ? arbGoldPlan(ctx && ctx.route, arbQty) : null;
+    const costEl = tipEl.querySelector('.tip-gold-cost');
+    if (costEl) {
+      costEl.innerHTML = plan
+        ? t('currency.arb.gold_cost', { gold: fmtQty(plan.gold) })
+            .replace('<b>', `<b class="${plan.gold >= 1000000 ? 'down' : ''}">`)
+        : '';
+    }
+    const retEl = tipEl.querySelector('.tip-gold-ret');
+    if (retEl && ctx) {
+      const unit = abbr(nameOf(ctx.baseId)) || nameOf(ctx.baseId);
+      retEl.textContent = plan
+        ? t('currency.arb.gold_returns', {
+            end: fmtQty(Math.round(plan.endsWith)), unit,
+            profit: (plan.profit >= 0 ? '+' : '') + fmtQty(Math.round(plan.profit)),
+          })
+        : '';
+    }
+  });
   tipEl.addEventListener('click', (e) => {
     e.stopPropagation();
+    if (e.target.closest('.tip-gold-qty')) return; // typing a size is not a pin toggle
     if (e.target.closest('.tip-fix')) {
       openRateFix();
       return;

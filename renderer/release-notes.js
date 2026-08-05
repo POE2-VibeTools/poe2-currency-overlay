@@ -6,14 +6,32 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.2',
+    date: '2026-08-05',
+    title: "User feedback changes and bug fixes",
+    notes: [
+      "User feedback changes:",
+      "A \"Search by Name\" feature. You can access it by clicking on the name of the item in your search window, or by clicking \"Search by name\" in the search history screen. Good for anything you can't Ctrl+C, like runestones in the combine dialogue or Ritual reward choices.",
+      "A \"Listed\" filter in the Misc section that lets you ignore listings older than whatever threshold you pick, removing them from the listings so they can't affect the suggested price.",
+      "Arbitrage routes now estimate the gold cost, so you can put in the quantity you're starting with and see the whole bill before you commit to the first trade instead of finding out halfway through.",
+      "Routes are quoted in whole units now, since Ange won't let you spend a fraction of an item and \"1.3 divine\" was never something you could actually trade.",
+      "Unidentified uniques now price properly. If the base only has one unique it just knows what you're holding, and if it has several, like a Sapphire that could be a Grand Spectrum or a Voices, it shows you the candidates and you pick the one you have. There is also an Identified filter in the Misc section now, and unidentified listings are marked in the results.",
+      "Bug report fixes:",
+      "A few versions ago I regressed the comparison window when adding language support. My bad. Thanks to the user who submitted the feedback.",
+      "Uniques were searching poorly. They now search on the rolls that actually vary between copies, so you get compared against uniques rolled like yours rather than the cheapest one on the market.",
+      "Unique mods, along with Time-Lost and Sanctum mods, were hidden in the add-a-mod screen. Over 1,400 mods in total, all searchable now.",
+      "Buttons and labels looked identical. If it has an outline you can click it, if it doesn't you can't.",
+    ],
+  },
+  {
     version: '2.6.1',
     date: '2026-08-04',
-    title: 'Net Worth needs community help to work properly',
+    title: "Net Worth needs community help to work properly",
     notes: [
-      'Net Worth is now marked EXPERIMENTAL. Added a new button to submit your stash tabs to help me build support. If it doesn\'t work for you, please follow the in-app process to send me your screenshots.',
-      'Fixed: opening Miscellaneous on a price check blanked the screen until you restarted the app.',
-      'Fixed: Ctrl+F did nothing if your game is not in English. The item was copied fine, the app just refused to read it.',
-      'Fixed: gems priced as if they had no level on non-English clients, and rune sockets did not show.',
+      "Net Worth is now marked EXPERIMENTAL. Added a new button to submit your stash tabs to help me build support. If it doesn't work for you, please follow the in-app process to send me your screenshots.",
+      "Fixed: opening Miscellaneous on a price check blanked the screen until you restarted the app.",
+      "Fixed: Ctrl+F did nothing if your game is not in English. The item was copied fine, the app just refused to read it.",
+      "Fixed: gems priced as if they had no level on non-English clients, and rune sockets did not show.",
     ],
   },
   {
