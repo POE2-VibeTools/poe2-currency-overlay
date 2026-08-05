@@ -37,16 +37,23 @@ import { setAppConfig } from "@/web/Config";
 import { setTradeData } from "@/web/background/TradeData";
 
 let ready = false;
+let readyLang: string | null = null;
 
 const EE2 = {
-  /** Load parser data (idempotent). Must resolve before parse/lookup calls. */
+  /**
+   * Load parser data (idempotent PER LANGUAGE). Must resolve before parse/lookup calls.
+   * The language can change after the first load: it is detected from the item text
+   * (the client's language), which the app only learns once an item actually arrives,
+   * and the warm-up call has to guess before then.
+   */
   async init(lang = "en"): Promise<void> {
-    if (ready) return;
+    if (ready && readyLang === lang) return;
     // the data module's default augment filter rejects EVERY rune (upstream's app
     // installs a real one before init); keep them all so augment lookups work
     setLocalAugmentFilter(() => true);
     await init(lang);
     ready = true;
+    readyLang = lang;
   },
   get ready() {
     return ready;

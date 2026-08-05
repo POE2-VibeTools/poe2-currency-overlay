@@ -747,14 +747,25 @@
     // "Requires: Level 90", so the property "Level: 20 (Max)" is unambiguous here -
     // gear's "Requirements: / Level: 78" never reaches this branch.
     const rawTxt = String(parsed.rawText || '');
+    // Gem identity comes from the PARSER and the item database, not from matching English
+    // text: `parsed.category` is set off the client's own localised rarity line, and the
+    // vendored db keys every gem's type to its language-independent refName ("Active Skill
+    // Gem" / "Support Skill Gem" / "MetaSkillGem"). The English-only regexes this replaces
+    // meant gem level and category silently did nothing on a translated client, so a level
+    // 20 gem priced as if it had no level at all. The class line is still read as a
+    // fallback, for a gem too new to be in the db yet.
+    const dbGemCategory = String((parsed.info && parsed.info.craftable && parsed.info.craftable.category) || '');
     const gemClass = /^Item Class: (Skill|Support|Meta) Gems\s*$/m.exec(rawTxt);
-    const isGem = !!gemClass || /^Rarity: Gem\s*$/m.test(rawTxt);
+    const isGem = parsed.category === 'Gem' || /gem/i.test(dbGemCategory) || !!gemClass;
     // trade2's own gem categories (from /api/trade2/data/filters): gem.activegem =
     // Skill Gem, gem.supportgem = Support Gem, gem.metagem = Meta Gem
     const gemCategory = !isGem ? null
-      : gemClass && gemClass[1] === 'Support' ? 'gem.supportgem'
-        : gemClass && gemClass[1] === 'Meta' ? 'gem.metagem'
-          : 'gem.activegem';
+      : /support/i.test(dbGemCategory) ? 'gem.supportgem'
+        : /meta/i.test(dbGemCategory) ? 'gem.metagem'
+          : dbGemCategory ? 'gem.activegem'
+            : gemClass && gemClass[1] === 'Support' ? 'gem.supportgem'
+              : gemClass && gemClass[1] === 'Meta' ? 'gem.metagem'
+                : 'gem.activegem';
     // A gem copied while SOCKETED prints its EFFECTIVE level - base plus every
     // +level your gear and passives grant ("Level: 32 (augmented)" on a level 20 gem
     // with +12). Nobody can buy a level 32 Comet, so the search must use the gem's
@@ -765,38 +776,46 @@
     // so "Levels from Gem" is authoritative when present; a stash copy has no
     // breakdown and its plain "Level: 20 (Max)" is the gem's own level already.
     const GEM_MAX_LEVEL = 20;
-    const gemLevelLine = isGem ? /^Level: (\d+)([^\n]*)$/m.exec(rawTxt) : null;
-    const gemLevelAugmented = !!(gemLevelLine && /augmented/i.test(gemLevelLine[2]));
+    // The parser reads the level off the client's own localised "Level: " line, so the
+    // shown level is right in every language - but it is the EFFECTIVE level, which on a
+    // socketed gem includes every +level granted by gear.
+    const shownLevel = isGem && Number.isFinite(Number(parsed.gemLevel)) ? Number(parsed.gemLevel) : null;
+    // The breakdown that separates the gem's OWN level from the gear bonus ("20 Levels
+    // from Gem", "(augmented)") is not in the vendored client strings for ANY language,
+    // so it can only be read on an English client. Everywhere else, fall back to capping
+    // at the highest level a gem can actually be - searching for a level 32 Comet finds
+    // nothing, since nobody can buy one.
     const gemOwnLevel = isGem ? /^(\d+) Levels? from Gem/m.exec(rawTxt) : null;
+    const gemLevelAugmented = isGem && /^Level: \d+[^\n]*augmented/mi.test(rawTxt);
     const gemLevel = (() => {
       if (gemOwnLevel) return Number(gemOwnLevel[1]);
-      if (!gemLevelLine) return null;
-      const n = Number(gemLevelLine[1]);
-      if (!Number.isFinite(n)) return null;
-      // no breakdown line but the level is boosted anyway: cap rather than search
-      // for a level that cannot exist on the market
-      return gemLevelAugmented ? Math.min(n, GEM_MAX_LEVEL) : n;
+      if (shownLevel == null) return null;
+      return (gemLevelAugmented || shownLevel > GEM_MAX_LEVEL) ? Math.min(shownLevel, GEM_MAX_LEVEL) : shownLevel;
     })();
     // how much of the shown level came from gear (display only - never searched)
     const gemLevelBonus = (() => {
-      if (!gemLevelLine || gemLevel == null) return 0;
-      const shown = Number(gemLevelLine[1]);
-      return Number.isFinite(shown) && shown > gemLevel ? shown - gemLevel : 0;
+      if (shownLevel == null || gemLevel == null) return 0;
+      return shownLevel > gemLevel ? shownLevel - gemLevel : 0;
     })();
-    // a gem searches by its own name as the base type ("Powered by Verisium")
+    // a gem searches by its own name as the base type ("Powered by Verisium"). trade2
+    // indexes gems by their ENGLISH name, so the db's refName is the identity to search
+    // with - the raw text carries whatever language the player's client is in.
     const gemName = (() => {
       if (!isGem) return null;
+      const ref = (parsed.info && (parsed.info.refName || parsed.info.name)) || '';
+      if (ref) return ref;
       const m = /^Rarity: Gem\s*\n(.+)$/m.exec(rawTxt);
-      const n = m ? m[1].trim() : '';
-      return n || baseType || title || null;
+      return (m ? m[1].trim() : '') || baseType || title || null;
     })();
     // A gem's lines are its skill's own stats at that level - every gem of the same
     // name and level carries them, and trade2 indexes none of them. So they go in as
     // display-only and the search rides on type + gem level + quality.
     if (isGem) for (const _m of allMods) _m.mode = 'off';
     for (const _m of allMods) _m.initiallyOff = (_m.mode === 'off');
-    // "Sockets: S S" line -> augmentable socket count, drawn as pips on the art
-    const sockLine = /^Sockets: (.+)$/m.exec(String(parsed.rawText || ''));
+    // "Sockets: S S" line -> augmentable socket count, drawn as pips on the art.
+    // Localised like every other header, so the socket pips vanished on a translated
+    // client (renderer/vendor/ee2/data/<lang>/client_strings.js SOCKETS).
+    const sockLine = /^(?:Sockets|Fassungen|Гнезда|Châsses|Engarces|Encaixes): (.+)$/m.exec(String(parsed.rawText || ''));
     const sockCount = sockLine ? (sockLine[1].match(/S/g) || []).length : 0;
     return {
       title,
@@ -2017,9 +2036,9 @@
   // firing a search (the Desecrate tab's paste path)
   async function modelFromText(text) {
     text = String(text || '').replace(/^﻿/, '');
-    if (!text || !/Item Class:|Rarity:/.test(text)) return null;
+    if (!text || !looksLikeItem(text)) return null;
     try {
-      await ensureInit();
+      await ensureInit(text);
       const res = window.EE2.parse(text);
       if (!res.ok) return null;
       return toModel(res.item);
@@ -2028,10 +2047,10 @@
 
   async function tryParse(text) {
     text = String(text || '').replace(/^﻿/, ''); // BOM-proof (pasted from files/editors)
-    if (!text || !/Item Class:|Rarity:/.test(text)) return false;
+    if (!text || !looksLikeItem(text)) return false;
     let res;
     try {
-      await ensureInit();
+      await ensureInit(text);
       res = window.EE2.parse(text);
     } catch (err) {
       res = { ok: false, error: String((err && err.message) || err) };
@@ -2068,7 +2087,7 @@
     const text = state.item && state.item.rawText;
     if (!text) return;
     try {
-      await ensureInit();
+      await ensureInit(text);
       const res = window.EE2.parse(text);
       if (!res.ok) return;
       const m = toModel(res.item);
@@ -2106,14 +2125,42 @@
   // nothing. Their EE2 name maps to a CX apiId here, which routes them to the
   // exchange-value view (priced via the currency-exchange feed instead).
   let CX_BY_NAME = new Map(); // lowercase display name -> CX apiId
+  const PARSER_LANGS = ['en', 'ru', 'pt', 'de', 'fr', 'es'];
+  // Every item PoE2 copies starts with a localised "Item Class: " header, so the item
+  // text states which language the CLIENT is in. That is the only thing the parser can
+  // be right about: the app's own display language follows the OS locale until the user
+  // picks one, and an English client on a non-English Windows is completely ordinary -
+  // binding the parser to the display language meant those players got a parser that
+  // could not read their items at all, so price check just stopped working for them.
+  const ITEM_CLASS_HEADER = [
+    ['en', 'Item Class: '], ['de', 'Gegenstandsklasse: '], ['ru', 'Класс предмета: '],
+    ['fr', "Classe d'objet: "], ['es', 'Clase de objeto: '], ['pt', 'Classe do Item: '],
+  ];
+  // Same story for the "is this even an item?" gate: it tested for the ENGLISH headers
+  // only, so a translated client's item text was thrown away before the parser saw it.
+  const RARITY_HEADER = [
+    ['en', 'Rarity: '], ['de', 'Seltenheit: '], ['ru', 'Редкость: '],
+    ['fr', 'Rareté: '], ['es', 'Rareza: '], ['pt', 'Raridade: '],
+  ];
+  function parserLangFor(text) {
+    const head = String(text || '').slice(0, 120);
+    for (const [code, label] of ITEM_CLASS_HEADER) if (head.startsWith(label)) return code;
+    for (const [code, label] of RARITY_HEADER) if (head.includes(label)) return code;
+    const ui = window.I18N && window.I18N.lang();
+    return PARSER_LANGS.includes(ui) ? ui : 'en'; // no header (warm-up call): best guess
+  }
+  function looksLikeItem(text) {
+    const s = String(text || '');
+    return ITEM_CLASS_HEADER.some(([, l]) => s.includes(l)) || RARITY_HEADER.some(([, l]) => s.includes(l));
+  }
   let initPromise = null;
-  function ensureInit() {
-    if (!initPromise) {
+  let initLang = null;
+  function ensureInit(text) {
+    const lang = parserLangFor(text);
+    if (!initPromise || initLang !== lang) {
+      initLang = lang;
       initPromise = Promise.all([
-        // The parser MUST load the same language the player's client is in: Russian
-        // item text cannot be matched against English stat data at all. Falls back to
-        // English for any language we haven't vendored data for.
-        window.EE2.init(window.I18N && ['en', 'ru', 'pt', 'de', 'fr', 'es'].includes(window.I18N.lang()) ? window.I18N.lang() : 'en'),
+        window.EE2.init(lang),
         Promise.resolve(window.api.getCxCatalog ? window.api.getCxCatalog() : null)
           .then((cat) => {
             if (cat && !cat.error) {

@@ -974,6 +974,22 @@ function gameIsForeground() {
   return linuxFocus.foregroundIsGame(config.gameWindowMatch);
 }
 
+// PoE2 localises the headers on a copied item, so testing only for the English ones
+// throws away a translated client's item text: the copy DOES land, we fail to recognise
+// it, retry, refocus, retry again and finally report the copy as failed - i.e. the price
+// check hotkey looks dead for anyone not playing in English. These are the "Item Class:"
+// and "Rarity:" strings for every language the vendored parser supports (see
+// renderer/vendor/ee2/data/<lang>/client_strings.js).
+const ITEM_TEXT_MARKERS = [
+  'Item Class: ', 'Rarity: ',
+  'Gegenstandsklasse: ', 'Seltenheit: ',
+  'Класс предмета: ', 'Редкость: ',
+  "Classe d'objet: ", 'Rareté: ',
+  'Clase de objeto: ', 'Rareza: ',
+  'Classe do Item: ', 'Raridade: ',
+];
+const looksLikeItemText = (t) => !!t && ITEM_TEXT_MARKERS.some((m) => t.includes(m));
+
 async function onItemHotkey(mode = 'pin', acc = null) {
   if (itemHotkeyBusy) return;
   itemHotkeyBusy = true;
@@ -1036,7 +1052,7 @@ async function onItemHotkey(mode = 'pin', acc = null) {
       for (let i = 0; i < tries; i++) {
         await new Promise((r) => setTimeout(r, 25));
         const t = clipboard.readText();
-        if (t && /Item Class:|Rarity:/.test(t)) return t;
+        if (looksLikeItemText(t)) return t;
       }
       return '';
     };
@@ -1083,7 +1099,7 @@ async function onItemHotkey(mode = 'pin', acc = null) {
       if (cleared && before) clipboard.writeText(before); // put their clipboard back
       // manual-workflow fallback (Ctrl+Alt+C then hotkey) - but never text we
       // already consumed, which would silently re-search the previous item
-      if (/Item Class:|Rarity:/.test(before) && before !== lastConsumedItemText) text = before;
+      if (looksLikeItemText(before) && before !== lastConsumedItemText) text = before;
     }
     if (!overlayShown) showOverlay();
     if (win) win.webContents.send('overlay-temp-mode', mode === 'temp');
@@ -1587,6 +1603,97 @@ function calBoxToFrame(c) {
     w: Math.round(FRAME_BOX.w * sx), h: Math.round(FRAME_BOX.h * sy),
   };
 }
+
+// ---------- community stash-panel submissions ----------
+// The Net Worth reader is tuned against ONE screenshot and misreads other machines'
+// renderings (dev-docs/2.6.1-HANDOFF-RATIONALE.md). Fixing it needs a corpus of real
+// captures from real setups, which is what this collects - opt-in, previewed, one panel
+// crop at a time. Never captures anything without the user pressing the button.
+const SAMPLE_ENDPOINT = 'https://poe2-overlay-api.dbatchell.workers.dev/v1/stash-sample';
+let sampleShots = []; // { png:Buffer, meta:Object } - held in main until the user sends
+
+// Crop the stash PANEL out of a full-screen grab, and read it, so the sample arrives
+// with what our reader made of it. Returns a preview data URL, never auto-sends.
+async function captureStashSample() {
+  const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
+  try {
+    await primeCapture();
+    const disp = screen.getPrimaryDisplay();
+    const capW = Math.round(disp.size.width * disp.scaleFactor);
+    const capH = Math.round(disp.size.height * disp.scaleFactor);
+    if (wasVisible) { win.setOpacity(0); if (process.platform !== 'win32') win.hide(); await new Promise((r) => setTimeout(r, 70)); }
+    const shot = await grabScreen(capW, capH, false);
+    if (wasVisible) { win.setOpacity(1); if (process.platform !== 'win32') win.showInactive(); }
+    if (!shot) return { ok: false, error: 'no screen source' };
+
+    const calBox = config.stashCalibration
+      || (() => { const s = capW / 1920; return frameToCalBox({ x: FRAME_BOX.x * s, y: FRAME_BOX.y * s, w: FRAME_BOX.w * s, h: FRAME_BOX.h * s }); })();
+    const frame = calBoxToFrame(calBox);
+    const full = nativeImage.createFromBitmap(Buffer.from(shot.bitmap), { width: shot.W, height: shot.H });
+    const panel = full.crop({
+      x: Math.max(0, frame.x), y: Math.max(0, frame.y),
+      width: Math.min(frame.w, shot.W - Math.max(0, frame.x)),
+      height: Math.min(frame.h, shot.H - Math.max(0, frame.y)),
+    });
+    const png = panel.toPNG();
+
+    // what our reader currently makes of it - the single most useful field in the sample
+    let read = null;
+    try {
+      const r = await runReaderWorker(Buffer.from(shot.bitmap), shot.W, shot.H, null);
+      if (r && r.ok) {
+        read = {
+          tab: r.tab || null, score: r.score != null ? +r.score.toFixed(3) : null,
+          mismatch: !!r.mismatch, readCount: r.readCount, slotCount: r.slotCount,
+          reads: (r.reads || []).map((x) => ({ id: x.apiId, n: x.count, c: x.conf != null ? +x.conf.toFixed(2) : null })),
+        };
+      }
+    } catch { /* diagnostics are a bonus; the image is the point */ }
+
+    const meta = {
+      appVersion: app.getVersion(), platform: process.platform,
+      screen: { w: capW, h: capH, scaleFactor: disp.scaleFactor },
+      calibrated: !!config.stashCalibration,
+      calBox, panelScale: +(calBox.h / REF_BOX.h).toFixed(4),
+      read,
+    };
+    if (png.length > 1024 * 1024) return { ok: false, error: 'panel image too large' };
+    sampleShots.push({ png, meta });
+    return { ok: true, index: sampleShots.length - 1, dataUrl: panel.toDataURL(), meta };
+  } catch (e) {
+    if (wasVisible && win && !win.isDestroyed()) { win.setOpacity(1); }
+    return { ok: false, error: String((e && e.message) || e) };
+  }
+}
+
+ipcMain.handle('stash-sample-capture', async () => captureStashSample());
+ipcMain.handle('stash-sample-reset', async () => { sampleShots = []; return { ok: true }; });
+ipcMain.handle('stash-sample-drop', async (_e, i) => {
+  if (i >= 0 && i < sampleShots.length) sampleShots.splice(i, 1);
+  return { ok: true, count: sampleShots.length };
+});
+// Sends only what the user previewed and confirmed. One request per image.
+ipcMain.handle('stash-sample-send', async (_e, payload) => {
+  if (!sampleShots.length) return { ok: false, error: 'nothing to send' };
+  const note = String((payload && payload.note) || '').slice(0, 500);
+  const sent = [];
+  for (let i = 0; i < sampleShots.length; i++) {
+    const s = sampleShots[i];
+    try {
+      const fd = new FormData();
+      fd.append('image', new Blob([s.png], { type: 'image/png' }), 'panel.png');
+      fd.append('meta', JSON.stringify(Object.assign({}, s.meta, { note, of: sampleShots.length, i })));
+      const r = await fetch(SAMPLE_ENDPOINT, { method: 'POST', body: fd });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return { ok: false, error: j.error || `upload failed (${r.status})`, sent: sent.length };
+      sent.push(j.id);
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e), sent: sent.length };
+    }
+  }
+  sampleShots = [];
+  return { ok: true, sent: sent.length };
+});
 
 let calibWin = null;
 let calibCap = null; // { buf, W, H } kept for auto-snap border detection

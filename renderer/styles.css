@@ -1644,3 +1644,27 @@ footer {
    permanently blank. */
 #root { visibility: hidden; }
 #root.ui-ready { visibility: visible; }
+
+/* Net Worth: EXPERIMENTAL banner + community screenshot submission.
+   The reader only works reliably on setups close to the one it was built against,
+   so the tab says so up front and offers the way to fix it. */
+.nw-exp { border: 1px solid var(--bd-16); border-left: 3px solid var(--am-60, #d8a24a); border-radius: 6px;
+  background: rgba(216,162,74,.06); padding: 10px 12px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px; }
+.nw-exp-body { color: var(--tx-mid); font-size: 12px; line-height: 1.45; flex: 1; }
+.nw-exp-btn { flex: 0 0 auto; background: var(--s-raise, rgba(255,255,255,.06)); color: var(--tx-hi);
+  border: 1px solid var(--bd-16); border-radius: 6px; padding: 7px 12px; font-size: 12px; cursor: pointer; }
+.nw-exp-btn:hover { background: rgba(216,162,74,.16); border-color: var(--am-60, #d8a24a); }
+.nw-sample-modal { width: 420px; }
+.nw-sample-strip { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+.nw-sample-thumb { position: relative; width: 110px; border: 1px solid var(--bd-16); border-radius: 6px;
+  overflow: hidden; background: rgba(0,0,0,.25); }
+.nw-sample-thumb img { display: block; width: 100%; height: 84px; object-fit: cover; object-position: top left; }
+.nw-sample-cap { font-size: 10px; color: var(--tx-faint); padding: 3px 5px; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nw-sample-drop { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; line-height: 1;
+  border-radius: 4px; border: 1px solid var(--bd-16); background: rgba(0,0,0,.6); color: var(--tx-mid);
+  font-size: 11px; cursor: pointer; padding: 0; }
+.nw-sample-drop:hover { color: #e08b8b; border-color: #e08b8b; }
+.nw-sample-note { font-size: 11px; color: var(--tx-faint); line-height: 1.4; margin-bottom: 8px; }
+.nw-empty-hint { color: var(--tx-faint); }

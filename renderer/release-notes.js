@@ -6,6 +6,17 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.1',
+    date: '2026-08-04',
+    title: 'Net Worth needs community help to work properly',
+    notes: [
+      'Net Worth is now marked EXPERIMENTAL. Added a new button to submit your stash tabs to help me build support. If it doesn\'t work for you, please follow the in-app process to send me your screenshots.',
+      'Fixed: opening Miscellaneous on a price check blanked the screen until you restarted the app.',
+      'Fixed: Ctrl+F did nothing if your game is not in English. The item was copied fine, the app just refused to read it.',
+      'Fixed: gems priced as if they had no level on non-English clients, and rune sockets did not show.',
+    ],
+  },
+  {
     version: '2.6.0',
     date: '2026-07-29',
     title: 'Русский · Português · Deutsch · Français · Español',

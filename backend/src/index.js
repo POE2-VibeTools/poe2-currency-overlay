@@ -29,6 +29,23 @@ const SCOUT = 'https://poe2scout.com/api';
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // The one WRITE route: community-submitted stash panel captures, used to build a
+    // corpus of real renderings for the Net Worth reader. Handled ahead of the GET-only
+    // guard and the edge cache, neither of which applies to an upload.
+    if (url.pathname === '/v1/stash-sample') {
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: {
+          'access-control-allow-origin': '*',
+          'access-control-allow-methods': 'POST, OPTIONS',
+          'access-control-allow-headers': 'content-type',
+        } });
+      }
+      if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+      try { return await stashSample(request, env); }
+      catch (e) { return noCacheJson({ error: String(e) }, 500); }
+    }
+
     if (request.method !== 'GET') return json({ error: 'GET only' }, 405);
 
     // Serve from edge cache first.
@@ -72,6 +89,117 @@ export default {
 
 function hasGGG(env) {
   return Boolean(env.GGG_CLIENT_ID && env.GGG_CLIENT_SECRET);
+}
+
+const SAMPLE_MAX_BYTES = 1024 * 1024; // a stash panel crop runs ~200-500KB
+const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47];
+// One per readable tab layout: the app reads 12, so a submitter can send all of theirs
+// and no more. Only STORED images count against it - a rejected upload writes nothing,
+// so it costs nothing and must not burn someone's allowance. Rejects are still bounded,
+// just by the global counter rather than this one.
+const SAMPLE_PER_IP_PER_WEEK = 12;
+const SAMPLE_GLOBAL_PER_DAY = 200; // hard ceiling on what a bad day can cost
+
+// Quota counters, backed by KV: a rolling-week counter per address and a daily one
+// globally. FAILS CLOSED: no KV binding, or KV erroring, means no uploads. The whole
+// point is a spend ceiling, so "storage is unprotected" must never be the fallback.
+// KV is eventually consistent, so simultaneous requests can slip a couple past the
+// per-IP count - the global counter is what actually bounds the bill.
+// The per-submitter counter is keyed by a SALTED HASH of the IP, never the address
+// itself: this only ever needs "have I seen this one before", which a hash answers just
+// as well, and it keeps us from holding a week of raw visitor IPs to explain in the
+// privacy statement. Truncated to 8 bytes - collisions cost a stranger a slot, nothing worse.
+async function hashIp(ip) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`poe2-stash-sample:${ip}`));
+  return [...new Uint8Array(buf).slice(0, 8)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+const quotaKeys = (ipHash) => ({
+  gKey: `total:${new Date().toISOString().slice(0, 10)}`,
+  // fixed 7-day bucket rather than calendar weeks - no timezone or ISO-week edge cases
+  iKey: `ip:${Math.floor(Date.now() / 604800000)}:${ipHash}`,
+});
+
+async function checkQuota(env, ip) {
+  const kv = env.SAMPLE_QUOTA;
+  if (!kv) return { ok: false, status: 503, error: 'submissions unavailable' };
+  try {
+    if (await kv.get('disabled')) return { ok: false, status: 503, error: 'submissions closed' };
+    const { gKey, iKey } = quotaKeys(await hashIp(ip));
+    const [gRaw, iRaw] = await Promise.all([kv.get(gKey), kv.get(iKey)]);
+    if ((Number(gRaw) || 0) >= SAMPLE_GLOBAL_PER_DAY) {
+      return { ok: false, status: 429, error: 'daily limit reached, try tomorrow' };
+    }
+    if ((Number(iRaw) || 0) >= SAMPLE_PER_IP_PER_WEEK) {
+      return { ok: false, status: 429, error: `that is all ${SAMPLE_PER_IP_PER_WEEK} for this week - thank you` };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, status: 503, error: 'submissions unavailable' };
+  }
+}
+
+// Counted only AFTER an image is stored, so the allowance means 12 stored tabs exactly.
+async function bumpQuota(env, ip) {
+  const kv = env.SAMPLE_QUOTA;
+  if (!kv) return;
+  try {
+    const { gKey, iKey } = quotaKeys(await hashIp(ip));
+    const [gRaw, iRaw] = await Promise.all([kv.get(gKey), kv.get(iKey)]);
+    await Promise.all([
+      kv.put(gKey, String((Number(gRaw) || 0) + 1), { expirationTtl: 172800 }),   // 48h
+      kv.put(iKey, String((Number(iRaw) || 0) + 1), { expirationTtl: 1209600 }),  // 14d
+    ]);
+  } catch { /* the image is already stored; a lost count is not worth failing the upload */ }
+}
+
+// Store ONE submitted stash panel capture plus its diagnostics.
+// Deliberately narrow: PNG only, size-capped, keys are server-generated so a submitter
+// can never overwrite someone else's sample, and there is no read or list route - the
+// corpus is pulled with wrangler, not served. Abuse control beyond the size cap is a
+// Cloudflare rate-limiting rule on this path, NOT anything in this code.
+async function stashSample(request, env) {
+  if (!env.STASH_SAMPLES) return noCacheJson({ error: 'sample storage not configured' }, 503);
+  if (Number(request.headers.get('content-length') || 0) > SAMPLE_MAX_BYTES) {
+    return noCacheJson({ error: 'too large' }, 413);
+  }
+  // quota BEFORE reading the body, so a spammer can't make us buffer megabytes per request
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const q = await checkQuota(env, ip);
+  if (!q.ok) return noCacheJson({ error: q.error }, q.status);
+
+  let form;
+  try { form = await request.formData(); }
+  catch { return noCacheJson({ error: 'expected multipart/form-data' }, 400); }
+
+  const file = form.get('image');
+  if (!file || typeof file === 'string') return noCacheJson({ error: 'image field required' }, 400);
+  const buf = new Uint8Array(await file.arrayBuffer());
+  if (!buf.byteLength) return noCacheJson({ error: 'empty image' }, 400);
+  if (buf.byteLength > SAMPLE_MAX_BYTES) return noCacheJson({ error: 'too large' }, 413);
+  if (!PNG_MAGIC.every((b, i) => buf[i] === b)) return noCacheJson({ error: 'png only' }, 415);
+
+  const id = crypto.randomUUID();
+  const key = `${new Date().toISOString().slice(0, 10)}/${id}`;
+  await env.STASH_SAMPLES.put(`${key}.png`, buf, { httpMetadata: { contentType: 'image/png' } });
+  // diagnostics ride alongside as a sibling object rather than R2 custom metadata,
+  // which is size-limited and awkward to read back in bulk
+  const meta = String(form.get('meta') || '').slice(0, 8192);
+  if (meta) {
+    await env.STASH_SAMPLES.put(`${key}.json`, meta, { httpMetadata: { contentType: 'application/json' } });
+  }
+  await bumpQuota(env, ip);
+  return noCacheJson({ ok: true, id });
+}
+
+function noCacheJson(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: {
+      'content-type': 'application/json',
+      'access-control-allow-origin': '*',
+      'cache-control': 'no-store',
+    },
+  });
 }
 
 function json(obj, status = 200) {

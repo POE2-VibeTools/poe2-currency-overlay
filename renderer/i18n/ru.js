@@ -946,7 +946,7 @@ window.I18N_CATALOGS.ru = {
   "ui.tabs.desecrate_tooltip": "Стоит ли этот предмет перекатывать через Omen of Light и кость? Загрузите предмет из Проверки цены или вставьте его сюда через Ctrl+V.",
   "ui.tabs.grandex_label": "Grand Expedition",
   "ui.tabs.grandex_tooltip": "Планируйте Grand Expedition: отслеживайте слухи, определяйте острова и готовьтесь к забегу.",
-  "ui.tabs.networth_label": "Капитал",
+  "ui.tabs.networth_label": "Капитал (EXPERIMENTAL)",
   "ui.tabs.networth_tooltip": "Оцените ваши вкладки валюты: откройте вкладку в игре, нажмите Захват - приложение считает количество и суммирует стоимость.",
   "ui.tabs.pricecheck_label": "Проверка цены",
   "ui.tabs.pricecheck_tooltip": "Проверяйте цены предметов: наведите на предмет в игре и нажмите вашу клавишу проверки цены (по умолчанию Ctrl+F)",

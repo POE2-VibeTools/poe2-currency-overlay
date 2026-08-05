@@ -273,6 +273,110 @@
     return back;
   }
 
+  // ---------- community screenshot submission ----------
+  // The reader is tuned against one screenshot and misreads other setups. Rather than
+  // pretend otherwise, the tab says so and offers a way to send the captures that would
+  // let it be fixed. Guided: currency tab first (most numbers = most useful), then any
+  // two more. Nothing leaves the machine until the user sees it and presses send.
+  const SAMPLE_MAX = 3;
+  function sampleStep() { return state.sample ? state.sample.shots.length : 0; }
+
+  function sampleModalEl() {
+    const s = state.sample;
+    const back = el('div', 'nw-modal-back');
+    const box = el('div', 'nw-modal nw-sample-modal');
+    const step = s.shots.length;
+
+    box.appendChild(el('div', 'nw-modal-title', t('networth.sample.title')));
+    if (s.sending) {
+      box.appendChild(el('div', 'nw-modal-sub', t('networth.sample.sending')));
+      back.appendChild(box); return back;
+    }
+    if (s.done) {
+      box.appendChild(el('div', 'nw-modal-sub', tn('networth.sample.thanks', s.done, { count: s.done })));
+      const ok = el('button', 'nw-modal-opt nw-modal-new', t('networth.sample.close'));
+      ok.onclick = () => { state.sample = null; render(); };
+      box.appendChild(ok);
+      back.appendChild(box); return back;
+    }
+
+    box.appendChild(el('div', 'nw-modal-sub', step === 0
+      ? t('networth.sample.step_currency')
+      : t('networth.sample.step_more', { n: step, max: SAMPLE_MAX })));
+
+    if (s.error) box.appendChild(el('div', 'nw-notice nw-error', esc(s.error)));
+
+    if (s.shots.length) {
+      const strip = el('div', 'nw-sample-strip');
+      s.shots.forEach((shot, i) => {
+        const cell = el('div', 'nw-sample-thumb');
+        const im = document.createElement('img');
+        im.src = shot.dataUrl; im.alt = '';
+        cell.appendChild(im);
+        const cap = el('div', 'nw-sample-cap',
+          esc(shot.meta && shot.meta.read && shot.meta.read.tab ? (TAB_LABEL[shot.meta.read.tab] || shot.meta.read.tab) : t('networth.sample.unknown_tab')));
+        cell.appendChild(cap);
+        const x = el('button', 'nw-sample-drop', '✕');
+        x.title = t('networth.sample.remove');
+        x.onclick = async () => {
+          await window.api.stashSampleDrop(i);
+          s.shots.splice(i, 1); render();
+        };
+        cell.appendChild(x);
+        strip.appendChild(cell);
+      });
+      box.appendChild(strip);
+      box.appendChild(el('div', 'nw-sample-note', t('networth.sample.preview_note')));
+    }
+
+    if (s.shots.length < SAMPLE_MAX) {
+      const cap = el('button', 'nw-modal-opt', s.shots.length === 0
+        ? t('networth.sample.capture_first') : t('networth.sample.capture_more'));
+      cap.onclick = async () => {
+        s.error = null; s.capturing = true; render();
+        const r = await window.api.stashSampleCapture();
+        s.capturing = false;
+        if (!r || !r.ok) s.error = t('networth.sample.capture_failed', { error: esc((r && r.error) || '?') });
+        else s.shots.push({ dataUrl: r.dataUrl, meta: r.meta });
+        render();
+      };
+      box.appendChild(cap);
+    }
+
+    if (s.shots.length) {
+      const send = el('button', 'nw-modal-opt nw-modal-new', tn('networth.sample.send', s.shots.length, { count: s.shots.length }));
+      send.onclick = async () => {
+        s.sending = true; render();
+        const r = await window.api.stashSampleSend({ note: '' });
+        s.sending = false;
+        if (r && r.ok) { s.done = r.sent; s.shots = []; }
+        else s.error = t('networth.sample.send_failed', { error: esc((r && r.error) || '?') });
+        render();
+      };
+      box.appendChild(send);
+    }
+
+    const cancel = el('button', 'nw-modal-cancel', t('networth.modal.cancel'));
+    cancel.onclick = async () => { await window.api.stashSampleReset(); state.sample = null; render(); };
+    box.appendChild(cancel);
+    back.appendChild(box);
+    back.onclick = (e) => { if (e.target === back) { cancel.onclick(); } };
+    return back;
+  }
+
+  function experimentalBanner() {
+    const b = el('div', 'nw-exp');
+    b.appendChild(el('div', 'nw-exp-body', t('networth.experimental.explain')));
+    const btn = el('button', 'nw-exp-btn', t('networth.experimental.submit_button'));
+    btn.onclick = async () => {
+      await window.api.stashSampleReset();
+      state.sample = { shots: [], error: null, sending: false, done: 0 };
+      render();
+    };
+    b.appendChild(btn);
+    return b;
+  }
+
   function render() {
     const root = $('networth-root'); if (!root) return;
     root.innerHTML = '';
@@ -299,6 +403,7 @@
     controls.appendChild(gear);
     header.appendChild(controls);
     wrap.appendChild(header);
+    wrap.appendChild(experimentalBanner());
 
     if (state.notice) wrap.appendChild(el('div', 'nw-notice nw-' + state.notice.kind, esc(state.notice.msg)));
 
@@ -307,7 +412,9 @@
       wrap.appendChild(el('div', 'nw-empty',
         t('networth.empty.instructions', { hotkey: esc(state.hotkey) }) + '<br>'
         + t('networth.empty.explain') + '<br>'
-        + '<span style="color:var(--tx-faint)">' + t('networth.empty.calibrate_hint') + '</span>'));
+        // class, not style="" - the main window's CSP strips inline style attributes,
+        // so this hint was rendering unstyled and logging a violation on every render
+        + '<span class="nw-empty-hint">' + t('networth.empty.calibrate_hint') + '</span>'));
     } else {
       for (const row of state.rows) wrap.appendChild(rowCard(row));
       if (state.busy) wrap.appendChild(busyCard(pending));
@@ -327,6 +434,7 @@
     }
     root.appendChild(wrap);
     if (state.modal) root.appendChild(modalEl());
+    if (state.sample) root.appendChild(sampleModalEl());
   }
 
   // staged events from main drive live feedback (works even while hidden)

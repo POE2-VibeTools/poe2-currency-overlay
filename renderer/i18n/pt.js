@@ -914,7 +914,7 @@ window.I18N_CATALOGS.pt = {
   "ui.tabs.desecrate_tooltip": "Vale a pena usar Omen of Light + reroll de ossos neste item? Carregue um item do Checar Preço, ou cole um aqui com Ctrl+V.",
   "ui.tabs.grandex_label": "Grand Expedition",
   "ui.tabs.grandex_tooltip": "Planeje sua Grand Expedition: acompanhe rumores, identifique ilhas e prepare a expedição.",
-  "ui.tabs.networth_label": "Patrimônio",
+  "ui.tabs.networth_label": "Patrimônio (EXPERIMENTAL)",
   "ui.tabs.networth_tooltip": "Avalie o valor das suas abas de moeda: abra uma aba no jogo, clique em Capturar e ele lê as quantidades e soma o valor total.",
   "ui.tabs.pricecheck_label": "Checar Preço",
   "ui.tabs.pricecheck_tooltip": "Checar preços de itens: passe o mouse sobre um no jogo e pressione seu atalho de checar preço (padrão Ctrl+F)",

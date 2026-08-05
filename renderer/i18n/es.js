@@ -938,7 +938,7 @@ window.I18N_CATALOGS.es = {
   "ui.tabs.desecrate_tooltip": "¿Vale la pena re-tirar este objeto con Omen of Light + hueso? Carga un objeto desde Price Check, o pega uno aquí con Ctrl+V.",
   "ui.tabs.grandex_label": "Grand Expedition",
   "ui.tabs.grandex_tooltip": "Planea tu Grand Expedition: sigue rumores, identifica islas, y prepara la run.",
-  "ui.tabs.networth_label": "Net Worth",
+  "ui.tabs.networth_label": "Net Worth (EXPERIMENTAL)",
   "ui.tabs.networth_tooltip": "Tasa tus pestañas de divisas: abre una pestaña en el juego, haz clic en Capturar, y lee los conteos y suma cuánto valen.",
   "ui.tabs.pricecheck_label": "Price Check",
   "ui.tabs.pricecheck_tooltip": "Tasa objetos: pasa el cursor sobre uno en el juego y pulsa tu tecla rápida de Price Check (por defecto Ctrl+F)",

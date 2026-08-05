@@ -10,3 +10,20 @@ compatibility_date = "2026-07-01"
 
 [observability]
 enabled = true
+
+# Community-submitted stash panel captures, used to build a corpus of real renderings
+# for the Net Worth reader (POST /v1/stash-sample).
+[[r2_buckets]]
+binding = "STASH_SAMPLES"
+bucket_name = "poe2-screenshot-submissions"
+
+# Upload quota counters (per-IP + global, per day). Uploads FAIL CLOSED without this.
+# Create once, then paste the printed id below:
+#   npx wrangler kv namespace create SAMPLE_QUOTA
+# Kill switch - stops all uploads immediately, no redeploy:
+#   npx wrangler kv key put --namespace-id=<id> disabled 1
+# Reopen:
+#   npx wrangler kv key delete --namespace-id=<id> disabled
+[[kv_namespaces]]
+binding = "SAMPLE_QUOTA"
+id = "1871e322b1d0434abd4653b79acc53a7"

@@ -71,6 +71,60 @@
     return { data: out, w: nw, h: nh };
   }
 
+  // Resample an RGBA/BGRA region of a frame to (nw,nh), so a panel captured above the
+  // reference resolution can be normalised ONCE, whole, before anything reads it.
+  // Minification area-averages (a game digit's strokes are 1-2px, and point-sampling
+  // a non-integer shrink drops them outright); magnification is bilinear.
+  // src rect is given in frame px and may be fractional; it is clamped to the frame.
+  function resampleRGBA(buf, W, H, sx0, sy0, sw, sh, nw, nh) {
+    const out = new Uint8Array(nw * nh * 4);
+    const stepX = sw / nw, stepY = sh / nh;
+    const minify = stepX > 1 || stepY > 1;
+    const clampX = (v) => (v < 0 ? 0 : v > W - 1 ? W - 1 : v);
+    const clampY = (v) => (v < 0 ? 0 : v > H - 1 ? H - 1 : v);
+    for (let y = 0; y < nh; y++) {
+      for (let x = 0; x < nw; x++) {
+        const d = (y * nw + x) * 4;
+        if (minify) {
+          // area average over the full source footprint of this output pixel
+          const fx0 = sx0 + x * stepX, fx1 = fx0 + stepX;
+          const fy0 = sy0 + y * stepY, fy1 = fy0 + stepY;
+          const ix0 = Math.floor(fx0), ix1 = Math.ceil(fx1) - 1;
+          const iy0 = Math.floor(fy0), iy1 = Math.ceil(fy1) - 1;
+          let r = 0, g = 0, b = 0, a = 0, wsum = 0;
+          for (let yy = iy0; yy <= iy1; yy++) {
+            const wy = Math.min(yy + 1, fy1) - Math.max(yy, fy0);
+            if (wy <= 0) continue;
+            const cy = clampY(yy);
+            for (let xx = ix0; xx <= ix1; xx++) {
+              const wx = Math.min(xx + 1, fx1) - Math.max(xx, fx0);
+              if (wx <= 0) continue;
+              const p = (cy * W + clampX(xx)) * 4, ww = wx * wy;
+              r += buf[p] * ww; g += buf[p + 1] * ww; b += buf[p + 2] * ww; a += buf[p + 3] * ww;
+              wsum += ww;
+            }
+          }
+          if (wsum > 0) {
+            out[d] = Math.round(r / wsum); out[d + 1] = Math.round(g / wsum);
+            out[d + 2] = Math.round(b / wsum); out[d + 3] = Math.round(a / wsum);
+          }
+        } else {
+          const fx = sx0 + (x + 0.5) * stepX - 0.5, fy = sy0 + (y + 0.5) * stepY - 0.5;
+          const x0 = Math.floor(fx), y0 = Math.floor(fy);
+          const wx = fx - x0, wy = fy - y0;
+          const xa = clampX(x0), xb = clampX(x0 + 1), ya = clampY(y0), yb = clampY(y0 + 1);
+          const pA = (ya * W + xa) * 4, pB = (ya * W + xb) * 4, pC = (yb * W + xa) * 4, pD = (yb * W + xb) * 4;
+          for (let c = 0; c < 4; c++) {
+            const top = buf[pA + c] + (buf[pB + c] - buf[pA + c]) * wx;
+            const bot = buf[pC + c] + (buf[pD + c] - buf[pC + c]) * wx;
+            out[d + c] = Math.round(top + (bot - top) * wy);
+          }
+        }
+      }
+    }
+    return out;
+  }
+
   function binarize(sub, floor) {
     const thr = Math.max(otsu(sub.data), floor);
     const b = new Uint8Array(sub.data.length);
@@ -442,7 +496,7 @@
   }
 
   return {
-    otsu, crop, binarize, components, iou, slideMatch, greyOpening,
+    otsu, crop, binarize, components, iou, slideMatch, greyOpening, resampleRGBA,
     extractTemplates, readCell, readCellEx, valueChannelFromRGBA, valueChannelDesatMax,
     templatesFromJSON, DEFAULTS, DESAT_SAT,
   };

@@ -471,8 +471,10 @@
           const sale = el('div', 'sale-row');
           sale.appendChild(el('span', null, t('item.misc.listings_label')));
           const sel = el('select');
-          for (const [v, t] of SALE_TYPES) {
-            const o = el('option', null, t);
+          // NB: the loop label must not be named `t` - that shadows the i18n
+          // helper for the whole loop scope (see the misc-filter loop below)
+          for (const [v, lbl] of SALE_TYPES) {
+            const o = el('option', null, lbl);
             o.value = v;
             sel.appendChild(o);
           }
@@ -488,8 +490,8 @@
           const row = el('label', 'misc-row');
           row.appendChild(el('span', null, esc(label)));
           const sel = el('select');
-          for (const [v, t] of [['', t('item.search.any_option')], ['true', t('item.misc.filter_yes')], ['false', t('item.misc.filter_no')]]) {
-            const o = el('option', null, t);
+          for (const [v, lbl] of [['', t('item.search.any_option')], ['true', t('item.misc.filter_yes')], ['false', t('item.misc.filter_no')]]) {
+            const o = el('option', null, lbl);
             o.value = v;
             sel.appendChild(o);
           }

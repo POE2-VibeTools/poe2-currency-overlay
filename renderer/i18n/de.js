@@ -939,7 +939,7 @@ window.I18N_CATALOGS.de = {
   "ui.tabs.desecrate_tooltip": "Lohnt sich für dieses Item Omen of Light + Knochen-Reroll? Lade ein Item aus Preischeck, oder füg eins hier mit Ctrl+V ein.",
   "ui.tabs.grandex_label": "Grand Expedition",
   "ui.tabs.grandex_tooltip": "Plan deine Grand Expedition: verfolg Gerüchte, identifizier Inseln, und bereite den Run vor.",
-  "ui.tabs.networth_label": "Vermögen",
+  "ui.tabs.networth_label": "Vermögen (EXPERIMENTAL)",
   "ui.tabs.networth_tooltip": "Wertet deine Currency-Tabs: öffne einen Tab im Spiel, klick Scan, und es liest die Anzahlen und summiert, was sie wert sind.",
   "ui.tabs.pricecheck_label": "Preischeck",
   "ui.tabs.pricecheck_tooltip": "Items preischecken: halt die Maus im Spiel über eins und drück deinen Preischeck-Hotkey (Standard Ctrl+F)",

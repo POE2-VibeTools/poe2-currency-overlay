@@ -939,7 +939,7 @@ window.I18N_CATALOGS.fr = {
   "ui.tabs.desecrate_tooltip": "Cet item vaut-il le coup en reroll Omen of Light + bone ? Charge un item depuis Vérif. prix, ou colles-en un ici avec Ctrl+V.",
   "ui.tabs.grandex_label": "Grand Expedition",
   "ui.tabs.grandex_tooltip": "Planifie ta Grand Expedition : suis les rumeurs, identifie les îles, et prépare le run.",
-  "ui.tabs.networth_label": "Valeur nette",
+  "ui.tabs.networth_label": "Valeur nette (EXPERIMENTAL)",
   "ui.tabs.networth_tooltip": "Chiffre tes onglets de monnaie : ouvre un onglet en jeu, clique Capturer, et ça lit les comptes et totalise leur valeur.",
   "ui.tabs.pricecheck_label": "Vérif. prix",
   "ui.tabs.pricecheck_tooltip": "Vérifie le prix des items : survole-en un en jeu et appuie sur ton raccourci de vérif. prix (par défaut Ctrl+F)",
