@@ -40,29 +40,43 @@ parentPort.on('message', (msg) => {
     const { bitmap, W, H, calBox } = msg;
     const buf = Buffer.from(bitmap);
     const refBox = TAB_TEMPLATES.box;
-    // Find the panel by its coloured frame first. This is what makes calibration
-    // optional: the frame is a saturated rectangle on an otherwise brown UI, so it can be
-    // located outright rather than asked for. Verified against every stash capture we
-    // hold - it lands within ~4px of the hand-measured box and reads identically (34/35
-    // on the reference, same as perfect calibration). A saved calibration is the fallback
-    // for the cases it cannot find, never the other way round, because a stale saved box
-    // is exactly what produces silent misreads after a resolution or UI-scale change.
+    // Find the panel by its coloured frame, which is what makes calibration optional: the
+    // frame is a saturated rectangle on an otherwise brown UI, so it can be located
+    // outright rather than asked for.
+    //
+    // When the user HAS calibrated, both boxes are scored and the better one wins. Auto
+    // must not silently override a box someone deliberately set - that turns Calibrate
+    // into a button that eats your effort and changes nothing. But a saved box also goes
+    // stale the moment the resolution or UI scale changes, and a stale box is exactly what
+    // produces silent misreads, so it does not get to win on seniority either. Letting the
+    // detector judge is the only version that is honest in both directions.
     let box = calBox || refBox;
     let boxSource = calBox ? 'calibration' : 'reference';
     let panelCoverage = null;
+    let autoFound = false;
     try {
       const found = PF.findPanel(buf, W, H);
       if (found) {
-        box = PF.frameToContent(found);
-        boxSource = 'auto';
+        const autoBox = PF.frameToContent(found);
+        if (!calBox) {
+          box = autoBox; boxSource = 'auto';
+        } else {
+          const autoDet = TD.detect(buf, W, H, autoBox, TAB_TEMPLATES);
+          const calDet = TD.detect(buf, W, H, calBox, TAB_TEMPLATES);
+          const autoScore = autoDet ? autoDet.score : 0;
+          const calScore = calDet ? calDet.score : 0;
+          // the saved box keeps the tie: if it is as good, the user's choice stands
+          if (autoScore > calScore + 0.02) { box = autoBox; boxSource = 'auto'; }
+        }
         panelCoverage = +found.coverage.toFixed(3);
+        autoFound = true;
       }
     } catch (e) { /* fall back to whatever calBox gave us */ }
 
     // 1) which tab? (template correlation, fill/darkness independent)
     const det = TD.detect(buf, W, H, box, TAB_TEMPLATES);
     if (!det || det.score < MIN_SCORE) {
-      parentPort.postMessage({ ok: true, mismatch: true, readCount: 0, slotCount: 0 });
+      parentPort.postMessage({ ok: true, mismatch: true, autoFound, readCount: 0, slotCount: 0 });
       return;
     }
     const tab = det.tab;
@@ -113,7 +127,7 @@ parentPort.on('message', (msg) => {
       const rel = (map.SLOT_RELIABILITY && map.SLOT_RELIABILITY[s.apiId]) || null;
       reads.push({ apiId: s.apiId, count: raw === '?' ? null : parseInt(raw, 10), conf: raw === '?' ? null : conf, rel });
     }
-    parentPort.postMessage({ ok: true, tab, score: det.score, readCount, slotCount: map.STATIC_SLOTS.length, reads, boxSource, panelCoverage, box });
+    parentPort.postMessage({ ok: true, tab, score: det.score, readCount, slotCount: map.STATIC_SLOTS.length, reads, boxSource, panelCoverage, autoFound, box });
   } catch (err) {
     parentPort.postMessage({ ok: false, error: String(err && err.message || err) });
   }

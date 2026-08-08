@@ -52,6 +52,9 @@
   // Fold a capture result into the tally. Dedup-by-type unless the duplicate
   // setting is on, in which case ask what to do when the type already exists.
   function applyResult(res) {
+    // remembered so Settings can offer manual calibration only once auto-detection
+    // has actually come up empty
+    if (res && typeof res.autoFound === 'boolean') state.autoFound = res.autoFound;
     if (!res || !res.ok) { state.notice = { kind: 'err', msg: t('networth.notice.capture_failed', { error: res && res.error || 'unknown error' }) }; return render(); }
     if (res.mismatch) { state.notice = { kind: 'warn', msg: t('networth.notice.mismatch', { readCount: res.readCount || 0, supportedTabs: Object.values(TAB_LABEL).join(', ') }) }; return render(); }
     state.notice = null;
@@ -113,6 +116,12 @@
       t('networth.settings.toggle_confidence_sub'),
       (v) => { state.showConfidence = v; try { window.api.setStashShowConfidence(v); } catch {} }));
     root.appendChild(toggles);
+    // Resolution calibration is a FALLBACK now, not a step. The panel is found by its
+    // coloured border on every capture, so this block stays hidden until auto-detection
+    // has actually failed - a permanent orange "Calibrate for my resolution" button reads
+    // as required, and a Linux user sat clicking it because of that. If you have never
+    // seen a failure there is nothing here to press, which is the honest state.
+    if (state.autoFound !== false && !state.calibrated) return;
     // resolution calibration
     const cal = el('div', 'nw-set-cal');
     const head = el('div', 'nw-set-cal-head');
@@ -450,9 +459,7 @@
       wrap.appendChild(el('div', 'nw-empty',
         t('networth.empty.instructions', { hotkey: esc(state.hotkey) }) + '<br>'
         + t('networth.empty.explain') + '<br>'
-        // class, not style="" - the main window's CSP strips inline style attributes,
-        // so this hint was rendering unstyled and logging a violation on every render
-        + '<span class="nw-empty-hint">' + t('networth.empty.calibrate_hint') + '</span>'));
+        ));
     } else {
       for (const row of state.rows) wrap.appendChild(rowCard(row));
       if (state.busy) wrap.appendChild(busyCard(pending));

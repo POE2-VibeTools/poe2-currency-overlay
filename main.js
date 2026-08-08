@@ -1510,7 +1510,7 @@ async function doStashCapture(onDetected) {
 
     const res = await runReaderWorker(bitmap, W, H, onDetected);
     if (!res || !res.ok) return res || { ok: false, error: 'reader failed' };
-    if (res.mismatch) return { ok: true, mismatch: true, readCount: res.readCount, slotCount: res.slotCount };
+    if (res.mismatch) return { ok: true, mismatch: true, autoFound: !!res.autoFound, readCount: res.readCount, slotCount: res.slotCount };
 
     let prices = {};
     try { prices = await getStashPriceMap(); } catch (err) { /* prices optional; counts still shown */ }
@@ -1539,6 +1539,7 @@ async function doStashCapture(onDetected) {
     return {
       ok: true, tab: res.tab, w: W, h: H, readCount: res.readCount, slotCount: res.slotCount,
       totalEx: total, divPrice, mirrorPrice, totalDiv: divPrice ? total / divPrice : null, lines, flags, mismatch: false,
+      autoFound: !!res.autoFound, // false = the panel finder came up empty, so manual calibration is worth offering
     };
   } catch (err) {
     return { ok: false, error: String(err && err.message || err) };
