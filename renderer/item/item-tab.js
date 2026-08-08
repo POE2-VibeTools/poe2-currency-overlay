@@ -1897,6 +1897,23 @@
     if (!hit) return;
     const isUnique = hit.namespace === 'UNIQUE';
     const isGem = hit.namespace === 'GEM';
+    // A currency picked by NAME has to reach the exchange-value screen, the same one
+    // Ctrl+C on that currency reaches. currencyTag was only ever set on the parse path,
+    // so a typed search built a bare model, fell through to a whisper search and showed
+    // no price at all. Resolve it the same way toModel does: the item db's tradeTag,
+    // else the CX feed matched on display name.
+    const currencyTag = (() => {
+      try {
+        const rec = (window.EE2.itemByRef('ITEM', hit.refName) || [])[0];
+        const tag = rec && rec.tradeTag;
+        if (tag && !CURRENCY_SKIP.has(tag)) return tag;
+        if (!tag && !isUnique) {
+          const cx = CX_BY_NAME.get(String(hit.name || '').toLowerCase());
+          if (cx) return cx;
+        }
+      } catch { /* not a currency, fall through to the normal search */ }
+      return null;
+    })();
     // Keep the existing mod filters ONLY when the new pick is gear that rolls its own
     // mods - swapping one rare ring base for another, where the filters still mean
     // something. Everything with fixed contents (a Mirror, an Omen, a Soul Core, a
@@ -1916,6 +1933,9 @@
           rarity: isUnique ? 'Unique' : null,
           mods: [], props: [],
           itemLevel: null, isGem, gemLevel: null,
+          currencyTag,
+          currencyName: hit.name || hit.refName || null,
+          currencyIcon: hit.icon || null,
           nameOnly: true, // marks a model with no parsed item behind it
         }
       : {

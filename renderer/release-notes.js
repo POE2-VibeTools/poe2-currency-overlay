@@ -6,6 +6,13 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.5',
+    date: '2026-08-07',
+    notes: [
+      "\"Manual typed search on a currency type item doesn’t show any price. it doesn’t bring you to the same screen as ctrl+f on the currency\" - Fixed",
+    ],
+  },
+  {
     version: '2.6.4',
     date: '2026-08-07',
     title: "Corrections",
