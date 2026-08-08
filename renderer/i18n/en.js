@@ -641,6 +641,8 @@ window.I18N_CATALOGS.en = {
   "networth.line.edit_count_title": "Click to edit count",
   "networth.line.no_price": "<span class=\"nw-noprice\">no price</span>",
   "networth.line.reset_title": "Reset this line to its scanned value",
+  "networth.line.unreliable_low": "The reader gets this one wrong on every setup we have tested. Check it against your stash and correct it.",
+  "networth.line.unreliable_mixed": "The reader gets this one wrong on some setups. Worth a glance.",
   "networth.modal.add_new": "+ Add as new row",
   "networth.modal.cancel": "Cancel",
   "networth.modal.replace_option": "Replace <b>{rowLabel}</b> <span class=\"nw-modal-tot\">{amount}</span>",

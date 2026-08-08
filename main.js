@@ -1533,7 +1533,7 @@ async function doStashCapture(onDetected) {
       }
       const valueEx = price != null ? r.count * price : null;
       if (valueEx != null) total += valueEx;
-      lines.push({ apiId: r.apiId, name, icon, count: r.count, price, valueEx, slot: i, conf: typeof r.conf === 'number' ? r.conf : null });
+      lines.push({ apiId: r.apiId, name, icon, count: r.count, price, valueEx, slot: i, conf: typeof r.conf === 'number' ? r.conf : null, rel: r.rel || null });
     });
     lines.sort((a, b) => (b.valueEx || 0) - (a.valueEx || 0));
     return {

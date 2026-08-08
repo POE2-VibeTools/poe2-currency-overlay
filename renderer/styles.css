@@ -1682,3 +1682,15 @@ footer {
 .notes-list li.notes-sec { list-style: none; margin-left: -1.1em; margin-top: 10px; font-weight: 600;
   color: var(--tx-hi); letter-spacing: .01em; }
 .notes-list li.notes-sec:first-child { margin-top: 0; }
+
+/* rows the reader is MEASURED to struggle with (renderer/stash/currency-tab-map.js
+   SLOT_RELIABILITY). Amber = wrong on some setups, red = wrong on every one tested.
+   Tinted, not shouty: these are still probably-usable numbers, just ones to glance at. */
+.nw-line-rel-mixed { background: linear-gradient(90deg, rgba(216,162,74,.10), transparent 60
+/* Rows the reader is MEASURED to struggle with (currency-tab-map.js SLOT_RELIABILITY).
+   Amber = wrong on some setups, red = wrong on every one tested. Tinted rather than
+   shouty: these are still usable numbers, just the ones worth a glance. */
+.nw-line-rel-mixed { background: linear-gradient(90deg, rgba(216,162,74,.10), transparent 60%);
+  box-shadow: inset 2px 0 0 rgba(216,162,74,.55); }
+.nw-line-rel-low { background: linear-gradient(90deg, rgba(224,85,74,.10), transparent 60%);
+  box-shadow: inset 2px 0 0 rgba(224,85,74,.6); }

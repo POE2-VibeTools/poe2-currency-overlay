@@ -188,10 +188,21 @@
     const missing = all.filter((ln) => ln.missing).sort(bySlot); // shown only with "Show missing", at the bottom
     const shown = state.showMissing ? owned.concat(missing) : owned;
     for (const ln of shown) {
+      // Rows our own testing says to distrust are marked, so a wrong number is visible
+      // rather than silently averaged into the total. `rel` is measured per slot against
+      // every ground-truthed capture we hold; a user edit clears the flag, because once
+      // they have typed the real number there is nothing left to doubt.
+      const relFlag = ln.userCount == null ? (ln.rel || null) : null;
       const line = el('div', 'nw-line'
         + (ln.userCount != null ? ' nw-line-edited' : '')
         + (ln.excluded ? ' nw-line-off' : '')
-        + (ln.missing ? ' nw-line-missing' : ''));
+        + (ln.missing ? ' nw-line-missing' : '')
+        + (relFlag ? ' nw-line-rel-' + relFlag : ''));
+      if (relFlag) {
+        line.title = relFlag === 'low'
+          ? t('networth.line.unreliable_low')
+          : t('networth.line.unreliable_mixed');
+      }
       const tg = el('input', 'nw-line-inc'); tg.type = 'checkbox'; tg.checked = !ln.excluded; tg.title = t('networth.row.include_title');
       tg.onclick = (e) => { e.stopPropagation(); ln.excluded = !tg.checked; render(); };
       line.appendChild(tg);

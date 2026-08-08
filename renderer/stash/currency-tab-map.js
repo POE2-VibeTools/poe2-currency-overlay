@@ -74,8 +74,24 @@
     { y: 706, xs: [128, 181, 240, 297, 355, 413, 473] },
   ];
 
+  // Per-slot reader reliability, measured against every ground-truthed capture we hold
+  // (the 1920x1032 reference, a 3840x1078 ultrawide, and a community 1920x1080 at panel
+  // scale 1.068). 'low' = wrong on every capture tested, 'mixed' = wrong on some. This is
+  // evidence, not a guess, and it exists so the UI can TELL the user which numbers to
+  // double-check rather than presenting every row with equal confidence. Re-measure with
+  // dev/stash-matcher/ultrawide-eval.js whenever the reader changes.
+  const SLOT_RELIABILITY = {
+    artificers: 'low', scrap: 'low', exalted: 'low', 'greater-exalted-orb': 'low',
+    bauble: 'low', gcp: 'low', wisdom: 'low',
+    transmute: 'mixed', 'greater-orb-of-transmutation': 'mixed', alch: 'mixed',
+    annul: 'mixed', 'lesser-jewellers-orb': 'mixed', 'perfect-jewellers-orb': 'mixed',
+    aug: 'mixed', 'greater-orb-of-augmentation': 'mixed', chance: 'mixed',
+    divine: 'mixed', regal: 'mixed', 'perfect-regal-orb': 'mixed', chaos: 'mixed',
+  };
+
   return {
     tab: 'currency',
+    SLOT_RELIABILITY,
     captureSize: { w: 1920, h: 1032 },
     STATIC_SLOTS,
     EMPTY_STATIC_TODO,

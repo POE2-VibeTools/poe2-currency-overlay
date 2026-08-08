@@ -641,6 +641,8 @@ window.I18N_CATALOGS.qa = {
   "networth.line.edit_count_title": "[[Ćlíćk tó édít ćóúñt ·······]]",
   "networth.line.no_price": "[[<span class=\"nw-noprice\">ñó príćé</span> ···]]",
   "networth.line.reset_title": "[[Réšét thíš líñé tó ítš šćáññéd válúé ·············]]",
+  "networth.line.unreliable_low": "[[Thé réádér gétš thíš óñé wróñg óñ évérý šétúp wé hávé téštéd. Ćhéćk ít ágáíñšt ýóúr štášh áñd ćórréćt ít. ·····································]]",
+  "networth.line.unreliable_mixed": "[[Thé réádér gétš thíš óñé wróñg óñ šómé šétúpš. Wórth á gláñćé. ······················]]",
   "networth.modal.add_new": "[[+ Ádd áš ñéw rów ······]]",
   "networth.modal.cancel": "[[Ćáñćél ···]]",
   "networth.modal.replace_option": "[[Répláćé <b>{rowLabel}</b> <span class=\"nw-modal-tot\">{amount}</span> ···]]",

@@ -100,9 +100,14 @@ parentPort.on('message', (msg) => {
       const pos = (originX || originY)
         ? { cx: s.cx - originX, cy: s.cy - originY }
         : TD.scalePos(s.cx, s.cy, refBox, box);
-      const { text: raw, conf } = DR.readCellEx(V, W2, H2, pos.cx, pos.cy, DIGITS, P, 1);
+      // adaptive: pick the binarisation threshold per cell rather than trusting one
+      // global floor, which only ever suited the capture the templates came from
+      const { text: raw, conf } = DR.readCellAdaptive(V, W2, H2, pos.cx, pos.cy, DIGITS, P, 1);
       if (raw !== '?') readCount++;
-      reads.push({ apiId: s.apiId, count: raw === '?' ? null : parseInt(raw, 10), conf: raw === '?' ? null : conf });
+      // pass the measured reliability of this slot through, so the UI can flag the
+      // rows our own testing says to distrust rather than showing them all alike
+      const rel = (map.SLOT_RELIABILITY && map.SLOT_RELIABILITY[s.apiId]) || null;
+      reads.push({ apiId: s.apiId, count: raw === '?' ? null : parseInt(raw, 10), conf: raw === '?' ? null : conf, rel });
     }
     parentPort.postMessage({ ok: true, tab, score: det.score, readCount, slotCount: map.STATIC_SLOTS.length, reads, boxSource, panelCoverage, box });
   } catch (err) {

@@ -384,6 +384,42 @@
     return readCellEx(V, W, H, cx, cy, templates, P, scale).text;
   }
 
+  // Binarisation floors tried per cell by readCellAdaptive, spanning "dim glyph on bright
+  // art" to "bright glyph on dark art". P.floor (122) sits in the middle.
+  const ADAPTIVE_FLOORS = [80, 95, 110, 122, 135, 150, 165, 180];
+
+  /**
+   * Read one cell, choosing the binarisation threshold PER CELL instead of trusting one
+   * global floor.
+   *
+   * A single floor silently assumes every machine draws the glyph edge the same way, and
+   * it does not - the same digit is a different number of ink pixels depending on the
+   * renderer, and one threshold that suits the capture the templates were cut from will
+   * thin or fatten everyone else's glyphs past matching. Sweeping and keeping the most
+   * confident read is the cheapest way to stop guessing.
+   *
+   * Measured on the two ground-truthed real captures we hold:
+   *   ultrawide  8/28 -> 13/28      community 1920x1080  13/35 -> 24/35
+   * and the reference capture is unchanged at 34/35, because its own floor is in the set.
+   */
+  function readCellAdaptive(V, W, H, cx, cy, templates, P, scale) {
+    // Keep the read from whichever threshold is most confident AND most complete.
+    // Consensus voting was tried instead and is too conservative: on the ultrawide
+    // capture the correct digits only survive one specific threshold, so requiring
+    // agreement gave back every point the sweep had won (13/28 -> 8/28). The artefact
+    // that motivated consensus - art at the strip edge read as a trailing "1" - is
+    // handled precisely, by the edge filter in readCellEx, instead of by distrusting
+    // every minority reading.
+    let best = null;
+    for (const floor of ADAPTIVE_FLOORS) {
+      const r = readCellEx(V, W, H, cx, cy, templates, floor === P.floor ? P : Object.assign({}, P, { floor }), scale);
+      if (!r.text || r.text === '?') continue;
+      const score = r.conf * Math.min(r.text.length, 3);
+      if (!best || score > best.score) best = { text: r.text, conf: r.conf, score, floor };
+    }
+    return best ? { text: best.text, conf: best.conf, floor: best.floor } : { text: '?', conf: 0 };
+  }
+
   // collect candidates over all templates at a given IoU threshold.
   function collect(strip, templates, thresh, P) {
     const out = [];
@@ -497,7 +533,7 @@
 
   return {
     otsu, crop, binarize, components, iou, slideMatch, greyOpening, resampleRGBA,
-    extractTemplates, readCell, readCellEx, valueChannelFromRGBA, valueChannelDesatMax,
+    extractTemplates, readCell, readCellEx, readCellAdaptive, valueChannelFromRGBA, valueChannelDesatMax,
     templatesFromJSON, DEFAULTS, DESAT_SAT,
   };
 });
