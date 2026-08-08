@@ -172,20 +172,24 @@
   // to a live exchange value. Raw fungible crafting orbs are skipped - pricing an
   // Exalted in Exalts is pointless - but fragments, soul cores, runes, alloys,
   // catalysts, essences, splinters, bones, infusers, etc. all get a quick value.
-  const CURRENCY_SKIP = new Set([
-    'exalted', 'greater-exalted-orb', 'perfect-exalted-orb',
-    'chaos', 'greater-chaos-orb', 'perfect-chaos-orb',
-    'divine',
-    'regal', 'greater-regal-orb', 'perfect-regal-orb',
-    'transmute', 'greater-orb-of-transmutation', 'perfect-orb-of-transmutation',
-    'aug', 'greater-orb-of-augmentation', 'perfect-orb-of-augmentation',
-    'chance', 'annul', 'alch', 'vaal', 'wisdom',
-  ]);
+  // Only the base unit is skipped. Everything is quoted in exalted, so an exalted priced
+  // in exalted reads "1 exalted = 1 exalted" and is the one genuinely useless answer.
+  //
+  // This list used to hold 21 tags - every greater/perfect variant plus the utility orbs -
+  // on the theory that "raw crafting currency" should not price. But a Perfect Exalted Orb
+  // is a traded good with a real exalted value, not a denominator, and so are Greater
+  // Chaos, Annul and Vaal. Mirror of Kalandra and Fracturing Orb were never on the list
+  // and priced fine, which is the precedent: a denominator can still have a useful price.
+  // Divine and chaos in particular are the numbers people most want to see.
+  const CURRENCY_SKIP = new Set(['exalted']);
   const cel = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const cesc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmtNum = (n) => (n >= 100 ? Math.round(n).toLocaleString() : n >= 10 ? n.toFixed(1) : n.toFixed(2));
   const divRateFull = () => (ccatalog && ccatalog.divine && ccatalog.divine.price > 0 ? ccatalog.divine.price
     : (window.currencyPriceOf ? window.currencyPriceOf('divine') : null));
+  // chaos, in exalted - the denominator a divine is actually quoted in
+  const chaosRateFull = () => (ccatalog && ccatalog.chaos && ccatalog.chaos.price > 0 ? ccatalog.chaos.price
+    : (window.currencyPriceOf ? window.currencyPriceOf('chaos') : null));
 
   let ccatalog = null, ccatalogAt = 0; // flat apiId -> { price, text, icon, logs }, cached
   async function currencyPrice(tag) {
@@ -252,12 +256,19 @@
       card.appendChild(cel('div', 'cur-note', t('itemtab.currency.fetching')));
     } else if (r && r.price != null) {
       const div = divRateFull();
-      const ex = r.price, big = div && ex >= div;
+      // A Divine Orb quoted in divines reads "1.00 div", the same useless tautology as
+      // pricing an exalted in exalted. Divines are quoted in CHAOS in trade, with the
+      // exalted count in brackets, so that is what a divine shows.
+      const selfDiv = state.item.currencyTag === 'divine';
+      const ex = r.price, big = !selfDiv && div && ex >= div;
       // unit as icon (Settings > "Show currency icons instead of names") or the
       // plain "div"/"ex" abbreviation, whichever the toggle calls for
       const unit = (apiId, abbr) => (window.currencyIconTag && window.currencyIconTag(apiId)) || abbr;
-      const primary = big ? `${(ex / div).toFixed(2)} ${unit('divine', t('itemtab.currency.unit_div'))}` : `${fmtNum(ex)} ${unit('exalted', t('itemtab.currency.unit_ex'))}`;
-      const secondary = big ? `${fmtNum(ex)} ${unit('exalted', t('itemtab.currency.unit_ex'))}` : (div ? `${(ex / div).toFixed(3)} ${unit('divine', t('itemtab.currency.unit_div'))}` : '');
+      const chaos = chaosRateFull();
+      const primary = selfDiv && chaos
+        ? `${fmtNum(ex / chaos)} ${unit('chaos', t('itemtab.currency.unit_chaos'))}`
+        : (big ? `${(ex / div).toFixed(2)} ${unit('divine', t('itemtab.currency.unit_div'))}` : `${fmtNum(ex)} ${unit('exalted', t('itemtab.currency.unit_ex'))}`);
+      const secondary = (selfDiv && chaos) ? `${fmtNum(ex)} ${unit('exalted', t('itemtab.currency.unit_ex'))}` : selfDiv ? '' : (big ? `${fmtNum(ex)} ${unit('exalted', t('itemtab.currency.unit_ex'))}` : (div ? `${(ex / div).toFixed(3)} ${unit('divine', t('itemtab.currency.unit_div'))}` : ''));
       const val = cel('div', 'cur-value', primary);
       if (secondary) val.appendChild(cel('span', 'cur-value-sub', ' · ' + secondary));
       card.appendChild(val);

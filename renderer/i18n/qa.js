@@ -550,6 +550,7 @@ window.I18N_CATALOGS.qa = {
   "itemtab.currency.price_lookup_failed": "[[Príćé lóókúp fáíléd: {error} ·······]]",
   "itemtab.currency.spark_label_7day": "[[7-dáý ··]]",
   "itemtab.currency.spark_range": "[[{lo}–{hi} éx ··]]",
+  "itemtab.currency.unit_chaos": "[[ćháóš ··]]",
   "itemtab.currency.unit_div": "[[dív]]",
   "itemtab.currency.unit_ex": "[[éx]]",
   "itemtab.history.age_days": "[[{count}d ágó ··]]",
