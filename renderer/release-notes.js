@@ -6,6 +6,21 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.3',
+    date: '2026-08-07',
+    title: 'Net Worth calibrates itself',
+    notes: [
+      "Net Worth:",
+      "Calibration is automatic. Let me know if it doesn’t work.",
+      "User-submitted stash tab screenshots have improved the reader. I still need more data especially at ultra-wide, and ultra-ultra-ultra-ultra-ultra wide some of you wackos run at.",
+      "If net-worth calc doesn’t work well for you still, submit using the in-tab button. Next patch, it should work for you.",
+      "Amber rows in Net Worth means known to have errors. Double check them.",
+      "Added a drag handle in the bottom right corner to resize the window. Windows could already do this with the invisible border, Linux couldn’t. Linux users let me know if it works.",
+      "Price Check:",
+      "Fixed a bug with negative mods. Thanks to the user who submitted the Atziri Step report.",
+    ],
+  },
+  {
     version: '2.6.2',
     date: '2026-08-05',
     title: "User feedback changes and bug fixes",

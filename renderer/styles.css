@@ -1704,3 +1704,15 @@ footer {
 .nw-legend-sw { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
 .nw-legend-sw-mixed { background: rgba(216,162,74,.55); box-shadow: inset 0 0 0 1px rgba(216,162,74,.8); }
 .nw-legend-sw-low { background: rgba(224,85,74,.55); box-shadow: inset 0 0 0 1px rgba(224,85,74,.85); }
+
+/* Corner resize grip. The window is frameless, so there is no OS border to drag and the
+   overlay could not be resized at all - scaling the UI just made things bigger inside the
+   same square. no-drag is essential or the title-bar drag region swallows the gesture. */
+#resize-grip { position: fixed; right: 0; bottom: 0; width: 16px; height: 16px; z-index: 90;
+  cursor: nwse-resize; -webkit-app-region: no-drag; opacity: .35; transition: opacity .12s; }
+#resize-grip::after { content: ''; position: absolute; right: 3px; bottom: 3px;
+  width: 9px; height: 9px;
+  background:
+    linear-gradient(135deg, transparent 45%, var(--tx-faint) 45%, var(--tx-faint) 55%, transparent 55%),
+    linear-gradient(135deg, transparent 70%, var(--tx-faint) 70%, var(--tx-faint) 80%, transparent 80%); }
+#resize-grip:hover { opacity: .85; }

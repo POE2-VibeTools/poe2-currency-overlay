@@ -2813,3 +2813,35 @@ async function main() {
 }
 
 main();
+
+// ---------- corner resize grip ----------
+// The overlay is a frameless window, so there is no OS border to grab and it could not be
+// resized at all: users on 1440p and above could scale the UI, which only made things
+// bigger inside the same small square. Main clamps to the work area; this just reports
+// how far the corner moved. Pointer capture keeps the drag alive if the cursor outruns
+// the window, which it will, because the window is the thing being resized.
+(function initResizeGrip() {
+  const grip = document.getElementById('resize-grip');
+  if (!grip || !window.api || !window.api.resizeWindowBy) return;
+  let last = null;
+  grip.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    last = { x: e.screenX, y: e.screenY };
+    try { grip.setPointerCapture(e.pointerId); } catch {}
+  });
+  grip.addEventListener('pointermove', (e) => {
+    if (!last) return;
+    const dx = e.screenX - last.x, dy = e.screenY - last.y;
+    if (!dx && !dy) return;
+    last = { x: e.screenX, y: e.screenY };
+    window.api.resizeWindowBy(dx, dy);
+  });
+  const end = (e) => {
+    if (!last) return;
+    last = null;
+    try { grip.releasePointerCapture(e.pointerId); } catch {}
+  };
+  grip.addEventListener('pointerup', end);
+  grip.addEventListener('pointercancel', end);
+})();

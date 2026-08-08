@@ -1696,6 +1696,21 @@ ipcMain.handle('stash-sample-send', async (_e, payload) => {
   return { ok: true, sent: sent.length };
 });
 
+// Frameless windows have no OS border to drag, so the overlay could not be resized at
+// all - a 1440p+ user could scale the UI but the window stayed the same small square.
+// The renderer drags a corner grip and sends deltas; clamping lives here because only
+// main knows the work area.
+ipcMain.on('resize-window-by', (_e, d) => {
+  if (!win || win.isDestroyed() || !d) return;
+  try {
+    const b = win.getBounds();
+    const wa = screen.getDisplayMatching(b).workAreaSize;
+    const width = Math.max(320, Math.min(Math.round(b.width + (d.dx || 0)), wa.width));
+    const height = Math.max(240, Math.min(Math.round(b.height + (d.dy || 0)), wa.height));
+    win.setBounds({ x: b.x, y: b.y, width, height });
+  } catch { /* a bad delta must never take the window down */ }
+});
+
 let calibWin = null;
 let calibCap = null; // { buf, W, H } kept for auto-snap border detection
 function closeCalibWin() { try { if (calibWin && !calibWin.isDestroyed()) calibWin.close(); } catch {} calibWin = null; calibCap = null; }
