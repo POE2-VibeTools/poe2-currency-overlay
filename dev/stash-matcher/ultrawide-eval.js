@@ -12,7 +12,10 @@ const DR = require(path.join(ROOT, 'renderer/stash/digit-reader'));
 const TD = require(path.join(ROOT, 'renderer/stash/tab-detect'));
 const TAB_TEMPLATES = require(path.join(ROOT, 'renderer/stash/tab-templates.json'));
 const MAP = require(path.join(ROOT, 'renderer/stash/currency-tab-map'));
-const DIGITS = DR.templatesFromJSON(require(path.join(ROOT, 'renderer/stash/digit-templates.json')));
+const rawTemplates = require(path.join(ROOT, 'renderer/stash/digit-templates.json'));
+const DIGITS = DR.templatesFromJSON(rawTemplates);            // base set only, for the historical column
+const { bank: BANK, unmap: UNMAP } = DR.bankFromJSON(rawTemplates); // what actually ships
+const PF = require(path.join(ROOT, 'renderer/stash/panel-finder'));
 const refBox = TAB_TEMPLATES.box;
 const P = DR.DEFAULTS;
 
@@ -53,13 +56,16 @@ app.whenReady().then(() => {
     return DR.readCellEx(Vnat, W, H, p.cx, p.cy, DIGITS, P, scale).text;
   };
 
-  // B) current: normalise the panel once, then read at reference scale
+  // B) SHIPPED reader: panel found automatically, multi-rendering bank, adaptive threshold
   const M = 24, kx = BOX.w / refBox.w, ky = BOX.h / refBox.h;
   const W2 = Math.round(refBox.w + 2 * M), H2 = Math.round(refBox.h + 2 * M);
   const norm = DR.resampleRGBA(buf, W, H, BOX.x - M * kx, BOX.y - M * ky,
     (refBox.w + 2 * M) * kx, (refBox.h + 2 * M) * ky, W2, H2);
   const Vn = DR.valueChannelDesatMax(norm, W2, H2);
-  const readNew = (s) => DR.readCellEx(Vn, W2, H2, s.cx - (refBox.x - M), s.cy - (refBox.y - M), DIGITS, P, 1).text;
+  const readNew = (s) => {
+    const t = DR.readCellAdaptive(Vn, W2, H2, s.cx - (refBox.x - M), s.cy - (refBox.y - M), BANK, P, 1).text;
+    return t === '?' ? '?' : UNMAP(t);
+  };
 
   const clean = (t) => (t === '?' ? '' : t);
   let a = 0, b = 0, n = 0;
@@ -74,7 +80,7 @@ app.whenReady().then(() => {
       + ((ra || '-') + mk(ra)).padEnd(11) + ((rb || '-') + mk(rb)));
   }
   console.log(`\nper-cell rescale (pre-2.6.1)  ${a}/${n}`);
-  console.log(`normalise-once   (current)    ${b}/${n}`);
+  console.log(`SHIPPED reader (auto box + bank)            ${b}/${n}`);
   console.log('\nBar for calling the reader fixed: 24/28. Anything less is not a fix.');
   app.quit();
 });
