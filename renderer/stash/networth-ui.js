@@ -375,6 +375,32 @@
     return back;
   }
 
+  // Tiny legend for the row tints. Only rendered when a captured tab actually contains
+  // flagged rows - a key to symbols that are not on screen is just clutter. Deliberately
+  // small and quiet: it explains a subtle cue, it should not out-shout the numbers.
+  function reliabilityLegend() {
+    const anyLow = state.rows.some((r) => (r.result.lines || []).some((ln) => ln.rel === 'low' && ln.userCount == null));
+    const anyMixed = state.rows.some((r) => (r.result.lines || []).some((ln) => ln.rel === 'mixed' && ln.userCount == null));
+    if (!anyLow && !anyMixed) return null;
+    const wrap = el('div', 'nw-legend');
+    wrap.appendChild(el('span', 'nw-legend-lab', t('networth.legend.label')));
+    if (anyMixed) {
+      const k = el('span', 'nw-legend-key');
+      k.appendChild(el('span', 'nw-legend-sw nw-legend-sw-mixed'));
+      k.appendChild(el('span', null, t('networth.legend.mixed')));
+      k.title = t('networth.line.unreliable_mixed');
+      wrap.appendChild(k);
+    }
+    if (anyLow) {
+      const k = el('span', 'nw-legend-key');
+      k.appendChild(el('span', 'nw-legend-sw nw-legend-sw-low'));
+      k.appendChild(el('span', null, t('networth.legend.low')));
+      k.title = t('networth.line.unreliable_low');
+      wrap.appendChild(k);
+    }
+    return wrap;
+  }
+
   function experimentalBanner() {
     const b = el('div', 'nw-exp');
     b.appendChild(el('div', 'nw-exp-body', t('networth.experimental.explain')));
@@ -415,6 +441,7 @@
     header.appendChild(controls);
     wrap.appendChild(header);
     wrap.appendChild(experimentalBanner());
+    { const lg = reliabilityLegend(); if (lg) wrap.appendChild(lg); }
 
     if (state.notice) wrap.appendChild(el('div', 'nw-notice nw-' + state.notice.kind, esc(state.notice.msg)));
 

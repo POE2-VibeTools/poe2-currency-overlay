@@ -81,12 +81,20 @@
   // double-check rather than presenting every row with equal confidence. Re-measure with
   // dev/stash-matcher/ultrawide-eval.js whenever the reader changes.
   const SLOT_RELIABILITY = {
-    artificers: 'low', scrap: 'low', exalted: 'low', 'greater-exalted-orb': 'low',
-    bauble: 'low', gcp: 'low', wisdom: 'low',
-    transmute: 'mixed', 'greater-orb-of-transmutation': 'mixed', alch: 'mixed',
-    annul: 'mixed', 'lesser-jewellers-orb': 'mixed', 'perfect-jewellers-orb': 'mixed',
-    aug: 'mixed', 'greater-orb-of-augmentation': 'mixed', chance: 'mixed',
-    divine: 'mixed', regal: 'mixed', 'perfect-regal-orb': 'mixed', chaos: 'mixed',
+    // Measured leave-one-out across four ground-truthed captures (each read using only
+    // the OTHER captures' baked exemplars, so nothing is scored against templates cut
+    // from itself). Overall 113/131 = 86%.
+    //
+    // Nothing is 'low' any more: before the multi-rendering bank, seven slots were wrong
+    // on every capture tested. None are now, so only 'mixed' remains - these read
+    // correctly on some renderings and not others, which is worth a glance but not alarm.
+    // RE-MEASURE after any reader or template change; a stale flag on a slot that now
+    // reads fine is its own kind of lie.
+    'greater-orb-of-transmutation': 'mixed', alch: 'mixed', annul: 'mixed',
+    'lesser-jewellers-orb': 'mixed', chance: 'mixed', divine: 'mixed',
+    artificers: 'mixed', 'perfect-regal-orb': 'mixed', scrap: 'mixed',
+    exalted: 'mixed', 'greater-exalted-orb': 'mixed', bauble: 'mixed',
+    gcp: 'mixed', chaos: 'mixed', wisdom: 'mixed',
   };
 
   return {

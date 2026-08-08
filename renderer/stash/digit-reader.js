@@ -519,6 +519,37 @@
     return V;
   }
 
+  // Build a MULTI-RENDERING bank from a baked templates file that carries `variants`.
+  //
+  // The same digit is drawn differently on different machines - not a different size (the
+  // font is fixed at 11px everywhere we have measured) but a different set of lit pixels.
+  // One exemplar per digit therefore only ever reads well on renderings close to the
+  // capture it was cut from. Extra exemplars are additive: leave-one-out across three
+  // ground-truthed captures (each read using ONLY the other captures' templates) went
+  //   ultrawide 13/28 -> 15/28    capture A 24/35 -> 33/35    capture B 19/33 -> 32/33
+  // and the reference is unaffected, because nothing is removed.
+  //
+  // Each exemplar needs a distinct key so it can compete as its own template; the keys
+  // are mapped back to digits by `unmap` after assembly.
+  const ALT_POOL = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  function bankFromJSON(obj) {
+    const bank = templatesFromJSON(obj);
+    const back = new Map();
+    const variants = (obj && obj.variants) || [];
+    let slot = 0;
+    for (const v of variants) {
+      const t = templatesFromJSON(v.templates || v);
+      for (const ch of Object.keys(t)) {
+        if (slot >= ALT_POOL.length) break;
+        const key = ALT_POOL[slot++];
+        bank[key] = t[ch];
+        back.set(key, ch);
+      }
+    }
+    const unmap = (text) => String(text || '').replace(/./g, (c) => (back.has(c) ? back.get(c) : c));
+    return { bank, unmap, variantCount: variants.length };
+  }
+
   // Rehydrate a baked template set ({ templates: { ch: {w,h,data:[…]} } } or the
   // bare { ch: {w,h,data} } map) into the {data:Uint8Array,w,h} form readCell wants.
   function templatesFromJSON(obj) {
@@ -534,6 +565,6 @@
   return {
     otsu, crop, binarize, components, iou, slideMatch, greyOpening, resampleRGBA,
     extractTemplates, readCell, readCellEx, readCellAdaptive, valueChannelFromRGBA, valueChannelDesatMax,
-    templatesFromJSON, DEFAULTS, DESAT_SAT,
+    templatesFromJSON, bankFromJSON, DEFAULTS, DESAT_SAT,
   };
 });

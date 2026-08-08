@@ -26,7 +26,9 @@ const TABS = {
   breach: require('./breach-tab-map'),
   expedition: require('./expedition-tab-map'),
 };
-const DIGITS = DR.templatesFromJSON(require('./digit-templates.json'));
+// multi-rendering bank: the base exemplars plus one set per baked capture, so a digit
+// drawn slightly differently on someone else's machine still has something to match
+const { bank: DIGITS, unmap: UNMAP } = DR.bankFromJSON(require('./digit-templates.json'));
 const MIN_SCORE = 0.3; // below this the panel isn't a recognized stash tab
 
 // per-tab OCR params: DEFAULTS with any map.readParams override (e.g. Kalguuran runes
@@ -102,7 +104,9 @@ parentPort.on('message', (msg) => {
         : TD.scalePos(s.cx, s.cy, refBox, box);
       // adaptive: pick the binarisation threshold per cell rather than trusting one
       // global floor, which only ever suited the capture the templates came from
-      const { text: raw, conf } = DR.readCellAdaptive(V, W2, H2, pos.cx, pos.cy, DIGITS, P, 1);
+      const r = DR.readCellAdaptive(V, W2, H2, pos.cx, pos.cy, DIGITS, P, 1);
+      const raw = r.text === '?' ? '?' : UNMAP(r.text); // alt keys back to digits
+      const conf = r.conf;
       if (raw !== '?') readCount++;
       // pass the measured reliability of this slot through, so the UI can flag the
       // rows our own testing says to distrust rather than showing them all alike
