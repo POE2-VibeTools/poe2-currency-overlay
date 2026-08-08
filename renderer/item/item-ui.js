@@ -1084,16 +1084,23 @@
     // Search by NAME, for the things Ctrl+C cannot reach: runestones and Verisium
     // gems inside the rune-combination dialogue, and Ritual remnant reward choices.
     // Three separate people asked for this, each about a different dialogue.
-    if (h.onNameSearch) {
-      const byName = el('button', 'sample-btn name-search-btn', t('item.history.search_by_name_button'));
-      byName.title = t('item.history.search_by_name_tooltip');
-      byName.onclick = () => h.onNameSearch();
-      wrap.appendChild(byName);
-    }
-    if (h.onLoadSample) {
-      const sample = el('button', 'sample-btn', t('item.history.see_example_button'));
-      sample.onclick = () => h.onLoadSample();
-      wrap.appendChild(sample);
+    // Both empty-state actions sit in ONE centered row. Individually they are
+    // `margin: auto`-centred blocks, so two of them stacked (and one with a margin
+    // override) drifted apart and left the name search hanging off to one side.
+    if (h.onNameSearch || h.onLoadSample) {
+      const acts = el('div', 'empty-actions');
+      if (h.onNameSearch) {
+        const byName = el('button', 'sample-btn name-search-btn', t('item.history.search_by_name_button'));
+        byName.title = t('item.history.search_by_name_tooltip');
+        byName.onclick = () => h.onNameSearch();
+        acts.appendChild(byName);
+      }
+      if (h.onLoadSample) {
+        const sample = el('button', 'sample-btn sample-btn-quiet', t('item.history.see_example_button'));
+        sample.onclick = () => h.onLoadSample();
+        acts.appendChild(sample);
+      }
+      wrap.appendChild(acts);
     }
     const hist = state.history || [];
     if (hist.length) {

@@ -427,7 +427,20 @@
         min += (c.min != null ? c.min : c.value);
         max += (c.max != null ? c.max : c.value);
       }
-      return any ? { value, min, max } : null;
+      if (!any) return null;
+      // NEGATED matchers (674 of them in the stat data) print the opposite sign to the
+      // stat's canonical form: Atziri's Step shows "-12% to amount of Damage Prevented by
+      // Deflection" for the stat whose canonical ref is "Prevent #% of Damage from
+      // Deflected Hits". The parser flips roll AND bounds to canonicalise, but the trade
+      // API indexes the sign the ITEM shows - so searching the canonical value asked for
+      // +12 and matched nothing. Flip back to the item's own sign here, once, so every
+      // downstream consumer (uniqueMin, lower, the min inputs) works in trade's terms.
+      // The bounds are also swapped: negating -12..-6 leaves min=12 > max=6, which made
+      // uniqueMin bail its `max > min` guard and fall back to an exact match.
+      if (srcs.some((s) => s.stat && s.stat.translation && s.stat.translation.negate)) {
+        return { value: -value, min: -max, max: -min };
+      }
+      return { value, min, max };
     };
 
     const mods = (parsed.statsByType || []).map((sc) => {

@@ -10,6 +10,7 @@
 const { parentPort } = require('worker_threads');
 const DR = require('./digit-reader');
 const TD = require('./tab-detect');
+const PF = require('./panel-finder');
 const TAB_TEMPLATES = require('./tab-templates.json'); // { box (reference), tw, th, templates }
 const TABS = {
   currency: require('./currency-tab-map'),
@@ -37,7 +38,24 @@ parentPort.on('message', (msg) => {
     const { bitmap, W, H, calBox } = msg;
     const buf = Buffer.from(bitmap);
     const refBox = TAB_TEMPLATES.box;
-    const box = calBox || refBox; // no calibration yet -> assume reference resolution
+    // Find the panel by its coloured frame first. This is what makes calibration
+    // optional: the frame is a saturated rectangle on an otherwise brown UI, so it can be
+    // located outright rather than asked for. Verified against every stash capture we
+    // hold - it lands within ~4px of the hand-measured box and reads identically (34/35
+    // on the reference, same as perfect calibration). A saved calibration is the fallback
+    // for the cases it cannot find, never the other way round, because a stale saved box
+    // is exactly what produces silent misreads after a resolution or UI-scale change.
+    let box = calBox || refBox;
+    let boxSource = calBox ? 'calibration' : 'reference';
+    let panelCoverage = null;
+    try {
+      const found = PF.findPanel(buf, W, H);
+      if (found) {
+        box = PF.frameToContent(found);
+        boxSource = 'auto';
+        panelCoverage = +found.coverage.toFixed(3);
+      }
+    } catch (e) { /* fall back to whatever calBox gave us */ }
 
     // 1) which tab? (template correlation, fill/darkness independent)
     const det = TD.detect(buf, W, H, box, TAB_TEMPLATES);
@@ -86,7 +104,7 @@ parentPort.on('message', (msg) => {
       if (raw !== '?') readCount++;
       reads.push({ apiId: s.apiId, count: raw === '?' ? null : parseInt(raw, 10), conf: raw === '?' ? null : conf });
     }
-    parentPort.postMessage({ ok: true, tab, score: det.score, readCount, slotCount: map.STATIC_SLOTS.length, reads });
+    parentPort.postMessage({ ok: true, tab, score: det.score, readCount, slotCount: map.STATIC_SLOTS.length, reads, boxSource, panelCoverage, box });
   } catch (err) {
     parentPort.postMessage({ ok: false, error: String(err && err.message || err) });
   }
