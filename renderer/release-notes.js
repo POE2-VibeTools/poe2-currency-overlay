@@ -6,6 +6,18 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.9',
+    date: '2026-08-09',
+    title: "More Random Fixes from user feedback",
+    notes: [
+      "\"When price checking waystones, the \"waystone drop chance\" property is always hidden. Please include it by default as this has a big sway on value.\"",
+      "Fixed now.",
+      "\"Please make the pop out comparison panel open on the right side if the panel is offscreen/overlay is all the way to the left edge of the screen.\"",
+      "Good feedback. Done.",
+      "The third guy wrote an essay but basically negative search values were not properly inverted. This SHOULD be fixed now but please report any searches that should auto-search with negative values but instead search positive.",
+    ],
+  },
+  {
     version: '2.6.8',
     date: '2026-08-09',
     notes: [

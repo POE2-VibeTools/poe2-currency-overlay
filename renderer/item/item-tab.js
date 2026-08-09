@@ -448,8 +448,18 @@
       // downstream consumer (uniqueMin, lower, the min inputs) works in trade's terms.
       // The bounds are also swapped: negating -12..-6 leaves min=12 > max=6, which made
       // uniqueMin bail its `max > min` guard and fall back to an exact match.
-      if (srcs.some((s) => s.stat && s.stat.translation && s.stat.translation.negate)) {
-        return { value: -value, min: -max, max: -min };
+      // ...but only for the 88 matchers where the item's wording is a DIFFERENT stat
+      // phrased inversely ("Lose # Life when you Block" against a "# Life gained when
+      // you Block" ref). The other 586 are reduced/less spellings of an increased/more
+      // ref, which is GGG's own sign convention: trade indexes "costs 25% reduced
+      // Tribute" as -25 on the increased stat, so the parser's canonical -25 is already
+      // the number trade wants and flipping it searched +25 and matched nothing.
+      const negSrc = srcs.find((s) => s.stat && s.stat.translation && s.stat.translation.negate);
+      if (negSrc) {
+        const matcher = String(negSrc.stat.translation.string || '');
+        const ref = String((negSrc.stat.stat && negSrc.stat.stat.ref) || '');
+        const spelling = /\b(reduced|less)\b/i.test(matcher) && /\b(increased|more)\b/i.test(ref);
+        if (!spelling) return { value: -value, min: -max, max: -min };
       }
       return { value, min, max };
     };
@@ -586,8 +596,8 @@
     // ---- Waystones: the value lives in the header properties, not the mods ----
     // GGG gives these their own filter family (map_filters, "Endgame Filters"),
     // which is why mod-only tools price waystones badly. The four that carry the
-    // price go on; tier pins the bracket; drop chance / revives / gold are listed
-    // but off. Every MOD defaults off - they're the map's danger text, and which
+    // price go on; tier pins the bracket; revives / gold are listed but off.
+    // Every MOD defaults off - they're the map's danger text, and which
     // ones matter is build-specific (Rakiata's wants monster ele res), so they're
     // one click from being part of the search.
     // waystones ONLY - a tablet is also "map.*" but its mods ARE its value
@@ -610,7 +620,10 @@
         parsed.mapMonsterRarity != null ? parsed.mapMonsterRarity : parsed.mapRareMonsters, true);
       mp('map_magic_monsters', t('itemtab.property.monster_effectiveness'),
         parsed.mapEffectiveness != null ? parsed.mapEffectiveness : parsed.mapMagicMonsters, true);
-      mp('map_bonus', t('itemtab.property.waystone_drop_chance'), parsed.mapDropChance, false);
+      // drop chance swings a waystone's price as hard as rarity/pack size, so it is ON
+      // with the rest of the value-carrying properties. It used to default off, which
+      // also buried it in the auto-set-aside group where you could not see it at all.
+      mp('map_bonus', t('itemtab.property.waystone_drop_chance'), parsed.mapDropChance, true);
       mp('map_revives', t('itemtab.property.revives_available'), parsed.mapRevives, false);
       mp('map_gold', t('itemtab.property.waystone_gold'), parsed.mapGold, false);
       for (const m of mods) m.mode = 'off';

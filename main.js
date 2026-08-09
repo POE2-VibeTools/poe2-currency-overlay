@@ -2076,6 +2076,20 @@ function ensurePeekWin() {
 }
 let peekAnchorY = 0;
 let peekPendingShow = false; // defer a fresh peek's reveal until peek-height has sized it (no scrollbar-flash / resize snap)
+// The comparison card sits to the LEFT of the overlay, which has nowhere to go when the
+// overlay is against the left edge of the screen - it used to clamp to x=0 and sit under
+// the overlay. Fall back to the right side, and only clamp inside the work area when
+// neither side fits. Work-area coords, not 0: a left-hand second monitor has negative x.
+const PEEK_W = 360, PEEK_GAP = 10;
+function peekX(b) {
+  const disp = screen.getDisplayMatching(b).workArea;
+  const left = b.x - PEEK_W - PEEK_GAP;
+  if (left >= disp.x) return left;
+  const right = b.x + b.width + PEEK_GAP;
+  if (right + PEEK_W <= disp.x + disp.width) return right;
+  return Math.max(disp.x, Math.min(left, disp.x + disp.width - PEEK_W));
+}
+
 ipcMain.on('item-peek-show', (_e, { html, frac }) => {
   try {
     if (!win) return;
@@ -2088,7 +2102,7 @@ ipcMain.on('item-peek-show', (_e, { html, frac }) => {
     // first open: the page may still be loading and would miss the message
     if (pw.webContents.isLoading()) pw.webContents.once('did-finish-load', send);
     else send();
-    pw.setBounds({ x: Math.max(0, b.x - 360 - 10), y: peekAnchorY, width: 360, height: pw.getBounds().height });
+    pw.setBounds({ x: peekX(b), y: peekAnchorY, width: 360, height: pw.getBounds().height });
     // If it's coming from hidden, DON'T show it at the previous card's height and
     // let the new content overflow (that's the scrollbar-flash + resize snap the
     // user sees). Keep it hidden and let peek-height reveal it fully sized. If it's
