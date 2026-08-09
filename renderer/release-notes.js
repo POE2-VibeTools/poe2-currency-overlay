@@ -16,10 +16,10 @@ window.RELEASE_NOTES = [
       "Sending screenshots was broken for the same reason your tabs werent calcing properly. Now fallbacks to whole game capture and  gives you a confirm screen so you can verify its sending me an actual stash tab.",
       "It shows you every screenshot and asks if it got the stash tab. Say no and it sends the whole game window instead.",
       "Capturing shows a spinner now instead of looking frozen.",
+      "Amber rows in Net Worth should now be visible. They denote rows with known issues.",
       "Price Check:",
       "Quality 20 and Greater Iron Rune toggles are always in Miscellaneous now.",
       "Some mod sliders weren't giving full ranges, should be fixed",
-      "Amber rows in Net Worth should now be visible. They denote rows with known issues.",
     ],
   },
   {
