@@ -121,7 +121,14 @@ function hasGGG(env) {
   return Boolean(env.GGG_CLIENT_ID && env.GGG_CLIENT_SECRET);
 }
 
-const SAMPLE_MAX_BYTES = 1024 * 1024; // a stash panel crop runs ~200-500KB
+// A stash panel crop runs ~200-500KB, but a sample whose panel could NOT be located is
+// sent as the whole game window (that framing is the only thing that can explain the
+// miss) - 2-5MB at 1080p-4K. PNG stays lossless on purpose: JPEG artifacts would land on
+// the exact pixels the digit reader looks at, so a compressed corpus would lie to us.
+// 4K and ultrawide game frames land at 8-14MB, so the ceiling has to clear those: the
+// app decides the framing, the user cannot make the file smaller, and "too large" is an
+// error they have no way to act on.
+const SAMPLE_MAX_BYTES = 24 * 1024 * 1024;
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47];
 // One per readable tab layout: the app reads 12, so a submitter can send all of theirs
 // and no more. Only STORED images count against it - a rejected upload writes nothing,

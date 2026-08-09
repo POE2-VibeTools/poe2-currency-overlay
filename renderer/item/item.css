@@ -267,6 +267,13 @@
 .mod.k-property { background: rgba(255, 255, 255, 0.02); box-shadow: inset 2px 0 0 rgba(168, 162, 148, 0.55); }
 .mod.k-desecrated { background: rgba(143, 212, 79, 0.03); box-shadow: inset 2px 0 0 rgba(143, 212, 79, 0.45); }
 .mod.k-fractured { background: rgba(200, 160, 90, 0.04); box-shadow: inset 2px 0 0 rgba(200, 160, 90, 0.5); }
+/* A desecrated/fractured line that HAS a 1:1 explicit counterpart splits into an
+   EXPLICIT head row (the filter that actually runs, since explicit matches desecrated
+   listings too) plus the narrower scope row folded under it. The head has to keep the
+   EXPLICIT tag to stay honest about what it searches, so it carries the source scope's
+   rail instead - otherwise a desecrated line is indistinguishable from a plain one. */
+.mod.src-desecrated { background: rgba(143, 212, 79, 0.03); box-shadow: inset 2px 0 0 rgba(143, 212, 79, 0.45); }
+.mod.src-fractured { background: rgba(200, 160, 90, 0.04); box-shadow: inset 2px 0 0 rgba(200, 160, 90, 0.5); }
 .kind-tag {
   font: 700 8.5px "Segoe UI", sans-serif;
   letter-spacing: 0.05em;
@@ -738,11 +745,16 @@
 .scope-chip:hover { color: #c8c2b2; }
 .scope-chip.on { color: #1a1410; background: linear-gradient(180deg, #e0a050, #c07828); border-color: transparent; font-weight: 700; }
 /* live per-item search assumptions (q20 / filled runes), inside Miscellaneous */
-.assume-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(214, 126, 44, 0.12); }
-.assume-lab { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #8a8372; }
-.assume-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #9a917f; padding: 2px 8px; border: 1px solid rgba(122, 116, 102, 0.3); border-radius: 999px; cursor: pointer; user-select: none; }
-.assume-chip.on { color: #e8c88a; border-color: rgba(214, 126, 44, 0.5); background: rgba(214, 126, 44, 0.1); }
-.assume-chip input { accent-color: #d67e2c; margin: 0; }
+.assume-row { margin: 0 9px 8px; padding-top: 7px; border-top: 1px solid rgba(214, 126, 44, 0.12); }
+.assume-lab { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #7a7466; margin-bottom: 3px; }
+/* same two columns and row shape as .misc-grid / .misc-row above it */
+.assume-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; }
+.assume-item { display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  font-size: 10.5px; color: #8a8372; cursor: pointer; user-select: none; }
+.assume-item:hover { color: #c8c2b2; }
+.assume-item.on { color: #f0d9a8; }
+.assume-item input { accent-color: #d67e2c; margin: 0; }
 /* quick currency price card (fragments/soul cores/runes/alloys/... exchange value) */
 .cur-card { margin: 10px; padding: 14px 16px; border: 1px solid rgba(214, 126, 44, 0.28); border-radius: 8px; background: rgba(30, 24, 16, 0.45); }
 .cur-head { display: flex; align-items: center; gap: 10px; }
@@ -824,3 +836,7 @@
 .unid-clear { margin-top: 7px; background: none; border: none; padding: 0; cursor: pointer;
   color: var(--tx-faint); font-size: 11px; text-decoration: underline dotted; }
 .unid-clear:hover { color: var(--tx-mid); }
+
+/* item level on a result row - dim, it is context not a headline */
+.listing .li-ilvl { font-size: 9.5px; color: var(--tx-faint); font-variant-numeric: tabular-nums;
+  white-space: nowrap; flex-shrink: 0; }

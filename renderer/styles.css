@@ -1656,16 +1656,28 @@ footer {
   border: 1px solid var(--bd-16); border-radius: 6px; padding: 7px 12px; font-size: 12px; cursor: pointer; }
 .nw-exp-btn:hover { background: rgba(216,162,74,.16); border-color: var(--am-60, #d8a24a); }
 .nw-sample-modal { width: 420px; }
-.nw-sample-strip { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-.nw-sample-thumb { position: relative; width: 110px; border: 1px solid var(--bd-16); border-radius: 6px;
-  overflow: hidden; background: rgba(0,0,0,.25); }
-.nw-sample-thumb img { display: block; width: 100%; height: 84px; object-fit: cover; object-position: top left; }
-.nw-sample-cap { font-size: 10px; color: var(--tx-faint); padding: 3px 5px; text-align: center;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nw-sample-drop { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; line-height: 1;
-  border-radius: 4px; border: 1px solid var(--bd-16); background: rgba(0,0,0,.6); color: var(--tx-mid);
-  font-size: 11px; cursor: pointer; padding: 0; }
-.nw-sample-drop:hover { color: #e08b8b; border-color: #e08b8b; }
+/* one row per shot: thumb on the left, the question and its answer on the right. The
+   question used to live inside a 110px thumb caption and truncated to "Did we capture
+   the s..." */
+.nw-sample-list { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.nw-sample-item { display: flex; align-items: stretch; gap: 9px; padding: 6px;
+  border: 1px solid var(--bd-09); border-radius: 6px; position: relative; }
+.nw-sample-item.nw-sample-unanswered { border-color: rgba(214, 126, 44, 0.45); }
+.nw-sample-item img { width: 96px; height: 72px; object-fit: cover; object-position: top left;
+  border-radius: 4px; cursor: zoom-in; flex: none; }
+.nw-sample-body { flex: 1; min-width: 0; display: flex; flex-direction: column;
+  justify-content: center; gap: 6px; padding-right: 20px; }
+.nw-sample-q { font-size: 12px; color: var(--tx-body); line-height: 1.3; }
+.nw-sample-q.nw-sample-done { color: var(--tx-dim); }
+.nw-sample-ask { display: flex; gap: 6px; }
+.nw-sample-ans { min-width: 58px; padding: 4px 10px; font-size: 12px; cursor: pointer;
+  background: var(--s-band); color: var(--tx-body);
+  border: 1px solid var(--bd-16); border-radius: 5px; }
+.nw-sample-ans:hover { border-color: var(--am); color: var(--tx-hi); }
+.nw-sample-yes { border-color: rgba(214, 126, 44, 0.5); color: #e8c88a; }
+.nw-sample-blocked { font-size: 11px; color: var(--tx-faint); text-align: center;
+  margin: -2px 0 6px; }
+.nw-modal-off { opacity: 0.45; cursor: not-allowed; }
 .nw-sample-note { font-size: 11px; color: var(--tx-faint); line-height: 1.4; margin-bottom: 8px; }
 .nw-empty-hint { color: var(--tx-faint); }
 
@@ -1686,10 +1698,6 @@ footer {
 /* rows the reader is MEASURED to struggle with (renderer/stash/currency-tab-map.js
    SLOT_RELIABILITY). Amber = wrong on some setups, red = wrong on every one tested.
    Tinted, not shouty: these are still probably-usable numbers, just ones to glance at. */
-.nw-line-rel-mixed { background: linear-gradient(90deg, rgba(216,162,74,.10), transparent 60
-/* Rows the reader is MEASURED to struggle with (currency-tab-map.js SLOT_RELIABILITY).
-   Amber = wrong on some setups, red = wrong on every one tested. Tinted rather than
-   shouty: these are still usable numbers, just the ones worth a glance. */
 .nw-line-rel-mixed { background: linear-gradient(90deg, rgba(216,162,74,.10), transparent 60%);
   box-shadow: inset 2px 0 0 rgba(216,162,74,.55); }
 .nw-line-rel-low { background: linear-gradient(90deg, rgba(224,85,74,.10), transparent 60%);
@@ -1705,14 +1713,27 @@ footer {
 .nw-legend-sw-mixed { background: rgba(216,162,74,.55); box-shadow: inset 0 0 0 1px rgba(216,162,74,.8); }
 .nw-legend-sw-low { background: rgba(224,85,74,.55); box-shadow: inset 0 0 0 1px rgba(224,85,74,.85); }
 
-/* Corner resize grip. The window is frameless, so there is no OS border to drag and the
-   overlay could not be resized at all - scaling the UI just made things bigger inside the
-   same square. no-drag is essential or the title-bar drag region swallows the gesture. */
-#resize-grip { position: fixed; right: 0; bottom: 0; width: 16px; height: 16px; z-index: 90;
-  cursor: nwse-resize; -webkit-app-region: no-drag; opacity: .35; transition: opacity .12s; }
-#resize-grip::after { content: ''; position: absolute; right: 3px; bottom: 3px;
-  width: 9px; height: 9px;
+/* Corner resize grip. The window is frameless, so there is no OS border to drag.
+   It MUST have a real background: the window is transparent, and several Linux
+   compositors hit-test on the alpha channel, so a box whose pixels are transparent
+   never receives the pointer - reported as "nothing to grab, cursor doesn't change"
+   while it worked fine on Windows. Bigger target too; 16px was a tiny thing to find. */
+#resize-grip { position: fixed; right: 0; bottom: 0; width: 22px; height: 22px; z-index: 90;
+  cursor: nwse-resize; -webkit-app-region: no-drag;
+  background: rgba(40, 36, 30, 0.92);
+  border-top-left-radius: 6px;
+  border-top: 1px solid var(--bd-12); border-left: 1px solid var(--bd-12);
+  transition: background .12s; }
+#resize-grip::after { content: ''; position: absolute; right: 4px; bottom: 4px;
+  width: 11px; height: 11px; pointer-events: none;
   background:
-    linear-gradient(135deg, transparent 45%, var(--tx-faint) 45%, var(--tx-faint) 55%, transparent 55%),
-    linear-gradient(135deg, transparent 70%, var(--tx-faint) 70%, var(--tx-faint) 80%, transparent 80%); }
-#resize-grip:hover { opacity: .85; }
+    linear-gradient(135deg, transparent 42%, var(--tx-dim) 42%, var(--tx-dim) 54%, transparent 54%),
+    linear-gradient(135deg, transparent 68%, var(--tx-dim) 68%, var(--tx-dim) 80%, transparent 80%); }
+#resize-grip:hover { background: rgba(216,162,74,.22); }
+
+/* stash-sample bucket view: the shot list is the user's only chance to see what leaves
+   their machine, so thumbs are clickable and each one says what it actually is */
+.nw-sample-req { font-size: 10.5px; color: var(--tx-faint); line-height: 1.45;
+  margin: 4px 0 2px; padding-top: 8px; border-top: 1px solid var(--bd-09); }
+.nw-sample-busy { display: flex; align-items: center; padding: 9px 11px; margin-bottom: 7px;
+  border: 1px solid var(--bd-09); border-radius: 6px; }

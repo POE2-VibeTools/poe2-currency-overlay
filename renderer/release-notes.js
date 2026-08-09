@@ -6,6 +6,23 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.7',
+    date: '2026-08-09',
+    notes: [
+      "General:",
+      "Wombgifts should now price accurately.",
+      "iLevels for all items should now display in results row, and as a tooltip compare line. iLevel was just being hidden for no reason for basically all items. If you guys notice items that should display iLevels and don't, submit a bug report.",
+      "Net Worth:",
+      "Sending screenshots was broken for the same reason your tabs werent calcing properly. Now fallbacks to whole game capture and  gives you a confirm screen so you can verify its sending me an actual stash tab.",
+      "It shows you every screenshot and asks if it got the stash tab. Say no and it sends the whole game window instead.",
+      "Capturing shows a spinner now instead of looking frozen.",
+      "Price Check:",
+      "Quality 20 and Greater Iron Rune toggles are always in Miscellaneous now.",
+      "Some mod sliders weren't giving full ranges, should be fixed",
+      "Amber rows in Net Worth should now be visible. They denote rows with known issues.",
+    ],
+  },
+  {
     version: '2.6.6',
     date: '2026-08-07',
     notes: [

@@ -104,7 +104,8 @@
   function modRow(mod, i, h, opts, fold) {
     const kind = mod.kind || 'explicit';
     const kindLabel = KIND_LABEL[kind] || kind;
-    const row = el('div', 'mod' + (mod.mode === 'off' ? ' off' : '') + (kind !== 'explicit' ? ` k-${esc(kind)}` : ''));
+    const row = el('div', 'mod' + (mod.mode === 'off' ? ' off' : '') + (kind !== 'explicit' ? ` k-${esc(kind)}` : '')
+      + (mod.scopeSrc ? ` src-${esc(mod.scopeSrc)}` : ''));
     if (!mod.id) {
       // no trade filter exists for this line (in this scope) - visibly unsearchable
       const na = el('span', 'mode-pill off', t('item.mods.na_label'));
@@ -595,24 +596,28 @@
         // page (recompute + re-search on toggle), not buried in Settings
         if (h.onAssume && state.item && (state.item.q20able || state.item.runeFillable)) {
           const arow = el('div', 'assume-row');
-          arow.appendChild(el('span', 'assume-lab', t('item.misc.assume_label')));
+          arow.appendChild(el('div', 'assume-lab', t('item.misc.assume_label')));
+          const agrid = el('div', 'assume-grid');
           // Exceptional Normal bases use the per-item override (q20 ON, runes OFF),
           // leaving the global assume pref untouched - so the chips read from it too.
           const asm = (state.item && state.item.exceptionalBase)
             ? (state.excAssume || { q20: true, fillRunes: false })
             : (state.assume || {});
+          // label left, control right, two columns - the same row grammar as the
+          // filter grid above, so the strip reads as part of the panel
           const mk = (key, label, on, title) => {
-            const lab = el('label', 'assume-chip' + (on ? ' on' : ''));
+            const lab = el('label', 'assume-item' + (on ? ' on' : ''));
             lab.title = title;
             const cb = el('input'); cb.type = 'checkbox'; cb.checked = on;
             cb.onchange = () => h.onAssume(key, cb.checked);
-            lab.appendChild(cb); lab.appendChild(el('span', null, esc(label)));
+            lab.appendChild(el('span', null, esc(label))); lab.appendChild(cb);
             return lab;
           };
-          if (state.item.q20able) arow.appendChild(mk('q20', t('item.misc.assume_q20_label'), !!asm.q20,
+          if (state.item.q20able) agrid.appendChild(mk('q20', t('item.misc.assume_q20_label'), !!asm.q20,
             t('item.misc.assume_q20_tooltip')));
-          if (state.item.runeFillable) arow.appendChild(mk('fillRunes', t('item.misc.assume_fillrunes_label'), !!asm.fillRunes,
+          if (state.item.runeFillable) agrid.appendChild(mk('fillRunes', t('item.misc.assume_fillrunes_label'), !!asm.fillRunes,
             t('item.misc.assume_fillrunes_tooltip')));
+          arow.appendChild(agrid);
           acc.appendChild(arow);
         }
       }
@@ -731,7 +736,11 @@
     // and friends are undefined and cmpRow drops the row silently. That is exactly how
     // Quality/ES/Armour/Evasion/Ward disappeared from this panel in 2.6.0: the i18n
     // rename took the three `tot.*` rows below and missed these five.
-    const cmp = cmpRow(`${t('item.listings.cmp_quality_label')}${tot.qualKind ? ` (${esc(tot.qualKind)})` : ''}`, tot.qual, t('item.listings.cmp_quality_tooltip'))
+    // Item level leads the comparison: it gates which mod tiers the item could roll, so
+    // a comp several levels below yours is not really comparable however close its stats
+    // look. It was missing from this panel entirely.
+    const cmp = cmpRow(t('item.listings.cmp_ilvl_label'), tot.ilvl, t('item.listings.cmp_ilvl_tooltip'))
+      + cmpRow(`${t('item.listings.cmp_quality_label')}${tot.qualKind ? ` (${esc(tot.qualKind)})` : ''}`, tot.qual, t('item.listings.cmp_quality_tooltip'))
       + cmpRow(t('item.listings.cmp_es_label'), tot.es, t('item.listings.cmp_es_tooltip'))
       + cmpRow(t('item.listings.cmp_armour_label'), tot.ar, t('item.listings.cmp_armour_tooltip'))
       + cmpRow(t('item.listings.cmp_evasion_label'), tot.ev, t('item.listings.cmp_evasion_tooltip'))
@@ -790,6 +799,14 @@
     const center = el('div', 'li-center');
     const nameLine = el('div', 'li-nameline');
     nameLine.appendChild(el('span', 'li-name', esc(l.name || l.base || '?')));
+    // Item level was not shown on ANY result, gear included, even though it gates which
+    // mod tiers an item can roll and is a real part of what people are paying for. On a
+    // Wombgift it IS the price. Shown on every row that has one.
+    if (l.ilvl != null) {
+      const lv = el('span', 'li-ilvl', 'i' + l.ilvl);
+      lv.title = t('item.listings.ilvl_title', { level: l.ilvl });
+      nameLine.appendChild(lv);
+    }
     // at-a-glance status beside the name (corrupted / fractured / desecrated / ...)
     if (l.flags && l.flags.length) {
       for (const f of l.flags) {

@@ -718,6 +718,10 @@
       const explicitRow = {
         ...m, kind: 'explicit', id: explicitIds[0], altIds: explicitIds.slice(1),
         foldGroup: `scope-${i}`, foldHead: true,
+        // the head reads EXPLICIT because that is the filter it runs, but the line on
+        // the item is desecrated/fractured. Without this the row looks like an ordinary
+        // explicit and the only clue is expanding the fold.
+        scopeSrc: m.kind,
       };
       const ownRow = {
         ...m, kind: m.kind, id: ownIds[0], altIds: ownIds.slice(1),
@@ -929,7 +933,16 @@
       // return the wrong tablet type entirely. With the type pinned, uses
       // remaining only has to carry the count - the pseudo is then as safe as the
       // type-specific implicit.
-      type: (categoryId === 'map.tablet' || parsed.isUnidentified) ? baseType : (isGem ? gemName : null),
+      // An item with NO searchable mods has nothing else to identify it, so the base type
+      // IS the search. Wombgifts are the case that exposed this: their category
+      // (BrequelFruit) has no trade equivalent, so categoryId was null, type was null,
+      // name was null and the whole query collapsed to "any Currency, cheapest first" -
+      // which is why every one of them came back as 1 transmute.
+      type: (categoryId === 'map.tablet' || parsed.isUnidentified || !allMods.some((m) => m.id))
+        ? baseType : (isGem ? gemName : null),
+      // Wombgift value is driven by its level, and the levels price very differently, so
+      // the search pins it exactly rather than using it as a floor.
+      exactLevel: parsed.category === 'BrequelFruit',
       // unidentified: drives misc_filters.identified=false, and the tier when the
       // item carries one (EE2 only searches the tier at 5+, where it starts mattering)
       isUnidentified: !!parsed.isUnidentified,
@@ -986,8 +999,20 @@
       currencyIcon: (parsed.info && parsed.info.icon) || null,
       // whether the q20 / filled-rune assumptions even apply to this item, so the
       // live toggles only show when they can change the numbers
-      runeFillable: emptySockets > 0 && !CASTER_NO_IRON,
-      q20able: !!(window.EE2.itemIsModifiable(parsed) && (parsed.quality || 0) < 20),
+      // shown whenever the item CLASS can take runes - not only when sockets
+      // happen to be empty right now. Toggling it on a fully-socketed item is a
+      // no-op, which is fine; hiding it makes the setting unreachable.
+      runeFillable: !!parsed.augmentSockets && !CASTER_NO_IRON,
+      // itemIsModifiable() only asks whether the item has a `craftable` block, and
+      // CURRENCY HAS ONE (Exalted Orb is craftable.category "Currency", a Wombgift is
+      // "BrequelFruit"). So every currency looked quality-upgradable and got an
+      // "assume quality 20" checkbox it can never have. Quality is a gear and gem
+      // concept, so require a real equipment/gem trade category as well - currency
+      // either maps to "currency*" or, like Wombgifts, to nothing at all.
+      // Deliberately NOT gated on quality < 20: an already-20% item makes the
+      // toggle a no-op, not a reason to hide the control.
+      q20able: !!(window.EE2.itemIsModifiable(parsed)
+        && categoryId && !/^currency/.test(categoryId) && !/^map/.test(categoryId)),
       // Exceptional Normal base: drives the OFF-by-default assumptions + corrupted=No
       exceptionalBase: excBase,
     };
@@ -1008,6 +1033,27 @@
       const n = sp && /(\d+)/.exec(sp.text);
       m.sockets = n ? Number(n[1]) : 0;
     }
+    // Saved records carry whatever q20able/runeFillable meant when they were
+    // stored, and those used to be gated on the item's CURRENT quality / empty
+    // sockets - so a restored 20%-quality or fully-runed item came back with the
+    // assume chips switched off for good. Both are class facts, so re-derive them
+    // from the model every restore instead of trusting the stored booleans.
+    // Same story for the scope-split rail: the split itself is saved (foldGroup +
+    // foldHead), but a record written before scopeSrc existed has a head row with no
+    // idea it came off a desecrated line, so restored items showed a bare EXPLICIT row.
+    // Re-derive it from the fold members instead of trusting the stored field.
+    const heads = (m.mods || []).filter((x) => x.foldGroup && x.foldHead);
+    for (const head of heads) {
+      if (head.scopeSrc) continue;
+      const member = (m.mods || []).find((x) => x.foldGroup === head.foldGroup && x.foldHead === false
+        && (x.kind === 'desecrated' || x.kind === 'fractured'));
+      if (member) head.scopeSrc = member.kind;
+    }
+    const cat = m.category || '';
+    const gear = !!cat && !/^currency/.test(cat) && !/^map/.test(cat);
+    m.q20able = gear;
+    m.runeFillable = gear && (m.sockets > 0 || (m.mods || []).some((x) => x.id === 'prop.rune_sockets'))
+      && cat !== 'weapon.wand' && cat !== 'weapon.staff' && cat !== 'weapon.sceptre';
   }
 
   const profileOf = (mods) => mods.filter((m) => m.damage && m.form).map((m) => ({ form: m.form, element: m.damage }));
@@ -1223,6 +1269,12 @@
     const myProps = (myIds && myIds.props) || {};
     const dcmp = (k) => (ext[k] != null ? cmp(myProps[k] != null ? myProps[k] : null, ext[k]) : null);
     const totals = {
+      // Item level, compared like every other dimension. It has to be computed HERE, not
+      // in the peek card: peekCardHtml(l) only receives the listing, so state.item is not
+      // in scope there. Same trap that erased five comparison rows in 2.6.0.
+      ilvl: (item.ilvl != null && state.item && state.item.itemLevel != null)
+        ? cmp(state.item.itemLevel, item.ilvl)
+        : (item.ilvl != null ? { val: item.ilvl, delta: null } : null),
       // quality as a compared number (their +4% vs my +20% -> -16); catalyst
       // kind (jewellery) travels alongside for the row label
       qual: (() => {
@@ -1262,6 +1314,9 @@
       quality,
       sockets: runeSockets(item) || 0,
       charm: charmLasts || charmConsumes ? { lasts: charmLasts, consumes: charmConsumes } : null,
+      // kept so the row can show it when ilvl IS the price (Wombgifts): without it you
+      // cannot tell whether the comps you are being priced against are your level
+      ilvl: item.ilvl != null ? item.ilvl : null,
       indexed: (l.listing && l.listing.indexed) || null,
       whisper: (l.listing && l.listing.whisper) || null,
       // item-level status the game shows as banners. GGG only sends each field
@@ -1361,8 +1416,13 @@
       } else {
         const table = !isUnique && !m.prop && m.id && modRanges && modRanges[cat + '|' + m.id.split('.').pop()];
         if (table) {
-          lo = Math.min(table[0], m.value);
-          hi = Math.max(table[1], m.value);
+          // the mod's OWN printed range is ground truth for what it can roll, so it has
+          // to be inside the track even when the table disagrees. The table aggregates
+          // the tiers we know about, and a low tier can sit under its floor - a 10-15
+          // crafted Spirit roll against a [36,60] table used to clamp the slider to the
+          // roll itself, so you could not drag below the value you already had.
+          lo = Math.min(table[0], m.value, m.min != null ? m.min : Infinity);
+          hi = Math.max(table[1], m.value, m.max != null ? m.max : -Infinity);
         } else {
           lo = Math.min(m.min != null ? m.min : m.value, rnd(m.value * 0.55));
           hi = Math.max(m.max != null ? m.max : m.value, rnd(m.value * 1.45));
@@ -1492,7 +1552,9 @@
     if (state._ilvlFor !== state.item) {
       state._ilvlFor = state.item;
       state.ilvlMin = state.item && state.item.itemLevel != null ? state.item.itemLevel : null;
-      state.ilvlMax = null;
+      // exact-level items (Wombgifts) pin BOTH ends; everything else keeps ilvl as a floor
+      state.ilvlMax = (state.item && state.item.exactLevel && state.item.itemLevel != null)
+        ? state.item.itemLevel : null;
       state.qualMin = state.item && state.item.quality > 0 ? state.item.quality : null;
       state.qualMax = null;
       state.sockMin = state.item && state.item.sockets > 0 ? state.item.sockets : null;

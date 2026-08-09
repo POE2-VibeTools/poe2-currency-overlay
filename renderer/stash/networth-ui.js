@@ -327,15 +327,41 @@
     if (s.error) box.appendChild(el('div', 'nw-notice nw-error', esc(s.error)));
 
     if (s.shots.length) {
-      const strip = el('div', 'nw-sample-strip');
+      const strip = el('div', 'nw-sample-list');
       s.shots.forEach((shot, i) => {
-        const cell = el('div', 'nw-sample-thumb');
+        const cell = el('div', 'nw-sample-item' + (shot.confirmed ? '' : ' nw-sample-unanswered'));
         const im = document.createElement('img');
-        im.src = shot.dataUrl; im.alt = '';
+        im.src = shot.scope === 'panel' ? (shot.panelDataUrl || shot.dataUrl) : shot.fullDataUrl;
+        im.alt = '';
+        im.title = t('networth.sample.enlarge');
+        im.onclick = () => { window.api.stashSamplePreview(i); }; // opens its own window
         cell.appendChild(im);
-        const cap = el('div', 'nw-sample-cap',
-          esc(shot.meta && shot.meta.read && shot.meta.read.tab ? (TAB_LABEL[shot.meta.read.tab] || shot.meta.read.tab) : t('networth.sample.unknown_tab')));
-        cell.appendChild(cap);
+        // The app cannot tell whether it actually caught the panel - a wrong box still
+        // reads as a plausible tab. The person looking at the picture can, so just ask.
+        // The app cannot tell whether it actually caught the panel - a wrong box still
+        // reads as a plausible tab. The person looking at the picture can, so just ask,
+        // and nothing sends until every shot has an answer.
+        const body = el('div', 'nw-sample-body');
+        if (!shot.confirmed) {
+          body.appendChild(el('div', 'nw-sample-q', t('networth.sample.confirm_q')));
+          const row = el('div', 'nw-sample-ask');
+          const yes = el('button', 'nw-sample-ans nw-sample-yes', t('networth.sample.confirm_yes'));
+          yes.onclick = () => { shot.confirmed = true; render(); };
+          const no = el('button', 'nw-sample-ans', t('networth.sample.confirm_no'));
+          no.onclick = async () => {
+            const r = await window.api.stashSampleScope(i, 'window');
+            if (r && r.ok) { shot.scope = r.scope; shot.confirmed = true; render(); }
+          };
+          row.appendChild(yes); row.appendChild(no);
+          body.appendChild(row);
+        } else {
+          body.appendChild(el('div', 'nw-sample-q nw-sample-done', esc(shot.scope === 'window'
+            ? t('networth.sample.using_window')
+            : (shot.meta && shot.meta.read && shot.meta.read.tab
+              ? (TAB_LABEL[shot.meta.read.tab] || shot.meta.read.tab)
+              : t('networth.sample.unknown_tab')))));
+        }
+        cell.appendChild(body);
         const x = el('button', 'nw-sample-drop', '✕');
         x.title = t('networth.sample.remove');
         x.onclick = async () => {
@@ -349,23 +375,45 @@
       box.appendChild(el('div', 'nw-sample-note', t('networth.sample.preview_note')));
     }
 
-    if (s.shots.length < SAMPLE_MAX) {
+    // The grab hides the overlay, screenshots the game and runs the whole reader before
+    // it returns, which is seconds on a big screen. Without a busy state the button just
+    // sits there and the app reads as hung.
+    if (s.capturing) {
+      const busy = el('div', 'nw-sample-busy');
+      busy.appendChild(el('span', 'nw-spin'));
+      busy.appendChild(el('span', 'nw-busy-lab', t('networth.sample.capturing')));
+      box.appendChild(busy);
+    } else if (s.shots.length < SAMPLE_MAX) {
       const cap = el('button', 'nw-modal-opt', s.shots.length === 0
         ? t('networth.sample.capture_first') : t('networth.sample.capture_more'));
       cap.onclick = async () => {
         s.error = null; s.capturing = true; render();
         const r = await window.api.stashSampleCapture();
         s.capturing = false;
-        if (!r || !r.ok) s.error = t('networth.sample.capture_failed', { error: esc((r && r.error) || '?') });
-        else s.shots.push({ dataUrl: r.dataUrl, meta: r.meta });
+        if (!r || !r.ok) {
+          const code = (r && r.error) || '?';
+          s.error = code === 'game-window-not-found' ? t('networth.sample.capture_no_game')
+            : code === 'game-window-black' ? t('networth.sample.capture_black')
+              : t('networth.sample.capture_failed', { error: esc(code) });
+        } else s.shots.push({
+          dataUrl: r.dataUrl, fullDataUrl: r.fullDataUrl, panelDataUrl: r.panelDataUrl,
+          scope: r.scope, meta: r.meta,
+        });
         render();
       };
       box.appendChild(cap);
     }
 
     if (s.shots.length) {
-      const send = el('button', 'nw-modal-opt nw-modal-new', tn('networth.sample.send', s.shots.length, { count: s.shots.length }));
+      // a shot nobody has vouched for is exactly the sample that poisons the corpus,
+      // so it cannot leave until it has an answer
+      const unanswered = s.shots.filter((sh) => !sh.confirmed).length;
+      const send = el('button', 'nw-modal-opt nw-modal-new' + (unanswered ? ' nw-modal-off' : ''),
+        tn('networth.sample.send', s.shots.length, { count: s.shots.length }));
+      send.disabled = unanswered > 0;
+      if (unanswered) send.title = t('networth.sample.answer_first');
       send.onclick = async () => {
+        if (unanswered) return;
         s.sending = true; render();
         const r = await window.api.stashSampleSend({ note: '' });
         s.sending = false;
@@ -374,7 +422,14 @@
         render();
       };
       box.appendChild(send);
+      if (unanswered) box.appendChild(el('div', 'nw-sample-blocked', t('networth.sample.answer_first')));
     }
+
+    // Which tabs the reader can actually score. Reference, not the next action, so it
+    // sits under the button as a footnote instead of a second paragraph fighting the
+    // step line for the top of a small modal.
+    box.appendChild(el('div', 'nw-sample-req',
+      t('networth.sample.tabs_required', { tabs: esc(Object.values(TAB_LABEL).join(', ')) })));
 
     const cancel = el('button', 'nw-modal-cancel', t('networth.modal.cancel'));
     cancel.onclick = async () => { await window.api.stashSampleReset(); state.sample = null; render(); };

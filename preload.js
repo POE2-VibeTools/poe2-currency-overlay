@@ -49,6 +49,8 @@ contextBridge.exposeInMainWorld('api', {
   setStashHotkey: (accelerator) => ipcRenderer.invoke('set-stash-hotkey', accelerator),
   stashSampleCapture: () => ipcRenderer.invoke('stash-sample-capture'),
   stashSampleDrop: (i) => ipcRenderer.invoke('stash-sample-drop', i),
+  stashSampleScope: (i, scope) => ipcRenderer.invoke('stash-sample-scope', i, scope),
+  stashSamplePreview: (i) => ipcRenderer.invoke('stash-sample-preview', i),
   stashSampleReset: () => ipcRenderer.invoke('stash-sample-reset'),
   stashSampleSend: (payload) => ipcRenderer.invoke('stash-sample-send', payload),
   resizeWindowBy: (dx, dy) => ipcRenderer.send('resize-window-by', { dx, dy }),

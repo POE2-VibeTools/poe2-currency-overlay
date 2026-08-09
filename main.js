@@ -1614,8 +1614,35 @@ function calBoxToFrame(c) {
 const SAMPLE_ENDPOINT = 'https://poe2-overlay-api.dbatchell.workers.dev/v1/stash-sample';
 let sampleShots = []; // { png:Buffer, meta:Object } - held in main until the user sends
 
-// Crop the stash PANEL out of a full-screen grab, and read it, so the sample arrives
-// with what our reader made of it. Returns a preview data URL, never auto-sends.
+// Capture the PoE2 CLIENT WINDOW only - never the desktop, never another app. Windows
+// hands back a black frame for exclusive-fullscreen games, so the caller checks.
+async function grabGameWindow(capW, capH) {
+  const wanted = [config.gameWindowMatch, 'Path of Exile 2', 'Path of Exile'].filter(Boolean);
+  const sources = await desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width: capW, height: capH } });
+  let src = null;
+  for (const title of wanted) { src = sources.find((s) => s.name === title); if (src) break; }
+  if (!src) src = sources.find((s) => /path of exile/i.test(s.name || ''));
+  if (!src || src.thumbnail.isEmpty()) return null;
+  const size = src.thumbnail.getSize();
+  if (!size.width || !size.height) return null;
+  return { img: src.thumbnail, bitmap: src.thumbnail.toBitmap(), W: size.width, H: size.height, name: src.name };
+}
+
+// Exclusive fullscreen yields an all-black window grab. Sparse stride (prime, so it
+// can't line up with any regular pattern in the frame) - we only need "is anything lit".
+function frameLooksBlank(bitmap) {
+  let lit = 0, n = 0;
+  for (let i = 0; i + 2 < bitmap.length; i += 4 * 997) {
+    n++;
+    if (bitmap[i] > 12 || bitmap[i + 1] > 12 || bitmap[i + 2] > 12) lit++;
+  }
+  return n > 0 && lit / n < 0.01;
+}
+
+// Grab the game window, read it, and keep BOTH framings: the panel crop and the whole
+// window. Which one is sent depends on whether the reader has positive evidence it
+// actually located the panel - see `evidence` below - and the user can override it in
+// the preview. Returns preview data URLs, never auto-sends.
 async function captureStashSample() {
   const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
   try {
@@ -1624,44 +1651,66 @@ async function captureStashSample() {
     const capW = Math.round(disp.size.width * disp.scaleFactor);
     const capH = Math.round(disp.size.height * disp.scaleFactor);
     if (wasVisible) { win.setOpacity(0); if (process.platform !== 'win32') win.hide(); await new Promise((r) => setTimeout(r, 70)); }
-    const shot = await grabScreen(capW, capH, false);
+    const shot = await grabGameWindow(capW, capH);
     if (wasVisible) { win.setOpacity(1); if (process.platform !== 'win32') win.showInactive(); }
-    if (!shot) return { ok: false, error: 'no screen source' };
-
-    const calBox = config.stashCalibration
-      || (() => { const s = capW / 1920; return frameToCalBox({ x: FRAME_BOX.x * s, y: FRAME_BOX.y * s, w: FRAME_BOX.w * s, h: FRAME_BOX.h * s }); })();
-    const frame = calBoxToFrame(calBox);
-    const full = nativeImage.createFromBitmap(Buffer.from(shot.bitmap), { width: shot.W, height: shot.H });
-    const panel = full.crop({
-      x: Math.max(0, frame.x), y: Math.max(0, frame.y),
-      width: Math.min(frame.w, shot.W - Math.max(0, frame.x)),
-      height: Math.min(frame.h, shot.H - Math.max(0, frame.y)),
-    });
-    const png = panel.toPNG();
+    if (!shot) return { ok: false, error: 'game-window-not-found' };
+    if (frameLooksBlank(shot.bitmap)) return { ok: false, error: 'game-window-black' };
 
     // what our reader currently makes of it - the single most useful field in the sample
-    let read = null;
+    let read = null, foundBox = null;
     try {
       const r = await runReaderWorker(Buffer.from(shot.bitmap), shot.W, shot.H, null);
       if (r && r.ok) {
         read = {
           tab: r.tab || null, score: r.score != null ? +r.score.toFixed(3) : null,
           mismatch: !!r.mismatch, readCount: r.readCount, slotCount: r.slotCount,
+          boxSource: r.boxSource || null, panelCoverage: r.panelCoverage != null ? r.panelCoverage : null,
+          autoFound: !!r.autoFound, box: r.box || null,
           reads: (r.reads || []).map((x) => ({ id: x.apiId, n: x.count, c: x.conf != null ? +x.conf.toFixed(2) : null })),
         };
+        if (r.box) foundBox = r.box;
       }
     } catch { /* diagnostics are a bonus; the image is the point */ }
+
+    // Always crop to wherever we think the panel is - detected box first, then the saved
+    // calibration, then the scaled reference. Whether it actually caught the panel is a
+    // question for the person looking at it, not something to infer from scores here.
+    const fallbackBox = config.stashCalibration
+      || (() => { const s = shot.W / 1920; return { x: REF_BOX.x * s, y: REF_BOX.y * s, w: REF_BOX.w * s, h: REF_BOX.h * s }; })();
+    const boxN = foundBox || fallbackBox;
+    const full = nativeImage.createFromBitmap(Buffer.from(shot.bitmap), { width: shot.W, height: shot.H });
+    // a little margin so the panel's own border is in frame - that border is what the
+    // finder keys on, so a sample that cuts it off can't explain a detection miss
+    const M = 14;
+    const cx = Math.max(0, Math.round(boxN.x) - M), cy = Math.max(0, Math.round(boxN.y) - M);
+    const panel = full.crop({
+      x: cx, y: cy,
+      width: Math.min(Math.round(boxN.w) + M * 2, shot.W - cx),
+      height: Math.min(Math.round(boxN.h) + M * 2, shot.H - cy),
+    });
 
     const meta = {
       appVersion: app.getVersion(), platform: process.platform,
       screen: { w: capW, h: capH, scaleFactor: disp.scaleFactor },
+      window: { w: shot.W, h: shot.H, name: shot.name },
       calibrated: !!config.stashCalibration,
-      calBox, panelScale: +(calBox.h / REF_BOX.h).toFixed(4),
+      calBox: config.stashCalibration || null,
       read,
     };
-    if (png.length > 1024 * 1024) return { ok: false, error: 'panel image too large' };
-    sampleShots.push({ png, meta });
-    return { ok: true, index: sampleShots.length - 1, dataUrl: panel.toDataURL(), meta };
+    const shotRec = {
+      fullPng: full.toPNG(),
+      panelPng: panel.toPNG(),
+      scope: 'panel', // the crop is always the default; the user swaps it if we missed
+      meta,
+    };
+    sampleShots.push(shotRec);
+    // previews are downscaled - the upload keeps full resolution, but a 4K window as a
+    // data URL over IPC is tens of megabytes of string for no benefit
+    const prev = (im) => im.resize({ width: Math.min(900, im.getSize().width), quality: 'good' }).toDataURL();
+    return {
+      ok: true, index: sampleShots.length - 1, scope: 'panel', meta,
+      dataUrl: prev(panel), fullDataUrl: prev(full), panelDataUrl: prev(panel),
+    };
   } catch (e) {
     if (wasVisible && win && !win.isDestroyed()) { win.setOpacity(1); }
     return { ok: false, error: String((e && e.message) || e) };
@@ -1674,6 +1723,57 @@ ipcMain.handle('stash-sample-drop', async (_e, i) => {
   if (i >= 0 && i < sampleShots.length) sampleShots.splice(i, 1);
   return { ok: true, count: sampleShots.length };
 });
+// A shot at 1080p+ is far bigger than the overlay, so an in-app lightbox would need the
+// window blown up past the game to show one. It opens as its own resizable window at
+// native size instead, on top of the overlay, and Chromium's own image view handles
+// fit-to-window and click-to-zoom.
+const samplePreviewWins = new Map();
+ipcMain.handle('stash-sample-preview', async (_e, i) => {
+  const s = sampleShots[i];
+  if (!s) return { ok: false, error: 'no such shot' };
+  try {
+    const png = s.scope === 'panel' && s.panelPng ? s.panelPng : s.fullPng;
+    // the filename IS the window title in Chromium's image view, so it names itself
+    const dir = path.join(app.getPath('temp'), 'poe2-overlay-preview', String(i));
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, s.scope === 'panel' ? 'stash-panel.png' : 'game-window.png');
+    fs.writeFileSync(file, png);
+
+    const old = samplePreviewWins.get(i);
+    if (old && !old.isDestroyed()) old.destroy();
+
+    const size = nativeImage.createFromBuffer(png).getSize();
+    const wa = screen.getPrimaryDisplay().workAreaSize;
+    const pw = new BrowserWindow({
+      width: Math.max(320, Math.min(size.width, Math.round(wa.width * 0.9))),
+      height: Math.max(240, Math.min(size.height, Math.round(wa.height * 0.9))),
+      resizable: true, autoHideMenuBar: true, backgroundColor: '#101010',
+      alwaysOnTop: true, // the overlay itself is always-on-top; without this it hides behind
+    });
+    pw.loadURL(require('url').pathToFileURL(file).href);
+    pw.once('ready-to-show', () => pw.show());
+    pw.on('closed', () => {
+      samplePreviewWins.delete(i);
+      try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* temp dir */ }
+    });
+    samplePreviewWins.set(i, pw);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e) };
+  }
+});
+
+// The finder can lock onto a border that is not the stash, and nothing in here can tell.
+// The person looking at the preview can, so they get to switch a shot to the whole
+// window (or back) before sending. Only 'panel' -> 'window' is always available; the
+// reverse needs a crop to exist.
+ipcMain.handle('stash-sample-scope', async (_e, i, scope) => {
+  const s = sampleShots[i];
+  if (!s) return { ok: false, error: 'no such shot' };
+  if (scope === 'panel' && !s.panelPng) return { ok: false, error: 'no panel crop for this shot' };
+  s.scope = scope === 'panel' ? 'panel' : 'window';
+  return { ok: true, scope: s.scope };
+});
 // Sends only what the user previewed and confirmed. One request per image.
 ipcMain.handle('stash-sample-send', async (_e, payload) => {
   if (!sampleShots.length) return { ok: false, error: 'nothing to send' };
@@ -1682,9 +1782,10 @@ ipcMain.handle('stash-sample-send', async (_e, payload) => {
   for (let i = 0; i < sampleShots.length; i++) {
     const s = sampleShots[i];
     try {
+      const png = s.scope === 'panel' && s.panelPng ? s.panelPng : s.fullPng;
       const fd = new FormData();
-      fd.append('image', new Blob([s.png], { type: 'image/png' }), 'panel.png');
-      fd.append('meta', JSON.stringify(Object.assign({}, s.meta, { note, of: sampleShots.length, i })));
+      fd.append('image', new Blob([png], { type: 'image/png' }), s.scope === 'panel' ? 'panel.png' : 'window.png');
+      fd.append('meta', JSON.stringify(Object.assign({}, s.meta, { scope: s.scope, note, of: sampleShots.length, i })));
       const r = await fetch(SAMPLE_ENDPOINT, { method: 'POST', body: fd });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) return { ok: false, error: j.error || `upload failed (${r.status})`, sent: sent.length };

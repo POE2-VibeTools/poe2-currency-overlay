@@ -24,3 +24,4 @@ memory/
 screenshots/
 dev/stash-matcher/refs/
 dev-docs/
+.wrangler/

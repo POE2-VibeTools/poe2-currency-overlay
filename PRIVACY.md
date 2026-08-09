@@ -20,12 +20,12 @@ The **Net Worth** tab reads a stash tab by taking a screenshot when you trigger 
 
 When you use it, you pick each tab, **see a preview of exactly what will be sent**, and press Send. Each submission contains:
 
-- a **cropped image of the stash panel itself** - not your whole screen, and nothing outside the panel border,
-- your screen resolution, display scale, and the calibration box you set,
+- an **image of the Path of Exile 2 window** - never your desktop, and never another application. It is cropped to the stash panel when the app finds the panel. When it cannot find it, the whole game window is sent instead, because that framing is the only thing that explains why it failed. The app tells you which one you are about to send, and asks you to confirm each screenshot before Send will work,
+- your screen resolution, display scale, the size of the game window, and the calibration box if you set one,
 - what the reader made of that image: which tab it thinks it is, the count it read for each slot, and how confident it was,
 - the app version and your operating system.
 
-It does not include your character or account name, your login or session, your other stash tabs, anything else on your screen, or any way to identify you. Bear in mind the panel image shows the contents of that stash tab, because that is the thing being diagnosed.
+It does not include your login or session, your other stash tabs, anything outside the game window, or any way to identify you. Bear in mind the panel image shows the contents of that stash tab, because that is the thing being diagnosed - and a whole-window image shows whatever else was on screen in game at that moment, which can include your character name and your chat. That is why you are shown every screenshot, can open any of them full size, and cannot send until you have confirmed each one.
 
 Submissions are stored in a private Cloudflare R2 bucket that only the author can read. They are used solely to test and fix the stash reader, and are deleted once that work is done. There is a per-submitter limit; it is enforced using a **salted hash** of your IP address, not the address itself, so no visitor IP list is kept.
 
