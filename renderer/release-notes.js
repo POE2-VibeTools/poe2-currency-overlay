@@ -20,6 +20,7 @@ window.RELEASE_NOTES = [
       "Price Check:",
       "Quality 20 and Greater Iron Rune toggles are always in Miscellaneous now.",
       "Some mod sliders weren't giving full ranges, should be fixed",
+      "Desecrated mods were folding into Explicits, which is technically correct for finding best matches. But visually it hides what mod is desecrated. Now the explicit with the folded desecrated line has a green tinge so you know without having to unfold the mods to see it.",
     ],
   },
   {
