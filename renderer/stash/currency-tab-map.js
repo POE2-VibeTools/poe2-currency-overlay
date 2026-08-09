@@ -95,6 +95,10 @@
     artificers: 'mixed', 'perfect-regal-orb': 'mixed', scrap: 'mixed',
     exalted: 'mixed', 'greater-exalted-orb': 'mixed', bauble: 'mixed',
     gcp: 'mixed', chaos: 'mixed', wisdom: 'mixed',
+    // Added from a submitted 1920x1080 currency tab, hand-read against the capture:
+    // regal 1608 read as 160 and perfect-exalted-orb 9 read as 91. Both were wrong AND
+    // unflagged, which is the one combination this table exists to prevent.
+    regal: 'mixed', 'perfect-exalted-orb': 'mixed',
   };
 
   return {

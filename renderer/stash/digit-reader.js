@@ -414,7 +414,13 @@
     for (const floor of ADAPTIVE_FLOORS) {
       const r = readCellEx(V, W, H, cx, cy, templates, floor === P.floor ? P : Object.assign({}, P, { floor }), scale);
       if (!r.text || r.text === '?') continue;
-      const score = r.conf * Math.min(r.text.length, 3);
+      // Length cap 3 meant a 4-digit read and a 3-digit read carried the SAME length
+      // weight, so the shorter read won on confidence alone and the last digit was
+      // dropped. Measured over 13 captures at cap 6: one slot fixed (a real 4112 read
+      // as 411), no correct answer broken, one already-wrong slot changed to a
+      // different wrong answer. The cap still exists so a strip of art cannot win by
+      // being long.
+      const score = r.conf * Math.min(r.text.length, 6);
       if (!best || score > best.score) best = { text: r.text, conf: r.conf, score, floor };
     }
     return best ? { text: best.text, conf: best.conf, floor: best.floor } : { text: '?', conf: 0 };

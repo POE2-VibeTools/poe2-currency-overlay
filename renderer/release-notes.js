@@ -6,6 +6,13 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.8',
+    date: '2026-08-09',
+    notes: [
+      "Minor tweaks to the Net Worth tab, and small updates to the amber lines.",
+    ],
+  },
+  {
     version: '2.6.7',
     date: '2026-08-09',
     notes: [
