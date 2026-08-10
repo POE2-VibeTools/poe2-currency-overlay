@@ -68,8 +68,9 @@
   <ul>
     <li>what you type (your description, and an optional contact only if you add one),</li>
     <li>the app version and a timestamp,</li>
-    <li>for bug reports only, a short <b>activity log</b>: the last 60 or so in-app actions (buttons clicked, settings toggled, currency and item type names, and any error messages), so the problem can be reproduced.</li>
+    <li>for bug reports only, a short <b>activity log</b>: the last 60 or so in-app actions (buttons clicked, settings toggled, currency and item type names, and any error messages), and the <b>last item you pasted into the app</b>, so the problem can be reproduced. Only text the app already recognised as an item is kept, so nothing else you copy can end up in a report.</li>
   </ul>
+  <p>A bug report also has an <b>"Include system information"</b> tick box, which describes your machine rather than the app: your screen resolution and scale, the overlay window's size, your operating system, the language the app is set to, and which tab you were on. The form has a link that shows you the exact text before you send, and unticking the box sends none of it.</p>
   <p>Reports are stored in a private Google Sheet. The second is <b>stash panel captures</b>, only if you use "Send my stash tabs", exactly as described above. That is all - neither includes your account, your session, or anything personal beyond what you type.</p>
 
   <h2>About the Cloudflare Worker in the repo</h2>
