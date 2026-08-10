@@ -12,6 +12,7 @@ window.RELEASE_NOTES = [
     notes: [
       "Bug reports now opt-out collect limited machine info to assist in debugging because I'm having trouble fixing some user reported errors in the Regex tab.",
       "The last item Ctrl+V'd into the app is included in the bug report.",
+      "Fixed a bug where Ctrl+V into the Regex tab did nothing if you'd clicked the pattern box first.",
       "Privacy policy updated to reflect the changes",
     ],
   },
