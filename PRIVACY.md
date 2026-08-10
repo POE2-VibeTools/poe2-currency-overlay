@@ -1,6 +1,6 @@
 # Privacy & data
 
-_Last updated: 2026-08-04_
+_Last updated: 2026-08-10_
 
 The POE2 Currency Overlay runs on your PC. It has **no analytics, no telemetry, no usage tracking, no background phone-home, and no machine or device IDs**. It reaches the internet only for the things below.
 
@@ -33,7 +33,9 @@ Submissions are stored in a private Cloudflare R2 bucket that only the author ca
 
 Two things, both of which you choose to send:
 
-1. **Bug and feedback reports** submitted from the in-app form. A report contains what you type (your description, and an optional contact only if you add one), the app version and a timestamp, and - for bug reports only - a short **activity log**: the last 60 or so in-app actions (buttons clicked, settings toggled, currency and item type names, and any error messages), so the problem can be reproduced. Reports are stored in a private Google Sheet.
+1. **Bug and feedback reports** submitted from the in-app form. A report contains what you type (your description, and an optional contact only if you add one), the app version and a timestamp, and - for bug reports only - a short **activity log**: the last 60 or so in-app actions (buttons clicked, settings toggled, currency and item type names, and any error messages), and the **last item you pasted into the app**, so the problem can be reproduced. Only text the app already recognised as an item is kept, so nothing else you copy can end up in a report. Reports are stored in a private Google Sheet.
+
+   A bug report also has an **"Include system information"** tick box, which describes your machine rather than the app: your screen resolution and scale, the overlay window's size, your operating system, the language the app is set to, and which tab you were on. The form has a link that shows you the exact text before you send, and unticking the box sends none of it.
 2. **Stash panel captures**, only if you use "Send my stash tabs", exactly as described above.
 
 That is all. Neither includes your account, your session, or anything personal beyond what you type.

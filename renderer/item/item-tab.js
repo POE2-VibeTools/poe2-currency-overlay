@@ -2400,6 +2400,7 @@
   async function modelFromText(text) {
     text = String(text || '').replace(/^﻿/, '');
     if (!text || !looksLikeItem(text)) return null;
+    if (window.noteItemText) window.noteItemText(text); // for an item bug report, opt-in
     try {
       await ensureInit(text);
       const res = window.EE2.parse(text);
@@ -2411,6 +2412,7 @@
   async function tryParse(text) {
     text = String(text || '').replace(/^﻿/, ''); // BOM-proof (pasted from files/editors)
     if (!text || !looksLikeItem(text)) return false;
+    if (window.noteItemText) window.noteItemText(text); // for an item bug report, opt-in
     let res;
     try {
       await ensureInit(text);
@@ -2825,12 +2827,22 @@
       // paste on the Regex tab seeds the builder from the copied waystone/tablet
       const rxRoot = $('regex-root');
       if (rxRoot && !rxRoot.classList.contains('hidden')) {
-        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return; // typing a custom pattern, not seeding
+        // Only an EDITABLE field means "the user is typing, don't hijack this". The
+        // generated-pattern box on this tab is <input readOnly> that you click to select
+        // the regex, so focus sits in it constantly - and this guard used to swallow the
+        // paste with no seed and no message. That is the "ctrl+v does nothing in Regex
+        // but works in Price Check" report: Price Check has no always-present field.
+        const tgt = e.target;
+        const editable = tgt && (tgt.tagName === 'TEXTAREA'
+          || (tgt.tagName === 'INPUT' && !tgt.readOnly && !tgt.disabled)
+          || tgt.isContentEditable);
+        if (editable) { if (window.logAction) window.logAction('regex paste ignored: typing in ' + (tgt.className || tgt.tagName)); return; }
         e.preventDefault();
         // parse first: the regex tab used to read the raw text, which only understands
         // an English client. The model carries canonical refs for every language.
         let model = null;
         try { model = await modelFromText(text); } catch { /* fall back to raw text */ }
+        if (window.logAction) window.logAction('regex paste: ' + (model ? 'parsed ' + (model.category || '?') : 'parse failed') + ', ' + String(text).split(/\r?\n/)[0].slice(0, 40));
         if (window.RegexTab) window.RegexTab.seedFromText(text, model);
         return;
       }

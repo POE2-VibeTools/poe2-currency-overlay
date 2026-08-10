@@ -1,6 +1,6 @@
 {
   "name": "poe2-price-overlay",
-  "version": "2.6.12",
+  "version": "2.6.13",
   "description": "Hotkey-toggled currency price overlay for Path of Exile 2 - live rates, arbitrage signals, 7d trends",
   "main": "main.js",
   "scripts": {

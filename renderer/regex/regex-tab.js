@@ -151,6 +151,7 @@
     if (!cls) {
       // say what it actually got, so a bad paste is diagnosable from the report alone
       try { console.warn('[regex] unrecognised paste. class line:', JSON.stringify(clsLine), 'first line:', JSON.stringify(lines[0] || '')); } catch { /* console may be gone */ }
+      if (window.logAction) window.logAction('regex seed rejected: class=' + JSON.stringify(clsLine.slice(0, 40)) + ' first=' + JSON.stringify((lines[0] || '').slice(0, 40)));
       state.notice = { kind: 'warn', msg: t('regex.notice.not_recognized') }; render(); return false;
     }
     state.cls = cls;
@@ -208,6 +209,7 @@
         break;
       }
     }
+    if (window.logAction) window.logAction('regex seeded ' + cls + ': ' + state.sel.size + ' mods' + (state.tabletType ? ' (' + state.tabletType + ')' : ''));
     state.notice = state.sel.size
       ? { kind: 'ok', msg: t('regex.notice.read_mods', { count: state.sel.size, plural_suffix: state.sel.size === 1 ? '' : 's' }) }
       : { kind: 'warn', msg: t('regex.notice.no_known_mods') };

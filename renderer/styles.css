@@ -1754,3 +1754,12 @@ footer {
   margin: 4px 0 2px; padding-top: 8px; border-top: 1px solid var(--bd-09); }
 .nw-sample-busy { display: flex; align-items: center; padding: 9px 11px; margin-bottom: 7px;
   border: 1px solid var(--bd-09); border-radius: 6px; }
+/* bug-report consent: the box, and the actual payload shown verbatim underneath */
+.fb-consent { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.fb-consent input { accent-color: var(--am); margin: 0; }
+.fb-linkish { background: none; border: none; padding: 2px 0 0 22px; font-size: 10.5px;
+  color: var(--tx-faint); text-decoration: underline; cursor: pointer; display: block; }
+.fb-linkish:hover { color: var(--tx-dim); }
+.fb-sysinfo-list { margin: 6px 0 0 22px; padding: 7px 9px; max-height: 150px; overflow: auto;
+  background: rgba(0,0,0,.28); border: 1px solid var(--bd-09); border-radius: 5px;
+  font: 10px/1.45 ui-monospace, Consolas, monospace; color: var(--tx-dim); white-space: pre-wrap; }

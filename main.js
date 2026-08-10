@@ -2306,6 +2306,12 @@ ipcMain.handle('submit-feedback', async (_e, payload) => {
       details: String((payload && payload.details) || '').slice(0, 5000),
       contact: String((payload && payload.contact) || '').slice(0, 200),
       log: String((payload && payload.log) || '').slice(0, 20000),
+      // only present when the user ticked "include system information"; the renderer
+      // sends '' otherwise and we add nothing of our own here
+      system: String((payload && payload.system) || '').slice(0, 2000),
+      // the item text they last copied, for item bugs - same tick box, and the form
+      // shows it to them before sending
+      item: String((payload && payload.item) || '').slice(0, 2000),
       version: app.getVersion(),
       ts: new Date().toISOString()
     });

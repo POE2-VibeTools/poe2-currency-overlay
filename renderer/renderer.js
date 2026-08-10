@@ -2346,10 +2346,16 @@ const ACTIVITY_LOG = [];
 function logAction(msg) {
   try {
     const t = new Date().toISOString().slice(11, 19);
-    ACTIVITY_LOG.push(`${t} ${msg}`);
+    // Collapse consecutive repeats. A report came in with 25 lines of "overlay shown"
+    // and "temp-peek mouse-off hide" and not one line about the thing being reported -
+    // identical events were crowding the useful ones out of a 60-entry buffer.
+    const last = ACTIVITY_LOG[ACTIVITY_LOG.length - 1];
+    if (last && last.msg === msg) { last.n++; last.t = t; return; }
+    ACTIVITY_LOG.push({ t, msg, n: 1 });
     if (ACTIVITY_LOG.length > 60) ACTIVITY_LOG.shift();
   } catch {}
 }
+const activityLogText = () => ACTIVITY_LOG.map((e) => `${e.t} ${e.msg}${e.n > 1 ? ` (x${e.n})` : ''}`).join('\n');
 window.logAction = logAction; // tutorial.js and others log through this
 window.addEventListener('error', (e) => {
   logAction(`ERROR ${e.message || ''} @${(e.filename || '').split('/').pop()}:${e.lineno || ''}`);
@@ -2480,6 +2486,25 @@ function openFeedback(kind) {
   $('fb-title').textContent = isBug ? t('currency.feedback.title_bug') : t('currency.feedback.title_feedback');
   $('fb-type-row').classList.toggle('hidden', isBug); // bugs need no type picker
   $('fb-note').classList.toggle('hidden', !isBug);
+  // reset the disclosure each time the form opens, and wire it once
+  const list = $('fb-sysinfo-list');
+  if (list) {
+    list.classList.add('hidden');
+    const what = $('fb-sysinfo-what');
+    if (what && !what.dataset.wired) {
+      what.dataset.wired = '1';
+      what.addEventListener('click', () => {
+        const hidden = list.classList.contains('hidden');
+        // shows everything the box controls, verbatim: the machine block AND the item
+        // text, so nobody sends an item without having seen that it goes
+        if (hidden) {
+          list.textContent = [systemInfoText(), LAST_ITEM_TEXT && ('\n' + t('ui.feedback_modal.sysinfo_item_heading') + '\n' + LAST_ITEM_TEXT)]
+            .filter(Boolean).join('\n');
+        }
+        list.classList.toggle('hidden', !hidden);
+      });
+    }
+  }
   $('fb-details').placeholder = isBug
     ? t('currency.feedback.placeholder_bug')
     : t('currency.feedback.placeholder_feedback');
@@ -2535,6 +2560,29 @@ function confirmDialog(message, opts = {}) {
     requestAnimationFrame(() => { const b = overlay.querySelector('.cf-ok'); if (b) b.focus(); });
   });
 }
+// The last item text the app read off the clipboard. Item bugs are almost always about
+// a SPECIFIC item - "ctrl+v does nothing in Regex" cost three rounds of guessing that
+// the item itself would have answered - and it names the client language too. Held in
+// memory only, replaced by the next item, and never sent unless the box is ticked.
+let LAST_ITEM_TEXT = '';
+window.noteItemText = (txt) => { try { LAST_ITEM_TEXT = String(txt || '').slice(0, 1500); } catch { /* ignore */ } };
+
+// Exactly what the "include system information" box sends, as text. It is shown to the
+// user verbatim before they send - describing it in prose invites them to imagine
+// something worse, or something better, than what actually goes.
+function systemInfoText() {
+  const lines = [];
+  try {
+    lines.push(`app: ${(config && config.__version) || ''} ${navigator.platform || ''}`.trim());
+    lines.push(`screen: ${window.screen.width}x${window.screen.height} @${window.devicePixelRatio || 1}`);
+    lines.push(`window: ${window.innerWidth}x${window.innerHeight}`);
+    lines.push(`language: ${(config && config.language) || 'auto'}`);
+    const tabEl = document.querySelector('.tab.active');
+    if (tabEl) lines.push(`tab: ${tabEl.textContent.trim()}`);
+  } catch {}
+  return lines.filter(Boolean).join('\n');
+}
+
 async function sendFeedback() {
   const details = $('fb-details').value.trim();
   if (!details) { $('fb-details').focus(); return; }
@@ -2543,12 +2591,21 @@ async function sendFeedback() {
   status.textContent = t('currency.feedback.status_sending');
   status.className = 'fb-status';
   const isBug = fbKind === 'bug';
+  // The in-app activity log rides with every bug report, as it always has - it is what
+  // the app did, and it is disclosed on the form and in PRIVACY.md. The checkbox governs
+  // ONLY the system block, which is information about the machine rather than the app.
+  const withSys = isBug && !!($('fb-sysinfo') && $('fb-sysinfo').checked);
   const ok = await window.api.submitFeedback({
     kind: fbKind,
     type: isBug ? 'Bug' : $('fb-type').value,
     details,
     contact: $('fb-contact').value.trim(),
-    log: isBug ? ACTIVITY_LOG.join('\n') : ''
+    log: isBug ? activityLogText() : '',
+    system: withSys ? systemInfoText() : '',
+    // No opt-out, same as the activity log: this is an item the user handed the app by
+    // pasting it in, not something read off their machine. Only text that already
+    // parsed as an item is ever kept, so nothing else on the clipboard can end up here.
+    item: isBug ? LAST_ITEM_TEXT : ''
   });
   if (ok) {
     status.textContent = t('currency.feedback.status_sent');

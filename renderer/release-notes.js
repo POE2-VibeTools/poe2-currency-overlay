@@ -6,6 +6,16 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.13',
+    date: '2026-08-10',
+    title: "Bug report improvements",
+    notes: [
+      "Bug reports now opt-out collect limited machine info to assist in debugging because I'm having trouble fixing some user reported errors in the Regex tab.",
+      "The last item Ctrl+V'd into the app is included in the bug report.",
+      "Privacy policy updated to reflect the changes",
+    ],
+  },
+  {
     version: '2.6.12',
     date: '2026-08-10',
     notes: [

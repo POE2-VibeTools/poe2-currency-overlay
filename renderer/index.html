@@ -268,7 +268,15 @@
       </div>
       <textarea id="fb-details" rows="4" data-i18n-ph="ui.feedback_modal.details_placeholder" placeholder="What happened, or what would you like to see?"></textarea>
       <input id="fb-contact" type="text" maxlength="200" data-i18n-ph="ui.feedback_modal.contact_placeholder" placeholder="Contact (optional) - Discord, email, etc." />
-      <div id="fb-note" class="fb-note hidden" data-i18n="ui.feedback_modal.log_note">A short activity log is attached to help us debug.</div>
+      <div id="fb-note" class="fb-note hidden">
+        <div data-i18n="ui.feedback_modal.log_note">A short activity log is attached to help us debug.</div>
+        <label class="fb-consent">
+          <input type="checkbox" id="fb-sysinfo" checked />
+          <span data-i18n="ui.feedback_modal.sysinfo_label">Include system information in this bug report</span>
+        </label>
+        <button type="button" id="fb-sysinfo-what" class="fb-linkish" data-i18n="ui.feedback_modal.sysinfo_what">Show me what that is</button>
+        <pre id="fb-sysinfo-list" class="fb-sysinfo-list hidden"></pre>
+      </div>
       <div class="fb-actions">
         <span id="fb-status" class="fb-status"></span>
         <button id="fb-cancel" class="mini-btn" data-i18n="ui.feedback_modal.cancel_button">Cancel</button>
