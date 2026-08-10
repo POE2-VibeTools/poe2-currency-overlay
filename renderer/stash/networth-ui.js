@@ -116,14 +116,15 @@
       t('networth.settings.toggle_confidence_sub'),
       (v) => { state.showConfidence = v; try { window.api.setStashShowConfidence(v); } catch {} }));
     root.appendChild(toggles);
-    // Resolution calibration is a FALLBACK now, not a step. The panel is found by its
-    // coloured border on every capture, so this block stays hidden until auto-detection
-    // has actually failed - a permanent orange "Calibrate for my resolution" button reads
-    // as required, and a Linux user sat clicking it because of that. If you have never
-    // seen a failure there is nothing here to press, which is the honest state.
-    if (state.autoFound !== false && !state.calibrated) return;
-    // resolution calibration
-    const cal = el('div', 'nw-set-cal');
+    // Resolution calibration is a FALLBACK, not a step - but it is always REACHABLE.
+    // It used to hide unless the panel finder returned nothing, and "found something" is
+    // not the same as "found it well": a capture came in with the border only 17% matched,
+    // a box two pixels out, and half the counts wrong - with no way to correct it, because
+    // detection had technically succeeded. Hiding it stranded exactly the people who need
+    // it. It stays quiet (see .nw-set-cal.quiet) so it never reads as a required step,
+    // which is what made a Linux user sit clicking the old orange button.
+    const autoOk = state.autoFound !== false && !state.calibrated;
+    const cal = el('div', 'nw-set-cal' + (autoOk ? ' quiet' : ''));
     const head = el('div', 'nw-set-cal-head');
     head.appendChild(el('div', 'nw-set-cal-title', t('networth.settings.cal_title')));
     head.appendChild(el('div', 'nw-set-cal-badge' + (state.calibrated ? ' on' : ''), state.calibrated ? t('networth.settings.cal_badge_calibrated') : t('networth.settings.cal_badge_default')));

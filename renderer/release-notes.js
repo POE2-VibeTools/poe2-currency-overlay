@@ -6,6 +6,13 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.11',
+    date: '2026-08-10',
+    notes: [
+      "Auto-Calibration broke for some views, causing strange offsets that ruined glyph matching for those users. I've restored the ability to calibrate yourself. If you notice glyph matching is bad, try manual calibration. If that doesn't help, send me stash screenshots.",
+    ],
+  },
+  {
     version: '2.6.10',
     date: '2026-08-09',
     title: "More negative value fixes",
@@ -19,9 +26,9 @@ window.RELEASE_NOTES = [
     title: "More Random Fixes from user feedback",
     notes: [
       "\"When price checking waystones, the \"waystone drop chance\" property is always hidden. Please include it by default as this has a big sway on value.\"",
-      "Fixed now.",
+      "  Fixed now.",
       "\"Please make the pop out comparison panel open on the right side if the panel is offscreen/overlay is all the way to the left edge of the screen.\"",
-      "Good feedback. Done.",
+      "  Good feedback. Done.",
       "The third guy wrote an essay but basically negative search values were not properly inverted. This SHOULD be fixed now but please report any searches that should auto-search with negative values but instead search positive.",
     ],
   },

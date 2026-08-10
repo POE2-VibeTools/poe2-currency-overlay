@@ -2365,8 +2365,16 @@ function noteAnchorId(version) { return 'notes-v-' + String(version).replace(/\.
 function renderNoteEntry(rel) {
   // A note ending in ':' is a SECTION HEADING, not a bullet - lets an entry group its
   // lines ("User feedback changes:" / "Bug fixes:") without them rendering as stray bullets.
+  // A note INDENTED with leading whitespace is a sub-bullet of the line above it, so a
+  // quoted bug report can carry the reply underneath it instead of the two reading as
+  // separate items. Existing entries have no leading space, so they are unaffected.
   const lis = (rel.notes || [])
-    .map((n) => (/:\s*$/.test(n) ? `<li class="notes-sec">${esc(n)}</li>` : `<li>${esc(n)}</li>`))
+    .map((n) => {
+      const sub = /^\s+\S/.test(n);
+      const text = String(n).trim();
+      if (/:\s*$/.test(text)) return `<li class="notes-sec">${esc(text)}</li>`;
+      return `<li${sub ? ' class="notes-sub"' : ''}>${esc(text)}</li>`;
+    })
     .join('');
   const date = rel.date ? `<span class="notes-rel-date">${esc(rel.date)}</span>` : '';
   const sub = rel.title ? `<div class="notes-rel-sub">${esc(rel.title)}</div>` : '';

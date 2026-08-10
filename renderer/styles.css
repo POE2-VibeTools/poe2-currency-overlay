@@ -986,6 +986,15 @@ footer {
   content: ''; position: absolute; left: 2px; top: 7px;
   width: 4px; height: 4px; border-radius: 50%; background: var(--am);
 }
+/* a sub-bullet: the reply under a quoted bug report. Indented, dimmer, hollow dot, so
+   the pair reads as one item instead of two unrelated lines. */
+.notes-list li.notes-sub {
+  padding-left: 30px; margin-top: -2px; color: var(--tx-dim);
+}
+.notes-list li.notes-sub::before {
+  left: 18px; background: transparent;
+  box-shadow: inset 0 0 0 1px var(--am);
+}
 .notes-actions {
   display: flex; align-items: center; justify-content: flex-end; gap: 8px;
   padding: 8px 14px 12px; border-top: 1px solid var(--bd-08);
@@ -1256,6 +1265,14 @@ footer {
 .nw-set-cal-badge.on { color: #7ec97e; border-color: rgba(126,201,126,.45); }
 .nw-set-cal-desc { color: var(--tx-dim); font-size: 11.5px; line-height: 1.45; margin-bottom: 11px; }
 .nw-set-cal-btns { display: flex; gap: 8px; }
+/* Auto-detection is working, so this is a fallback nobody needs to press: no card, no
+   emphasis, muted button. Present and findable, but it must not read as a required step. */
+.nw-set-cal.quiet { border: none; background: none; padding: 4px 0 0; }
+.nw-set-cal.quiet .nw-set-cal-title { color: var(--tx-dim); font-size: 11.5px; font-weight: 500; }
+.nw-set-cal.quiet .nw-set-cal-badge { display: none; }
+.nw-set-cal.quiet .nw-set-cal-desc { font-size: 11px; color: var(--tx-faint); margin-bottom: 7px; }
+.nw-set-cal.quiet .nw-set-btn { background: none; border-color: var(--bd-12); color: var(--tx-dim); }
+.nw-set-cal.quiet .nw-set-btn:hover { color: var(--tx-body); border-color: var(--bd-16); }
 .nw-set-btn { background: linear-gradient(180deg, var(--am-grad-a), var(--am-grad-b)); color: var(--am-on); border: none; border-radius: 6px; padding: 7px 15px; font-size: 12px; font-weight: 700; cursor: pointer; }
 .nw-set-btn:hover { filter: brightness(1.08); }
 .nw-set-btn-ghost { background: transparent; color: var(--tx-dim); border: 1px solid var(--bd-12); }
