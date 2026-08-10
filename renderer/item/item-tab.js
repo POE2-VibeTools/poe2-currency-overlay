@@ -424,6 +424,13 @@
     // actually has 72, so catalysed jewellery was priced against weaker comps.
     // Summing across sources also fixes stats granted by TWO mods, where
     // sources[0] alone silently reported half the item's total.
+    // GGG's own sign convention: a stat has ONE trade id and two spellings, so the sign
+    // is the only thing telling them apart. 516 stats in the data are exactly this
+    // shape. "faster/slower" and "increased/decreased" are the same convention wearing
+    // different words.
+    const DOWN_WORD = /\b(reduced|less|decreased|slower)\b/i;
+    const UP_WORD = /\b(increased|more|faster)\b/i;
+
     const effRoll = (sc) => {
       const srcs = (sc && sc.sources) || [];
       let value = 0, min = 0, max = 0, any = false;
@@ -458,7 +465,11 @@
       if (negSrc) {
         const matcher = String(negSrc.stat.translation.string || '');
         const ref = String((negSrc.stat.stat && negSrc.stat.stat.ref) || '');
-        const spelling = /\b(reduced|less)\b/i.test(matcher) && /\b(increased|more)\b/i.test(ref);
+        // The pair runs BOTH ways: "reduced Tribute" against an "increased" ref, and
+        // "increased Mana Cost of Skills" against a "reduced" ref. 13 stats are the
+        // second kind, and a one-directional test left them inverted.
+        const spelling = (DOWN_WORD.test(matcher) && UP_WORD.test(ref))
+          || (UP_WORD.test(matcher) && DOWN_WORD.test(ref));
         if (!spelling) return { value: -value, min: -max, max: -min };
       }
       return { value, min, max };

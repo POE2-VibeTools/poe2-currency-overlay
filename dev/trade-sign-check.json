@@ -1,0 +1,1427 @@
+{
+ "enchant.stat_762600725": {
+  "ref": "# Life gained when you Block",
+  "matcher": "Lose # Life when you Block",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2122183138": {
+  "ref": "# Mana gained when you Block",
+  "matcher": "Lose # Mana when you Block",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_2333085568": {
+  "ref": "# to all Attributes per Level",
+  "matcher": "# to all Attributes per Level",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "-1 to all [Attributes] per Level",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "-1 to all [Attributes] per Level",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "-1 to all [Attributes] per Level",
+    "lo": -1,
+    "hi": -1
+   }
+  ]
+ },
+ "sanctum.stat_142859883": {
+  "ref": "#% Resolve Mitigation from Enemy Hits",
+  "matcher": "#% Resolve Mitigation from Enemy Hits",
+  "ruleKeep": false,
+  "verdict": "no-listings"
+ },
+ "sanctum.stat_2284543592": {
+  "ref": "#% chance to Avoid Resolve loss from Enemy Hits if you've been Hit Recently",
+  "matcher": "#% chance to Avoid Resolve loss from Enemy Hits if you've been Hit Recently",
+  "ruleKeep": false,
+  "verdict": "no-listings"
+ },
+ "sanctum.stat_1798691236": {
+  "ref": "#% increased chance to Avoid Resolve Loss from Enemy Projectile Hits",
+  "matcher": "#% increased chance to Avoid Resolve Loss from Enemy Projectile Hits",
+  "ruleKeep": false,
+  "verdict": "no-listings"
+ },
+ "explicit.stat_1803659985": {
+  "ref": "#% less Armour, Evasion and Energy Shield",
+  "matcher": "#% less Armour, Evasion and Energy Shield",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "18% less [Armour], [Evasion] and [EnergyShield|Energy Shield]",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "12% less [Armour], [Evasion] and [EnergyShield|Energy Shield]",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "16% less [Armour], [Evasion] and [EnergyShield|Energy Shield]",
+    "lo": 20,
+    "hi": 10
+   }
+  ]
+ },
+ "explicit.stat_1274947822": {
+  "ref": "#% less Damage",
+  "matcher": "#% less Damage",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "10% less Damage",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "17% less Damage",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "14% less Damage",
+    "lo": 20,
+    "hi": 10
+   }
+  ]
+ },
+ "explicit.stat_67637087": {
+  "ref": "#% less Damage taken if you have not been Hit Recently",
+  "matcher": "#% less Damage taken if you have not been Hit Recently",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "20% less Damage taken if you have not been [HitDamage|Hit] [Recently|R",
+    "lo": 20,
+    "hi": 20
+   },
+   {
+    "text": "20% less Damage taken if you have not been [HitDamage|Hit] [Recently|R",
+    "lo": 20,
+    "hi": 20
+   },
+   {
+    "text": "20% less Damage taken if you have not been [HitDamage|Hit] [Recently|R",
+    "lo": 20,
+    "hi": 20
+   }
+  ]
+ },
+ "rune.stat_762761075": {
+  "ref": "#% less Mana Regeneration Rate",
+  "matcher": "#% less Mana Regeneration Rate",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_2146799605": {
+  "ref": "#% less Movement Speed",
+  "matcher": "#% less Movement Speed",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "19% less Movement Speed",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "16% less Movement Speed",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "18% less Movement Speed",
+    "lo": 20,
+    "hi": 10
+   }
+  ]
+ },
+ "explicit.stat_537850431": {
+  "ref": "#% less Spirit",
+  "matcher": "#% less Spirit",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "10% less [Spirit]",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "14% less [Spirit]",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "11% less [Spirit]",
+    "lo": 20,
+    "hi": 10
+   }
+  ]
+ },
+ "explicit.stat_3796523155": {
+  "ref": "#% less effect of Curses on Monsters",
+  "matcher": "#% less effect of Curses on Monsters",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "49% less [BuffEffect|effect] of [Curse|Curses] on Monsters",
+    "lo": 50,
+    "hi": 40
+   },
+   {
+    "text": "40% less [BuffEffect|effect] of [Curse|Curses] on Monsters",
+    "lo": 50,
+    "hi": 40
+   },
+   {
+    "text": "48% less [BuffEffect|effect] of [Curse|Curses] on Monsters",
+    "lo": 50,
+    "hi": 40
+   }
+  ]
+ },
+ "explicit.stat_1633735772": {
+  "ref": "#% less maximum Life",
+  "matcher": "#% less maximum Life",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "14% less maximum Life",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "19% less maximum Life",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "15% less maximum Life",
+    "lo": 20,
+    "hi": 10
+   }
+  ]
+ },
+ "explicit.stat_3045154261": {
+  "ref": "#% less maximum Mana",
+  "matcher": "#% less maximum Mana",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "19% less maximum Mana",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "19% less maximum Mana",
+    "lo": 20,
+    "hi": 10
+   },
+   {
+    "text": "12% less maximum Mana",
+    "lo": 20,
+    "hi": 10
+   }
+  ]
+ },
+ "explicit.stat_2423248184": {
+  "ref": "#% less minimum Physical Attack Damage",
+  "matcher": "#% less minimum Physical Attack Damage",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "37% less minimum [Physical] [Attack] Damage",
+    "lo": 40,
+    "hi": 30
+   },
+   {
+    "text": "36% less minimum [Physical] [Attack] Damage",
+    "lo": 40,
+    "hi": 30
+   },
+   {
+    "text": "39% less minimum [Physical] [Attack] Damage",
+    "lo": 40,
+    "hi": 30
+   }
+  ]
+ },
+ "explicit.stat_1570770415": {
+  "ref": "#% reduced Charm Charges used",
+  "matcher": "#% reduced Charm Charges used",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "2% increased [Charm] Charges used",
+    "lo": 10,
+    "hi": -10
+   },
+   {
+    "text": "9% increased [Charm] Charges used",
+    "lo": 10,
+    "hi": -10
+   },
+   {
+    "text": "9% increased [Charm] Charges used",
+    "lo": 10,
+    "hi": -10
+   }
+  ]
+ },
+ "explicit.stat_1478653032": {
+  "ref": "#% reduced Effect of Chill on you",
+  "matcher": "#% reduced Effect of Chill on you",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "36% reduced Effect of [Chill|Chill] on you",
+    "lo": 50,
+    "hi": 35
+   },
+   {
+    "text": "49% reduced Effect of [Chill|Chill] on you",
+    "lo": 50,
+    "hi": 35
+   },
+   {
+    "text": "38% reduced Effect of [Chill|Chill] on you",
+    "lo": 50,
+    "hi": 35
+   }
+  ]
+ },
+ "explicit.stat_644456512": {
+  "ref": "#% reduced Flask Charges used",
+  "matcher": "#% reduced Flask Charges used",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "50% increased [Flask|Flask] Charges used",
+    "lo": -50,
+    "hi": -50
+   },
+   {
+    "text": "50% increased [Flask|Flask] Charges used",
+    "lo": -50,
+    "hi": -50
+   },
+   {
+    "text": "50% increased [Flask|Flask] Charges used",
+    "lo": -50,
+    "hi": -50
+   }
+  ]
+ },
+ "explicit.stat_1269971728": {
+  "ref": "#% reduced Magnitude of Ignite on you",
+  "matcher": "#% reduced Magnitude of Ignite on you",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "40% reduced [BuffMagnitude|Magnitude] of [Ignite|Ignite] on you",
+    "lo": 50,
+    "hi": 35
+   },
+   {
+    "text": "42% reduced [BuffMagnitude|Magnitude] of [Ignite|Ignite] on you",
+    "lo": 50,
+    "hi": 35
+   },
+   {
+    "text": "41% reduced [BuffMagnitude|Magnitude] of [Ignite|Ignite] on you",
+    "lo": 50,
+    "hi": 35
+   }
+  ]
+ },
+ "explicit.stat_3839676903": {
+  "ref": "#% reduced Slowing Potency of Debuffs on You if you've used a Charm Recently",
+  "matcher": "#% reduced Slowing Potency of Debuffs on You if you've used a Charm Recently",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_3407849389": {
+  "ref": "#% reduced effect of Curses on you",
+  "matcher": "#% reduced effect of Curses on you",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_3801067695": {
+  "ref": "#% reduced effect of Shock on you",
+  "matcher": "#% reduced effect of Shock on you",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "37% reduced [BuffEffect|effect] of [Shock|Shock] on you",
+    "lo": 50,
+    "hi": 35
+   },
+   {
+    "text": "44% reduced [BuffEffect|effect] of [Shock|Shock] on you",
+    "lo": 50,
+    "hi": 35
+   },
+   {
+    "text": "35% reduced [BuffEffect|effect] of [Shock|Shock] on you",
+    "lo": 50,
+    "hi": 35
+   }
+  ]
+ },
+ "explicit.stat_38301299": {
+  "ref": "#% to Fire Resistance while on Low Life",
+  "matcher": "#% to Fire Resistance while on Low Life",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2593651571": {
+  "ref": "#% to all Elemental Resistances per Socket filled",
+  "matcher": "-#% to all Elemental Resistances per Socket filled",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "rune.stat_282990844": {
+  "ref": "+# to Deflection Rating per 10 maximum Runic Ward",
+  "matcher": "-# to Deflection Rating per 10 maximum Runic Ward",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "rune.stat_2838678452": {
+  "ref": "+# to Stun Threshold per 10 maximum Runic Ward",
+  "matcher": "-# to Stun Threshold per 10 maximum Runic Ward",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_664606484": {
+  "ref": "Abyssal Monsters have #% increased Effectiveness for each closed Pit, up to 100%",
+  "matcher": "Abyssal Monsters have #% increased Effectiveness for each closed Pit",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2957287092": {
+  "ref": "Chance to Block Damage is Lucky",
+  "matcher": "Chance to Block Attack Damage is Unlucky",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "rune.stat_935518591": {
+  "ref": "Critical Hit chance is Lucky against Parried enemies",
+  "matcher": "Critical Hit chance is Unlucky against Parried enemies",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_3417711605": {
+  "ref": "Damage Penetrates #% Cold Resistance",
+  "matcher": "Your Hits treat Cold Resistance as #% higher than actual value",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2653955271": {
+  "ref": "Damage Penetrates #% Fire Resistance",
+  "matcher": "Your Hits treat Fire Resistance as #% higher than actual value",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_818778753": {
+  "ref": "Damage Penetrates #% Lightning Resistance",
+  "matcher": "Your Hits treat Lightning Resistance as #% higher than actual value",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_3753748365": {
+  "ref": "Damage of Enemies Hitting you is Unlucky while you are on Low Life",
+  "matcher": "Damage of Enemies Hitting you is Unlucky while you are on Low Life",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "Damage of Enemies Hitting you is Unlucky while you are on [LowLife|Low",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "Damage of Enemies Hitting you is Unlucky while you are on [LowLife|Low",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "Damage of Enemies Hitting you is Unlucky while you are on [LowLife|Low",
+    "lo": -1,
+    "hi": -1
+   }
+  ]
+ },
+ "explicit.stat_2836928993": {
+  "ref": "Enemies in your Presence count as having double Power",
+  "matcher": "Enemies in your Presence count as having #% less Power",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2480151124": {
+  "ref": "Equipment has no Attribute Requirements",
+  "matcher": "Equipment has no Attribute Requirements",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_3764198549": {
+  "ref": "Every 3 seconds, Consume a nearby Corpse to Recover #% of maximum Life",
+  "matcher": "Every 3 seconds, Consume a nearby Corpse to Lose #% of maximum Life",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_3841984913": {
+  "ref": "Gain # Fragile Regrowth each second",
+  "matcher": "Lose # Fragile Regrowth each second",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2797971005": {
+  "ref": "Gain # Life per Enemy Hit with Attacks",
+  "matcher": "Lose # Life per Enemy Hit with Attacks",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_3695891184": {
+  "ref": "Gain # Life per enemy killed",
+  "matcher": "Lose # Life per enemy killed",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "Lose 10 Life per enemy killed",
+    "lo": -10,
+    "hi": -10
+   },
+   {
+    "text": "Lose 10 Life per enemy killed",
+    "lo": -10,
+    "hi": -10
+   },
+   {
+    "text": "Lose 10 Life per enemy killed",
+    "lo": -10,
+    "hi": -10
+   }
+  ]
+ },
+ "explicit.stat_820939409": {
+  "ref": "Gain # Mana per Enemy Hit with Attacks",
+  "matcher": "Lose # Mana per Enemy Hit with Attacks",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1368271171": {
+  "ref": "Gain # Mana per enemy killed",
+  "matcher": "Lose # Mana per enemy killed",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "Lose 3 Mana per enemy killed",
+    "lo": -3,
+    "hi": -3
+   },
+   {
+    "text": "Lose 3 Mana per enemy killed",
+    "lo": -3,
+    "hi": -3
+   },
+   {
+    "text": "Lose 3 Mana per enemy killed",
+    "lo": -3,
+    "hi": -3
+   }
+  ]
+ },
+ "explicit.stat_821021828": {
+  "ref": "Grants # Life per Enemy Hit",
+  "matcher": "Removes # of your Life per Enemy Hit",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_4224965099": {
+  "ref": "Lightning Damage of Enemies Hitting you is Lucky",
+  "matcher": "Lightning Damage of Enemies Hitting you is Unlucky",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "[Lightning] Damage of Enemies [HitDamage|Hitting] you is [Unlucky]",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "[Lightning] Damage of Enemies [HitDamage|Hitting] you is [Unlucky]",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "[Lightning] Damage of Enemies [HitDamage|Hitting] you is [Unlucky]",
+    "lo": -1,
+    "hi": -1
+   }
+  ]
+ },
+ "explicit.stat_3246948616": {
+  "ref": "Lightning Damage of Enemies Hitting you is Lucky during effect",
+  "matcher": "Lightning Damage of Enemies Hitting you is Unlucky during effect",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "[Lightning] Damage of Enemies [HitDamage|Hitting] you is [Unlucky] dur",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "[Lightning] Damage of Enemies [HitDamage|Hitting] you is [Unlucky] dur",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "[Lightning] Damage of Enemies [HitDamage|Hitting] you is [Unlucky] dur",
+    "lo": -1,
+    "hi": -1
+   }
+  ]
+ },
+ "explicit.stat_2424163939": {
+  "ref": "Physical Damage of Enemies Hitting you is Lucky",
+  "matcher": "Physical Damage of Enemies Hitting you is Unlucky",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "[Physical] Damage of Enemies [HitDamage|Hitting] you is [Unlucky]",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "[Physical] Damage of Enemies [HitDamage|Hitting] you is [Unlucky]",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "[Physical] Damage of Enemies [HitDamage|Hitting] you is [Unlucky]",
+    "lo": -1,
+    "hi": -1
+   }
+  ]
+ },
+ "explicit.stat_2549889921": {
+  "ref": "Players gain #% reduced Flask Charges",
+  "matcher": "Players gain #% reduced Flask Charges",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "Players gain 30% reduced [Flask] Charges",
+    "lo": 35,
+    "hi": 30
+   },
+   {
+    "text": "Players gain 34% reduced [Flask] Charges",
+    "lo": 35,
+    "hi": 30
+   },
+   {
+    "text": "Players gain 35% reduced [Flask] Charges",
+    "lo": 35,
+    "hi": 30
+   }
+  ]
+ },
+ "explicit.stat_4181072906": {
+  "ref": "Players have #% less Recovery Rate of Life and Energy Shield",
+  "matcher": "Players have #% less Recovery Rate of Life and Energy Shield",
+  "ruleKeep": false,
+  "verdict": "reduced-indexed-positive",
+  "samples": [
+   {
+    "text": "Players have 37% less Recovery Rate of Life and [EnergyShield|Energy S",
+    "lo": 40,
+    "hi": 36
+   },
+   {
+    "text": "Players have 36% less Recovery Rate of Life and [EnergyShield|Energy S",
+    "lo": 40,
+    "hi": 36
+   },
+   {
+    "text": "Players have 38% less Recovery Rate of Life and [EnergyShield|Energy S",
+    "lo": 40,
+    "hi": 36
+   }
+  ]
+ },
+ "explicit.stat_3552135623": {
+  "ref": "Prevent #% of Damage from Deflected Hits",
+  "matcher": "#% to amount of Damage Prevented by Deflection",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "-7% to amount of [HitDamage|Damage] Prevented by [Deflect|Deflection]",
+    "lo": -12,
+    "hi": -6
+   },
+   {
+    "text": "-9% to amount of [HitDamage|Damage] Prevented by [Deflect|Deflection]",
+    "lo": -12,
+    "hi": -6
+   },
+   {
+    "text": "-8% to amount of [HitDamage|Damage] Prevented by [Deflect|Deflection]",
+    "lo": -12,
+    "hi": -6
+   }
+  ]
+ },
+ "rune.stat_967155385": {
+  "ref": "Prevent #% of Damage from Deflected Hits if you've\nDeflected no Hits Recently",
+  "matcher": "#% to amount of Damage Prevented by Deflection if you haven't Deflected a Hit Recently",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_554145967": {
+  "ref": "Recover # Runic Ward when a Charm is used",
+  "matcher": "Lose # Runic Ward when a Charm is used",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_1568848828": {
+  "ref": "Recover # Runic Ward when you Block",
+  "matcher": "Lose # Runic Ward when you Block",
+  "ruleKeep": false,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_2023107756": {
+  "ref": "Recover #% of maximum Life on Kill",
+  "matcher": "Lose #% of maximum Life on Kill",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "[LifeLoss|Lose] 1% of maximum Life on Kill",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "[LifeLoss|Lose] 1% of maximum Life on Kill",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "[LifeLoss|Lose] 1% of maximum Life on Kill",
+    "lo": -1,
+    "hi": -1
+   }
+  ]
+ },
+ "explicit.stat_2442647190": {
+  "ref": "Recover #% of maximum Life when you Block",
+  "matcher": "Lose #% of maximum Life when you Block",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1030153674": {
+  "ref": "Recover #% of maximum Mana on Kill",
+  "matcher": "Lose #% of maximum Mana on Kill",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "Lose 1% of maximum Mana on Kill",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "Lose 1% of maximum Mana on Kill",
+    "lo": -1,
+    "hi": -1
+   },
+   {
+    "text": "Lose 1% of maximum Mana on Kill",
+    "lo": -1,
+    "hi": -1
+   }
+  ]
+ },
+ "explicit.stat_2267564181": {
+  "ref": "Require # additional enemies to be Surrounded",
+  "matcher": "Require # fewer enemies to be Surrounded",
+  "ruleKeep": false,
+  "verdict": "negative-but-not-reduced-worded",
+  "samples": [
+   {
+    "text": "Require 2 fewer enemies to be [Surrounded|Surrounded]",
+    "lo": -4,
+    "hi": -2
+   },
+   {
+    "text": "Require 2 fewer enemies to be [Surrounded|Surrounded]",
+    "lo": -4,
+    "hi": -2
+   },
+   {
+    "text": "Require 3 fewer enemies to be [Surrounded|Surrounded]",
+    "lo": -4,
+    "hi": -2
+   }
+  ]
+ },
+ "explicit.stat_4245256219": {
+  "ref": "Skill Gems have no Attribute Requirements",
+  "matcher": "Skill Gems have no Attribute Requirements",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1373370443": {
+  "ref": "Skills have a #% longer Perfect Timing window",
+  "matcher": "Skills have a #% shorter Perfect Timing window",
+  "ruleKeep": false,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1176947534": {
+  "ref": "Undead Minions have #% reduced Reservation",
+  "matcher": "Undead Minions have #% reduced Reservation",
+  "ruleKeep": false,
+  "verdict": "no-listings"
+ },
+ "explicit.stat_1104825894": {
+  "ref": "#% faster Curse Activation",
+  "matcher": "#% slower Curse Activation",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1782086450": {
+  "ref": "#% faster start of Energy Shield Recharge",
+  "matcher": "#% slower start of Energy Shield Recharge",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "30% [FasterESRechargeStart|slower start of Energy Shield Recharge]",
+    "lo": -30,
+    "hi": -30
+   },
+   {
+    "text": "37% [FasterESRechargeStart|slower start of Energy Shield Recharge]",
+    "lo": -30,
+    "hi": -30
+   },
+   {
+    "text": "30% [FasterESRechargeStart|slower start of Energy Shield Recharge]",
+    "lo": -30,
+    "hi": -30
+   }
+  ]
+ },
+ "explicit.stat_624954515": {
+  "ref": "#% increased Accuracy Rating",
+  "matcher": "#% reduced Accuracy Rating",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_4255854327": {
+  "ref": "#% increased Accuracy Rating against Enemies affected by Abyssal Wasting",
+  "matcher": "#% reduced Accuracy Rating against Enemies affected by Abyssal Wasting",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_169946467": {
+  "ref": "#% increased Accuracy Rating with Bows",
+  "matcher": "#% reduced Accuracy Rating with Bows",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_700317374": {
+  "ref": "#% increased Amount Recovered",
+  "matcher": "#% reduced Amount Recovered",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "50% reduced Amount Recovered",
+    "lo": -50,
+    "hi": -50
+   },
+   {
+    "text": "50% reduced Amount Recovered",
+    "lo": -50,
+    "hi": -50
+   },
+   {
+    "text": "50% reduced Amount Recovered",
+    "lo": -50,
+    "hi": -50
+   }
+  ]
+ },
+ "explicit.stat_2158617060": {
+  "ref": "#% increased Archon Buff duration",
+  "matcher": "#% reduced Archon Buff duration",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_280731498": {
+  "ref": "#% increased Area of Effect",
+  "matcher": "#% reduced Area of Effect",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1840985759": {
+  "ref": "#% increased Area of Effect for Attacks",
+  "matcher": "#% reduced Area of Effect for Attacks",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_434750362": {
+  "ref": "#% increased Area of Effect for Attacks per 10 Intelligence",
+  "matcher": "#% reduced Area of Effect for Attacks per 10 Intelligence",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_3481736410": {
+  "ref": "#% increased Area of Effect if you've Killed Recently",
+  "matcher": "#% reduced Area of Effect if you've Killed Recently",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_153777645": {
+  "ref": "#% increased Area of Effect of Curses",
+  "matcher": "#% reduced Area of Effect of Curses",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1062208444": {
+  "ref": "#% increased Armour",
+  "matcher": "#% reduced Armour",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2637470878": {
+  "ref": "#% increased Armour Break Duration",
+  "matcher": "#% reduced Armour Break Duration",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_3321629045": {
+  "ref": "#% increased Armour and Energy Shield",
+  "matcher": "#% reduced Armour and Energy Shield",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2451402625": {
+  "ref": "#% increased Armour and Evasion",
+  "matcher": "#% reduced Armour and Evasion",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "rune.stat_1392112423": {
+  "ref": "#% increased Armour and Evasion Rating while on Low Runic Ward",
+  "matcher": "#% reduced Armour and Evasion Rating while on Low Runic Ward",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_1015576579": {
+  "ref": "#% increased Armour from Equipped Body Armour",
+  "matcher": "#% reduced Armour from Equipped Body Armour",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_3523867985": {
+  "ref": "#% increased Armour, Evasion and Energy Shield",
+  "matcher": "#% reduced Armour, Evasion and Energy Shield",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2523933828": {
+  "ref": "#% increased Armour, Evasion and Energy Shield from Equipped Shield",
+  "matcher": "#% reduced Armour, Evasion and Energy Shield from Equipped Shield",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "rune.stat_2829985691": {
+  "ref": "#% increased Armour, Evasion and Energy Shield while your Companion is in your Presence",
+  "matcher": "#% reduced Armour, Evasion and Energy Shield while your Companion is in your Presence",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_1207554355": {
+  "ref": "#% increased Arrow Speed",
+  "matcher": "#% reduced Arrow Speed",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2843214518": {
+  "ref": "#% increased Attack Damage",
+  "matcher": "#% reduced Attack Damage",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "rune.stat_2077615515": {
+  "ref": "#% increased Attack Damage against Rare or Unique Enemies",
+  "matcher": "#% reduced Attack Damage against Rare or Unique",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_2879725899": {
+  "ref": "#% increased Attack Damage while Surrounded",
+  "matcher": "#% reduced Attack Damage while Surrounded",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "18% reduced [Attack|Attack] Damage while [Surrounded|Surrounded]",
+    "lo": -40,
+    "hi": 40
+   },
+   {
+    "text": "32% reduced [Attack|Attack] Damage while [Surrounded|Surrounded]",
+    "lo": -40,
+    "hi": 40
+   },
+   {
+    "text": "7% reduced [Attack|Attack] Damage while [Surrounded|Surrounded]",
+    "lo": -40,
+    "hi": 40
+   }
+  ]
+ },
+ "explicit.stat_2462683918": {
+  "ref": "#% increased Attack Damage while not on Low Mana",
+  "matcher": "#% reduced Attack Damage while not on Low Mana",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_4246007234": {
+  "ref": "#% increased Attack Damage while on Low Life",
+  "matcher": "#% reduced Attack Damage while on Low Life",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_210067635": {
+  "ref": "#% increased Attack Speed",
+  "matcher": "#% reduced Attack Speed",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "20% reduced [Attack] Speed",
+    "lo": -20,
+    "hi": -20
+   },
+   {
+    "text": "10% reduced [Attack] Speed",
+    "lo": -10,
+    "hi": -10
+   },
+   {
+    "text": "20% reduced [Attack] Speed",
+    "lo": -20,
+    "hi": -20
+   }
+  ]
+ },
+ "rune.stat_3203854378": {
+  "ref": "#% increased Attack Speed if you have Blocked Recently",
+  "matcher": "#% reduced Attack Speed if you have Blocked Recently",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_889691035": {
+  "ref": "#% increased Attack Speed per 10 Dexterity",
+  "matcher": "#% reduced Attack Speed per 10 Dexterity",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_720908147": {
+  "ref": "#% increased Attack Speed per 20 Dexterity",
+  "matcher": "#% reduced Attack Speed per 20 Dexterity",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_324579579": {
+  "ref": "#% increased Attack Speed per 20 Spirit",
+  "matcher": "#% reduced Attack Speed per 20 Spirit",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_314741699": {
+  "ref": "#% increased Attack Speed while a Rare or Unique Enemy is in your Presence",
+  "matcher": "#% reduced Attack Speed while a Rare or Unique is in your Presence",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_325171970": {
+  "ref": "#% increased Attack Speed while missing Runic Ward",
+  "matcher": "#% reduced Attack Speed while missing Runic Ward",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_4145314483": {
+  "ref": "#% increased Attack Speed while on Full Mana",
+  "matcher": "#% reduced Attack Speed while on Full Mana",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_299996": {
+  "ref": "#% increased Attack Speed while your Companion is in your Presence",
+  "matcher": "#% reduced Attack Speed while your Companion is in your Presence",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_3759735052": {
+  "ref": "#% increased Attack Speed with Bows",
+  "matcher": "#% reduced Attack Speed with Bows",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1135928777": {
+  "ref": "#% increased Attack Speed with Crossbows",
+  "matcher": "#% reduced Attack Speed with Crossbows",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_3283482523": {
+  "ref": "#% increased Attack Speed with Quarterstaves",
+  "matcher": "#% reduced Attack Speed with Quarterstaves",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1165163804": {
+  "ref": "#% increased Attack Speed with Spears",
+  "matcher": "#% reduced Attack Speed with Spears",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2672805335": {
+  "ref": "#% increased Attack and Cast Speed",
+  "matcher": "#% reduced Attack and Cast Speed",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "13% reduced [Attack] and Cast Speed",
+    "lo": -15,
+    "hi": -10
+   },
+   {
+    "text": "10% reduced [Attack] and Cast Speed",
+    "lo": -15,
+    "hi": -10
+   },
+   {
+    "text": "10% reduced [Attack] and Cast Speed",
+    "lo": -15,
+    "hi": -10
+   }
+  ]
+ },
+ "explicit.stat_3910614548": {
+  "ref": "#% increased Attack and Cast Speed if you've summoned a Totem Recently",
+  "matcher": "#% reduced Attack and Cast Speed if you've summoned a Totem Recently",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_3639275092": {
+  "ref": "#% increased Attribute Requirements",
+  "matcher": "#% reduced Attribute Requirements",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "20% reduced [Attributes|Attribute] Requirements",
+    "lo": -20,
+    "hi": -20
+   },
+   {
+    "text": "25% reduced [Attributes|Attribute] Requirements",
+    "lo": -25,
+    "hi": -25
+   },
+   {
+    "text": "15% reduced [Attributes|Attribute] Requirements",
+    "lo": -15,
+    "hi": -15
+   }
+  ]
+ },
+ "explicit.stat_3143208761": {
+  "ref": "#% increased Attributes",
+  "matcher": "#% reduced Attributes",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2513318031": {
+  "ref": "#% increased Attributes per Socket filled",
+  "matcher": "#% reduced Attributes per Socket filled",
+  "ruleKeep": true,
+  "verdict": "no-listings"
+ },
+ "explicit.stat_1459321413": {
+  "ref": "#% increased Bleeding Duration",
+  "matcher": "#% reduced Bleeding Duration",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1585769763": {
+  "ref": "#% increased Blind Effect",
+  "matcher": "#% reduced Blind Effect",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2481353198": {
+  "ref": "#% increased Block chance",
+  "matcher": "#% reduced Block chance",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "rune.stat_3087034595": {
+  "ref": "#% increased Block chance while your Companion is in your Presence",
+  "matcher": "#% reduced Block chance while your Companion is in your Presence",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "implicit.stat_1803308202": {
+  "ref": "#% increased Bolt Speed",
+  "matcher": "#% reduced Bolt Speed",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_2891184298": {
+  "ref": "#% increased Cast Speed",
+  "matcher": "#% reduced Cast Speed",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "25% reduced Cast Speed",
+    "lo": -25,
+    "hi": -15
+   },
+   {
+    "text": "23% reduced Cast Speed",
+    "lo": -25,
+    "hi": -15
+   },
+   {
+    "text": "17% reduced Cast Speed",
+    "lo": -25,
+    "hi": -15
+   }
+  ]
+ },
+ "explicit.stat_1518586897": {
+  "ref": "#% increased Cast Speed for each different Non-Instant Spell you've Cast Recently",
+  "matcher": "#% reduced Cast Speed for each different Non-Instant Spell you've Cast Recently",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_1174076861": {
+  "ref": "#% increased Cast Speed if you've dealt a Critical Hit Recently",
+  "matcher": "#% reduced Cast Speed if you've dealt a Critical Hit Recently",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "12% reduced Cast Speed if you've dealt a [Critical|Critical Hit] [Rece",
+    "lo": -15,
+    "hi": 15
+   },
+   {
+    "text": "15% reduced Cast Speed if you've dealt a [Critical|Critical Hit] [Rece",
+    "lo": -15,
+    "hi": 15
+   }
+  ]
+ },
+ "explicit.stat_34174842": {
+  "ref": "#% increased Cast Speed per 20 Spirit",
+  "matcher": "#% reduced Cast Speed per 20 Spirit",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_656291658": {
+  "ref": "#% increased Cast Speed when on Full Life",
+  "matcher": "#% reduced Cast Speed when on Full Life",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_1136768410": {
+  "ref": "#% increased Cast Speed when on Low Life",
+  "matcher": "#% reduced Cast Speed when on Low Life",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_1914226331": {
+  "ref": "#% increased Cast Speed while on Full Mana",
+  "matcher": "#% reduced Cast Speed while on Full Mana",
+  "ruleKeep": true,
+  "verdict": "no-magnitudes"
+ },
+ "explicit.stat_892489594": {
+  "ref": "#% increased Chance to be afflicted by Ailments when Hit",
+  "matcher": "#% reduced Chance to be afflicted by Ailments when Hit",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_736967255": {
+  "ref": "#% increased Chaos Damage",
+  "matcher": "#% reduced Chaos Damage",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "26% reduced [Chaos] Damage",
+    "lo": -30,
+    "hi": 30
+   },
+   {
+    "text": "30% reduced [Chaos] Damage",
+    "lo": -30,
+    "hi": 30
+   },
+   {
+    "text": "22% reduced [Chaos] Damage",
+    "lo": -30,
+    "hi": 30
+   }
+  ]
+ },
+ "implicit.stat_4004011170": {
+  "ref": "#% increased Chaos Damage for each Corrupted Item Equipped",
+  "matcher": "#% reduced Chaos Damage for each Corrupted Item Equipped",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_1366840608": {
+  "ref": "#% increased Charges",
+  "matcher": "#% reduced Charges",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "60% reduced Charges",
+    "lo": -60,
+    "hi": -50
+   },
+   {
+    "text": "56% reduced Charges",
+    "lo": -60,
+    "hi": -50
+   },
+   {
+    "text": "52% reduced Charges",
+    "lo": -60,
+    "hi": -50
+   }
+  ]
+ },
+ "explicit.stat_3196823591": {
+  "ref": "#% increased Charges gained",
+  "matcher": "#% reduced Charges gained",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ },
+ "explicit.stat_388617051": {
+  "ref": "#% increased Charges per use",
+  "matcher": "#% reduced Charges per use",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "25% reduced Charges per use",
+    "lo": -26,
+    "hi": -24
+   },
+   {
+    "text": "20% reduced Charges per use",
+    "lo": -20,
+    "hi": -18
+   },
+   {
+    "text": "15% reduced Charges per use",
+    "lo": -17,
+    "hi": -15
+   }
+  ]
+ },
+ "explicit.stat_3585532255": {
+  "ref": "#% increased Charm Charges gained",
+  "matcher": "#% reduced Charm Charges gained",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "10% reduced [Charm] Charges gained",
+    "lo": -20,
+    "hi": 20
+   },
+   {
+    "text": "15% reduced [Charm] Charges gained",
+    "lo": -20,
+    "hi": 20
+   },
+   {
+    "text": "10% reduced [Charm] Charges gained",
+    "lo": -20,
+    "hi": 20
+   }
+  ]
+ },
+ "explicit.stat_1389754388": {
+  "ref": "#% increased Charm Effect Duration",
+  "matcher": "#% reduced Charm Effect Duration",
+  "ruleKeep": true,
+  "verdict": "reduced-indexed-negative",
+  "samples": [
+   {
+    "text": "35% reduced [Charm] Effect Duration",
+    "lo": -50,
+    "hi": -10
+   },
+   {
+    "text": "45% reduced [Charm] Effect Duration",
+    "lo": -50,
+    "hi": -10
+   },
+   {
+    "text": "22% reduced [Charm] Effect Duration",
+    "lo": -50,
+    "hi": -10
+   }
+  ]
+ },
+ "explicit.stat_3485067555": {
+  "ref": "#% increased Chill Duration on Enemies",
+  "matcher": "#% reduced Chill Duration on Enemies",
+  "ruleKeep": true,
+  "verdict": "only-up-samples"
+ }
+}

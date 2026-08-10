@@ -6,6 +6,14 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.10',
+    date: '2026-08-09',
+    title: "More negative value fixes",
+    notes: [
+      "Last \"fix\" caused a mirror issue with some items. This should hopefully be the last fix needed, pending any edge cases I couldn't find.",
+    ],
+  },
+  {
     version: '2.6.9',
     date: '2026-08-09',
     title: "More Random Fixes from user feedback",
