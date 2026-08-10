@@ -125,18 +125,34 @@
   // Raw item text (Ctrl+C in game) -> pick the class, tick every pool mod the
   // item has. Numbered lines seed their roll as the minimum; mods flagged bad
   // seed as EXCLUDE (players filter against them, not for them).
-  function seedFromText(text) {
+  // `model` is the parsed item when the caller could produce one. It is the ONLY
+  // language-aware path: reading the raw text means matching "Item Class:" and English
+  // mod lines, so a Russian or French client got "that doesn't look like a waystone"
+  // for a waystone. The parser resolves any client language to canonical English refs,
+  // which is exactly what the pools are written in. Raw text stays as the fallback for
+  // when parsing fails.
+  function seedFromText(text, model) {
     const lines = String(text).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     const clsLine = lines.find((l) => /^Item Class:/i.test(l)) || '';
     let cls = null;
-    if (/waystone/i.test(clsLine)) cls = 'waystone';
-    else if (/tablet/i.test(clsLine)) {
-      cls = 'tablet'; // one pool covers every type
+    if (model && model.category === 'map.waystone') cls = 'waystone';
+    else if (model && model.category === 'map.tablet') cls = 'tablet';
+    else if (/waystone/i.test(clsLine)) cls = 'waystone';
+    else if (/tablet/i.test(clsLine)) cls = 'tablet';
+    if (cls === 'tablet') {
       // the pasted tablet's implicit names its type - preselect the subtype filter
-      const imp = ((window.RegexPools || {}).tabletImplicits || []).find((i) => lines.some((l) => l.toLowerCase() === i.text.toLowerCase()));
+      const imps = (window.RegexPools || {}).tabletImplicits || [];
+      // same two-line shape as above: compare against the ref's first line
+      const refs = model ? (model.mods || []).map((m) => String(m.ref || '').toLowerCase().trim().split('\n')[0].trim()) : [];
+      const imp = imps.find((i) => refs.includes(i.text.toLowerCase()))
+        || imps.find((i) => lines.some((l) => l.toLowerCase() === i.text.toLowerCase()));
       state.tabletType = imp ? imp.type : null;
     }
-    if (!cls) { state.notice = { kind: 'warn', msg: t('regex.notice.not_recognized') }; render(); return false; }
+    if (!cls) {
+      // say what it actually got, so a bad paste is diagnosable from the report alone
+      try { console.warn('[regex] unrecognised paste. class line:', JSON.stringify(clsLine), 'first line:', JSON.stringify(lines[0] || '')); } catch { /* console may be gone */ }
+      state.notice = { kind: 'warn', msg: t('regex.notice.not_recognized') }; render(); return false;
+    }
     state.cls = cls;
     state.sel = new Map();
     const pool = poolFor(cls);
@@ -146,8 +162,39 @@
     const clean = lines.map((l) => l
       .replace(/\(([0-9]+(?:\.[0-9]+)?[-–][0-9]+(?:\.[0-9]+)?)\)/g, '')
       .replace(/\s+[—–-]+\s+Unscalable Value$/i, '')); // advanced-copy annotation, not tooltip text
+    // Preferred path: match the pool against the PARSED mods by canonical ref, which is
+    // English whatever the client language is. Pool entries for header properties carry
+    // the printed line shape ("Item Rarity: +#%") while the parser's ref is bare
+    // ("Item Rarity"), so compare against the part before the colon too.
+    // Index the FIRST LINE of the ref as well. Tablet type stats are two-liners
+    // ("Adds an Otherworldy Breach to a Map \n# use remaining") while the pool carries
+    // only the first line, so a whole-ref comparison missed every tablet subtype.
+    // Third key: punctuation-stripped. The pool writes header properties the way the
+    // tooltip prints them ("Waystone (Tier #)") while the parser names the stat
+    // ("Waystone Tier"). Verified to collapse no two distinct pool entries together,
+    // for either pool.
+    const norm = (s) => String(s || '').toLowerCase().split('\n')[0].replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const byRef = new Map();
+    const indexRef = (ref, m) => {
+      const full = String(ref || '').toLowerCase().trim();
+      if (!full) return;
+      for (const k of [full, full.split('\n')[0].trim(), norm(full)]) {
+        if (k && !byRef.has(k)) byRef.set(k, m);
+      }
+    };
+    for (const m of ((model && model.mods) || [])) indexRef(m.ref, m);
     for (const mod of pool) {
       if (mod.hidden) continue;
+      if (byRef.size) {
+        const key = mod.text.toLowerCase();
+        const hit = byRef.get(key) || byRef.get(key.split(':')[0].trim()) || byRef.get(norm(mod.text));
+        if (hit) {
+          const val = hit.value != null ? Math.floor(Number(hit.value)) : null;
+          if (mod.bad) state.sel.set(mod.text, { mode: 'exc', min: null });
+          else state.sel.set(mod.text, { mode: 'inc', min: Number.isFinite(val) ? val : null });
+          continue;
+        }
+      }
       const segs = mod.text.split('#').map((p) => p.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&'));
       const last = segs.length - 1;
       if (/s$/i.test(segs[last])) segs[last] = segs[last].replace(/s$/i, 's?');

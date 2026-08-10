@@ -6,6 +6,13 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.6.12',
+    date: '2026-08-10',
+    notes: [
+      "Ctrl+V a tablet or waystone into the Regex tab should now work for non-english clients",
+    ],
+  },
+  {
     version: '2.6.11',
     date: '2026-08-10',
     notes: [

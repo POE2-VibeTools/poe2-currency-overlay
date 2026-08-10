@@ -2827,7 +2827,11 @@
       if (rxRoot && !rxRoot.classList.contains('hidden')) {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return; // typing a custom pattern, not seeding
         e.preventDefault();
-        if (window.RegexTab) window.RegexTab.seedFromText(text);
+        // parse first: the regex tab used to read the raw text, which only understands
+        // an English client. The model carries canonical refs for every language.
+        let model = null;
+        try { model = await modelFromText(text); } catch { /* fall back to raw text */ }
+        if (window.RegexTab) window.RegexTab.seedFromText(text, model);
         return;
       }
       // paste on the Desecrate tab loads the item straight into the EV view
