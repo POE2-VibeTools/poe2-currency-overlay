@@ -1105,7 +1105,35 @@ async function onItemHotkey(mode = 'pin', acc = null) {
       if (!text && synthCopy()) text = await pollClip(12);
       logToggle('item-hotkey', text
         ? `copy OK via ${viaTool ? 'xdotool' : 'uiohook'} len=${text.length}`
-        : `copy did not land (xdotool copy ${viaTool ? 'tried' : 'off/unavailable'}) - using existing clipboard`);
+        : `copy did not land on the first try (xdotool copy ${viaTool ? 'tried' : 'off/unavailable'})`);
+      // A Linux report of "press Ctrl+F twice" traced to here. Two things were wrong.
+      //
+      // First, the budget: Windows waits 625ms, then REFOCUSES THE GAME and polls another
+      // 500ms. Linux waited 300ms and gave up. A copy that landed late was missed, the
+      // press fell through to the old clipboard, the already-consumed guard correctly
+      // refused to re-search it - and the NEXT press found the first press's copy sitting
+      // there. From the outside that is a hotkey that works every other time.
+      //
+      // Second, the cause of the miss is usually the same as on Windows: the game is not
+      // actually holding keyboard focus, so the synthesized Ctrl+C goes nowhere. xdotool
+      // can fix that here, and it is already a dependency of the copy path.
+      //
+      // None of this runs when the copy landed, so a working setup pays nothing.
+      if (!text) {
+        logToggle('item-hotkey', 'copy empty; refocusing game for retry');
+        let refocused = false;
+        try { refocused = !!linuxFocus.focusGame(config.gameWindowMatch); } catch { }
+        // longer than the Windows 150ms: this is a spawned xdotool process plus an X
+        // round trip, not an in-process SetForegroundWindow
+        if (refocused) await new Promise((r) => setTimeout(r, 250));
+        // retry the copy itself, not just the poll - a second look at an unchanged
+        // clipboard would only ever find a copy that was already on its way
+        const retried = (config.linuxCopyViaXdotool && linuxFocus.sendCopy()) || synthCopy();
+        if (retried) text = await pollClip(20);
+        logToggle('item-hotkey', text
+          ? `copy OK on retry (refocus ${refocused ? 'ok' : 'unavailable'})`
+          : `copy still empty after retry (refocus ${refocused ? 'ok' : 'unavailable'})`);
+      }
     }
     if (process.platform === 'win32') {
       clipboard.writeText(''); // so a successful copy is unambiguous
