@@ -22,7 +22,8 @@ GitHub Pages serves `/docs` from `master`, so **pushing docs/ IS publishing**. N
    reporting, and the number could not be recalled once it was public.
    "Cut the release" is not an answer to "which version" - ask.
 2. **Notes:**
-   - Add the new version to the TOP of `renderer/release-notes.js` (`{version, date, title?, notes:[...]}`) - drives the in-app what's-new popup + Settings viewer.
+   - Add the new version to the TOP of `renderer/release-notes.js`. **Transcribe Drew's
+     notes verbatim - see `PATCH-NOTES.md` before touching a single character.** (`{version, date, title?, notes:[...]}`) - drives the in-app what's-new popup + Settings viewer.
    - `docs/changelog.html`: add an entry at the top, move the `<span class="badge">latest</span>` off the previous version.
    - `docs/roadmap.html`: flip any shipped items to `<span class="tag tag-done">Shipped X.Y.Z</span>`.
    - **Update the privacy statement if necessary.** If the release changes what the app captures, stores, sends, connects to, or reads (e.g. a new screen capture, network endpoint, stored file, or on-device data source), update BOTH `docs/privacy.html` and `PRIVACY.md` - and fix any now-inaccurate claim. (e.g. 2.4.0's Net Worth screen-capture / stash-reading should have triggered this.)
