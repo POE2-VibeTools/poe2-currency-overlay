@@ -27,6 +27,30 @@
   .tag-plan { color: #b7ad97; background: rgba(214,126,44,.12); border: 1px solid rgba(214,126,44,.28); }
   .tag-done { color: #14120f; background: linear-gradient(180deg,#8ec97a,#5fa04a); }
   .feat p { color: #bdb7a7; margin-top: 6px; font-size: 15px; }
+  .empty { padding: 22px 0 6px; text-align: center; }
+  .empty-lead { color: #f0d9a8; font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .empty p { color: #bdb7a7; font-size: 14.5px; max-width: 520px; margin: 0 auto 14px; }
+  .idea { display: inline-block; color: #e8c88a; border: 1px solid rgba(214,126,44,.5);
+    border-radius: 8px; padding: 9px 22px; font-size: 14px; font-weight: 600; text-decoration: none; }
+  .idea:hover { background: rgba(214,126,44,.14); }
+  #idea-form { max-width: 520px; margin: 16px auto 0; text-align: left; }
+  #idea-form textarea, #idea-contact { width: 100%; background: rgba(0,0,0,.3); color: #d5cdbc;
+    border: 1px solid rgba(214,126,44,.28); border-radius: 6px; padding: 9px 11px;
+    font: inherit; font-size: 14px; resize: vertical; }
+  #idea-form textarea:focus, #idea-contact:focus { outline: none; border-color: rgba(214,126,44,.6); }
+  #idea-contact { margin-top: 8px; }
+  #idea-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .idea-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .idea-status { font-size: 12.5px; color: #7c7565; }
+  .idea-status.ok { color: #8ec97a; }
+  .idea-status.bad { color: #d08a80; }
+  button.idea { background: transparent; cursor: pointer; font-family: inherit; }
+  button.idea[disabled] { opacity: .5; cursor: default; }
+  /* .idea sets display:inline-block, which outranks the UA rule behind the hidden
+     attribute - without this the button stays on screen after opening the form. */
+  .idea[hidden], #idea-form[hidden] { display: none; }
+  .empty-alt { font-size: 12.5px; color: #7c7565; margin-top: 14px; }
+  .empty-alt b { color: #bdb7a7; }
   .note { margin-top: 34px; font-size: 12.5px; color: #7c7565; text-align: center; }
   footer { margin-top: 20px; font-size: 12px; color: #6f6a5e; text-align: center; }
   a.gh { color: #d67e2c; text-decoration: none; border-bottom: 1px solid rgba(214,126,44,.4); }
@@ -38,24 +62,38 @@
   <div class="top">
     <img src="icon.png" alt="POE2 Currency Overlay logo">
     <h1>Roadmap</h1>
-    <div class="lead">What's planned next. Release targets are aims, not promises.</div>
     <a class="back" href="./">&larr; Back to download</a>
   </div>
 
   <div class="rel-group">
-    <h2>Targeting ~2.7</h2>
-    <div class="feat">
-      <div class="feat-head"><span class="feat-title">Dedicated Arbitrage Route tab</span><span class="tag tag-plan">Planned</span></div>
-      <p>A tab where you can build and check your own trade routes, instead of only viewing the single best route the app finds for a pair.</p>
-    </div>
-    <div class="feat">
-      <div class="feat-head"><span class="feat-title">In-app bug reporting</span><span class="tag tag-plan">Planned</span></div>
-      <p>Report a specific thing that misbehaved - a currency row, a search, a result, a desecration - straight from the app, with the real underlying data attached.</p>
+    <h2>Planned</h2>
+    <div class="empty">
+      <p class="empty-lead">Nothing planned yet.</p>
+      <p>A lot of what's below started as somebody asking for it. If there is something you want the app to do, say so.</p>
+      <button class="idea" id="idea-open" type="button">Submit an idea</button>
+      <form id="idea-form" hidden>
+        <textarea id="idea-text" rows="5" maxlength="5000" placeholder="What should the app do?" required></textarea>
+        <input id="idea-contact" type="text" maxlength="200" placeholder="Contact (optional) - Discord, email, etc." autocomplete="off">
+        <!-- bots fill every field they find; a human never sees this one -->
+        <input id="idea-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="idea-actions">
+          <button class="idea" id="idea-send" type="submit">Send</button>
+          <span id="idea-status" class="idea-status"></span>
+        </div>
+      </form>
     </div>
   </div>
 
   <div class="rel-group">
     <h2>Recently shipped</h2>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-title">Industry theme</span><span class="tag tag-done">Shipped 2.7.0</span></div>
+      <p>A second theme: steel blue, square corners, flat fills, no glow. Switch it in Settings.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="feat-title">In-app bug reporting</span><span class="tag tag-done">Shipped 2.6.13</span></div>
+      <p>Report a specific thing that misbehaved - a currency row, a search, a result, a desecration - straight from the app, with the real underlying data attached.</p>
+    </div>
     <div class="feat">
       <div class="feat-head"><span class="feat-title">Five more languages</span><span class="tag tag-done">Shipped 2.6.0</span></div>
       <p>The app runs in Russian, Brazilian Portuguese, German, French or Spanish, and price checks items copied from those clients. Settings &rarr; App &rarr; Language.</p>
@@ -103,8 +141,66 @@
     </div>
   </div>
 
-  <div class="note">Have a request? Open an issue on <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay/issues">GitHub</a>.</div>
   <footer><a class="gh" href="changelog.html">Changelog</a> &middot; <a class="gh" href="./">Download</a> &middot; <a class="gh" href="https://github.com/POE2-VibeTools/poe2-currency-overlay">Source on GitHub</a></footer>
 </main>
+<script>
+(function () {
+  // Posts straight to the same Apps Script the in-app Feedback form uses, so ideas from
+  // the site land in the same sheet. Content-Type is text/plain on purpose: that keeps it
+  // a "simple" request, so the browser sends it without a CORS preflight, which an Apps
+  // Script /exec cannot answer. no-cors means the response is opaque - the write happens,
+  // we just cannot read the result, so success here means "sent", not "stored".
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbzzeXIgPXcpZJG3BSnd-feEIQ-7G_-41IHnZHptENI3QvYeTi0zgFBQg_WG0GUXMru-/exec';
+  var open = document.getElementById('idea-open');
+  var form = document.getElementById('idea-form');
+  var text = document.getElementById('idea-text');
+  var contact = document.getElementById('idea-contact');
+  var hp = document.getElementById('idea-hp');
+  var send = document.getElementById('idea-send');
+  var status = document.getElementById('idea-status');
+  if (!open || !form) return;
+
+  open.addEventListener('click', function () {
+    form.hidden = false;
+    open.hidden = true;
+    text.focus();
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var details = (text.value || '').trim();
+    if (!details) { text.focus(); return; }
+    if (hp.value) { status.textContent = 'Thanks.'; status.className = 'idea-status ok'; return; }
+    send.disabled = true;
+    status.textContent = 'Sending...';
+    status.className = 'idea-status';
+    fetch(ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        kind: 'feedback',
+        type: 'Feature request',
+        details: details.slice(0, 5000),
+        contact: (contact.value || '').trim().slice(0, 200),
+        log: '', system: '', item: '',
+        version: 'website',
+        ts: new Date().toISOString()
+      })
+    }).then(function () {
+      form.hidden = true;
+      status.textContent = '';
+      var done = document.createElement('p');
+      done.className = 'empty-alt';
+      done.textContent = 'Sent. Thanks.';
+      form.parentNode.appendChild(done);
+    }).catch(function () {
+      send.disabled = false;
+      status.textContent = 'Could not send. Try the Feedback button in the app.';
+      status.className = 'idea-status bad';
+    });
+  });
+})();
+</script>
 </body>
 </html>

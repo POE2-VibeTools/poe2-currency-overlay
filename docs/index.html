@@ -53,6 +53,27 @@
   .feature ul { list-style: none; margin: 0; }
   .feature li { padding: 3px 0 3px 18px; position: relative; color: #bdb7a7; font-size: 14.5px; }
   .feature li::before { content: "◆"; color: #d67e2c; font-size: 9px; position: absolute; left: 0; top: 7px; }
+  /* The section that introduces the theme is drawn IN the theme: steel blue on charcoal,
+     square corners, flat, no glow. Same values the app generates (--am, --tx-hi, --tx-body,
+     --s-root). Scoped to .themed so none of it reaches the rest of the page. */
+  .feature.themed { background: #0f1214; border: 1px solid rgba(128,157,180,.22);
+    padding: 34px 34px 30px; margin: 62px 0; }
+  .feature.themed .copy .kicker { color: #809db4; }
+  .feature.themed .copy h2 { color: #d8e1e8; }
+  .feature.themed .copy p { color: #abbece; }
+  .feature.themed .copy b { color: #d8e1e8; font-weight: 600; }
+  .feature.themed li { color: #abbece; }
+  .feature.themed li::before { content: "■"; color: #809db4; font-size: 7px; top: 8px; }
+  .feature.themed .shot-row .cap { color: #7d8b98; }
+  .shot-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px; align-items: start; }
+  /* steel edge, not the site's gold - a gold frame around a steel-blue screenshot fights
+     the thing it is framing. Square corners for the same reason: these are shots OF a
+     square-cornered theme. All three are captured at the same window size, so they line
+     up without cropping. */
+  .shot-row img { width: 100%; display: block;
+    border: 1px solid rgba(128,157,180,.28); border-radius: 0; box-shadow: 0 10px 34px rgba(0,0,0,.45); }
+  .shot-row .cap { font-size: 12px; color: #8a8478; margin-top: 6px; text-align: center; }
+  .feature.wide { grid-template-columns: 1fr; gap: 0; }
   .shot-wrap { text-align: center; }
   .shot-wrap img { max-width: 100%; border: 1px solid rgba(214,126,44,.3); border-radius: 10px; box-shadow: 0 10px 34px rgba(0,0,0,.45); }
   .shot-wrap .cap { font-size: 12px; color: #8a8478; margin-top: 8px; }
@@ -70,6 +91,7 @@
     .feature, .feature.flip { grid-template-columns: 1fr; gap: 20px; justify-items: center; }
     .feature.flip .copy { order: 0; }
     .shot-wrap img { width: 100%; max-width: 470px; }
+    .shot-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -89,6 +111,32 @@
     <p class="sub">Linux is a new experimental AppImage - runs under XWayland automatically. Report anything odd.</p>
     <div><a class="btn2" href="faq.html">&#128214; How it works &amp; FAQ</a></div>
   </div>
+
+<!-- ============ THEME ============ -->
+  <section class="feature wide themed">
+    <div class="copy">
+      <div class="kicker">New in 2.7.0</div>
+      <h2>Industry, a second theme</h2>
+      <p>Steel blue theme - Same layout, same rough brightness &amp; contrast, one hue instead of six, square corners instead of round, flat fills instead of gradients, and no glow.</p>
+      <ul>
+        <li>Switch in <b>Settings &rarr; App &rarr; Theme</b>. Takes effect immediately, no restart.</li>
+      </ul>
+    </div>
+    <div class="shot-row">
+      <div>
+        <img src="img/theme-currency.png" alt="Currency tab in the Industry theme: steel-blue buckets for three Chaotic Omens, each priced in Exalted, Chaos and Divine, with green BEST badges and blue arbitrage percentages.">
+        <div class="cap">Currency</div>
+      </div>
+      <div>
+        <img src="img/theme-pricecheck.png" alt="Price Check in the Industry theme: a rare body armour parsed into property, implicit, pseudo and explicit filter rows, with a suggested floor of 90 divine.">
+        <div class="cap">Price Check</div>
+      </div>
+      <div>
+        <img src="img/theme-networth.png" alt="Net Worth in the Industry theme: twelve captured stash tabs totalling 1,028,593 exalted, each row showing its own exalted and divine value.">
+        <div class="cap">Net Worth</div>
+      </div>
+    </div>
+  </section>
 
   <!-- ============ PRICE CHECK ============ -->
   <section class="feature">
