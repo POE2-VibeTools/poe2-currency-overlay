@@ -719,6 +719,7 @@ function createWindow() {
 
 
 
+
   // Bring the window up once, invisible and click-through. From here on it is
   // never hidden again - toggling only flips opacity (see showOverlay/hideOverlay).
   win.once('ready-to-show', () => {
@@ -865,6 +866,7 @@ function registerHotkey(accelerator) {
     const ok = globalShortcut.register(accelerator, toggleOverlay);
     registerItemHotkey(); // unregisterAll wiped it; always restore alongside
     registerStashHotkey(); // ditto - restore the stash-capture hotkey
+    registerSavedRepriceHotkey(); // and the reprice-mode toggle
     registerCommandHotkeys(); // ditto - restore the chat-command binds
     if (!ok) throw new Error('register returned false');
     return true;
@@ -1640,6 +1642,117 @@ ipcMain.handle('set-stash-dup', (_e, on) => { config.stashDupTabs = !!on; saveCo
 ipcMain.handle('set-stash-sort', (_e, on) => { config.stashSortLayout = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-missing', (_e, on) => { config.stashShowMissing = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-confidence', (_e, on) => { config.stashShowConfidence = !!on; saveConfig(); return true; });
+// ===== REPRICE-WIRING-START =====================================================
+// Reprice mode. The engine is in reprice.js; main owns the hotkey, the config, the
+// input hook and the calibration window.
+const repriceMod = require('./reprice.js');
+
+let _rpTemplates;
+function repriceTemplates() {
+  if (_rpTemplates !== undefined) return _rpTemplates;
+  try {
+    const DR = require('./renderer/stash/digit-reader.js');
+    _rpTemplates = DR.templatesFromJSON(require('./renderer/stash/reprice-digits.json'));
+  } catch { _rpTemplates = null; }   // template set not cut yet
+  return _rpTemplates;
+}
+
+const reprice = repriceMod.create({
+  getWin: () => win,
+  getConfig: () => config,
+  saveConfig,
+  log: (tag, msg) => logToggle(tag, msg),
+  getHook: () => loadHook(),
+  // Until the template set exists the mode still arms and still sees the click; it
+  // simply finds no number and leaves the clipboard alone, which is the right failure.
+  readPrice: async (shot) => {
+    try {
+      const tpl = repriceTemplates();
+      if (!tpl) return null;
+      return require('./renderer/stash/reprice-reader.js').read(shot, tpl, 0.55).value;
+    } catch (err) { logToggle('reprice', 'read failed: ' + (err && err.message || err)); return null; }
+  },
+});
+
+function registerRepriceHotkey(accelerator) {
+  if (!accelerator) return false;
+  try { return globalShortcut.register(accelerator, () => { reprice.toggle(); }); }
+  catch { return false; }
+}
+
+// Restore the binding after a restart, not only when it is set.
+function registerSavedRepriceHotkey() {
+  if (!config || !config.repriceHotkey) return;
+  if (!registerRepriceHotkey(config.repriceHotkey)) {
+    console.error(`Reprice hotkey "${config.repriceHotkey}" is taken by another app`);
+  }
+}
+
+ipcMain.handle('set-reprice-hotkey', (_e, accelerator) => {
+  if (!accelerator) return false;
+  const prev = config.repriceHotkey;
+  try { if (prev) globalShortcut.unregister(prev); } catch { }
+  if (!registerRepriceHotkey(accelerator)) {
+    try { if (prev) registerRepriceHotkey(prev); } catch { }
+    return false;
+  }
+  config.repriceHotkey = accelerator; saveConfig();
+  logToggle('reprice', 'hotkey bound to ' + accelerator);
+  return true;
+});
+
+ipcMain.handle('set-reprice-config', (_e, cfg) => {
+  if (!cfg || typeof cfg !== 'object') return false;
+  const num = (v, d) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : d);
+  const op = (v) => (v === 'add' ? 'add' : 'subtract');
+  const mode = (v) => (v === 'percent' ? 'percent' : 'flat');
+  config.repriceCombine = ['single', 'bigger', 'smaller', 'threshold'].includes(cfg.combine) ? cfg.combine : 'single';
+  config.repriceThreshold = num(cfg.threshold, 20);
+  config.repriceOp = op(cfg.op); config.repriceValue = num(cfg.value, 0); config.repriceMode = mode(cfg.mode);
+  config.repriceOp2 = op(cfg.op2); config.repriceValue2 = num(cfg.value2, 0); config.repriceMode2 = mode(cfg.mode2);
+  saveConfig();
+  return true;
+});
+
+// Guessing where the price box sits does not work well enough to trust with money, so
+// the user draws it over their own screen. Stored as SCREEN FRACTIONS, like the Net
+// Worth calibration, so it survives a resolution change.
+let repriceCalWin = null;
+ipcMain.handle('reprice-calibrate', async () => {
+  if (repriceCalWin && !repriceCalWin.isDestroyed()) { repriceCalWin.focus(); return null; }
+  const b = screen.getPrimaryDisplay().bounds;
+  return await new Promise((resolve) => {
+    let done = false;
+    const finish = (rect) => {
+      if (done) return;
+      done = true;
+      ipcMain.removeListener('reprice-calibrate-done', onDone);
+      try { if (repriceCalWin && !repriceCalWin.isDestroyed()) repriceCalWin.close(); } catch { }
+      repriceCalWin = null;
+      if (rect && rect.w > 0 && rect.h > 0) {
+        config.repriceRegion = rect; saveConfig();
+        logToggle('reprice', 'region set to ' + JSON.stringify(rect));
+        resolve(rect);
+      } else resolve(null);
+    };
+    const onDone = (_e, rect) => finish(rect);
+    ipcMain.on('reprice-calibrate-done', onDone);
+
+    repriceCalWin = new BrowserWindow({
+      x: b.x, y: b.y, width: b.width, height: b.height,
+      frame: false, transparent: true, alwaysOnTop: true, skipTaskbar: true,
+      resizable: false, movable: false, fullscreenable: false, show: false,
+      webPreferences: { preload: path.join(__dirname, 'renderer', 'stash', 'reprice-calibrate-preload.js') },
+    });
+    repriceCalWin.setAlwaysOnTop(true, 'screen-saver');
+    repriceCalWin.loadFile(path.join(__dirname, 'renderer', 'stash', 'reprice-calibrate.html'));
+    repriceCalWin.once('ready-to-show', () => { try { repriceCalWin.show(); repriceCalWin.focus(); } catch { } });
+    // closing it any other way must not leave the settings screen awaiting forever
+    repriceCalWin.on('closed', () => finish(null));
+  });
+});
+// ===== REPRICE-WIRING-END =======================================================
+
 ipcMain.handle('set-stash-hotkey', (_e, accelerator) => {
   if (!accelerator) return false;
   const prev = config.stashHotkey;

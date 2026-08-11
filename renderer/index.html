@@ -38,6 +38,7 @@
           <button class="set-nav" data-sec="currency" data-i18n="ui.settings.nav_currency">Currency</button>
           <button class="set-nav" data-sec="pricecheck" data-i18n="ui.settings.nav_pricecheck">Price Check</button>
           <button class="set-nav" data-sec="networth" data-i18n="ui.settings.nav_networth">Net Worth</button>
+          <button class="set-nav" data-sec="reprice" data-i18n="ui.settings.nav_reprice">Reprice</button>
           <button class="set-nav" data-sec="hotkeys" data-i18n="ui.settings.nav_hotkeys">Hotkeys</button>
           <button class="set-nav" data-sec="help" data-i18n="ui.settings.nav_help">Help &amp; About</button>
           <button id="btn-quit" class="set-quit" data-i18n="ui.settings.quit_button" data-i18n-title="ui.settings.quit_tooltip" title="Quit the app entirely">Quit app</button>
@@ -191,6 +192,59 @@
             <div id="nw-set-root"></div>
           </section>
 
+          <section class="set-card" id="sec-reprice">
+            <div class="set-card-lab" data-i18n="ui.settings.reprice.heading">Reprice</div>
+            <div class="set-field">
+              <label data-i18n="ui.settings.reprice.hotkey_label" data-i18n-title="ui.settings.reprice.hotkey_tooltip" title="Global key that turns reprice mode on and off. While it is on, right-clicking an item to reprice puts the adjusted price on your clipboard, ready to paste.">Reprice mode hotkey</label>
+              <div class="kb-field"><input id="reprice-hotkey-input" class="kb-input" readonly data-i18n-ph="ui.settings.hotkey_placeholder" placeholder="click, then press keys" /><span class="kb-hint" data-i18n="ui.settings.hotkey_rebind_hint">click to rebind</span></div>
+            </div>
+            <div class="set-field">
+              <label data-i18n="ui.settings.reprice.adjust_label" data-i18n-title="ui.settings.reprice.adjust_tooltip" title="What to do to the price the app reads. The result is rounded to a whole number, and never goes below 1.">Adjustment</label>
+              <select id="reprice-combine">
+                <option value="single" data-i18n="ui.settings.reprice.combine_single">Always</option>
+                <option value="bigger" data-i18n="ui.settings.reprice.combine_bigger">Whichever changes the price more</option>
+                <option value="smaller" data-i18n="ui.settings.reprice.combine_smaller">Whichever changes the price less</option>
+                <option value="threshold" data-i18n="ui.settings.reprice.combine_threshold">If the price is at least...</option>
+              </select>
+              <div id="reprice-threshold-row" class="rp-adjust hidden">
+                <span class="rp-lead" data-i18n="ui.settings.reprice.threshold_lead">If the price is at least</span>
+                <input id="reprice-threshold" type="number" min="0" step="any" value="20" />
+              </div>
+              <div class="rp-adjust" data-rule="0">
+                <span class="rp-lead rp-lead-a hidden" data-i18n="ui.settings.reprice.then_lead">then</span>
+                <select id="reprice-op">
+                  <option value="subtract" data-i18n="ui.settings.reprice.op_subtract">Subtract</option>
+                  <option value="add" data-i18n="ui.settings.reprice.op_add">Add</option>
+                </select>
+                <input id="reprice-value" type="number" min="0" step="any" value="10" />
+                <select id="reprice-mode">
+                  <option value="flat" data-i18n="ui.settings.reprice.mode_flat">flat</option>
+                  <option value="percent" data-i18n="ui.settings.reprice.mode_percent">percent</option>
+                </select>
+              </div>
+              <div class="rp-adjust rp-rule2 hidden" data-rule="1">
+                <span class="rp-lead rp-lead-b hidden" data-i18n="ui.settings.reprice.else_lead">otherwise</span>
+                <select id="reprice-op2">
+                  <option value="subtract" data-i18n="ui.settings.reprice.op_subtract">Subtract</option>
+                  <option value="add" data-i18n="ui.settings.reprice.op_add">Add</option>
+                </select>
+                <input id="reprice-value2" type="number" min="0" step="any" value="1" />
+                <select id="reprice-mode2">
+                  <option value="flat" data-i18n="ui.settings.reprice.mode_flat">flat</option>
+                  <option value="percent" data-i18n="ui.settings.reprice.mode_percent">percent</option>
+                </select>
+              </div>
+              <div id="reprice-example" class="rp-examples"></div>
+            </div>
+            <div class="set-field">
+              <label data-i18n="ui.settings.reprice.calibrate_label" data-i18n-title="ui.settings.reprice.calibrate_tooltip" title="Show the app where the price box sits on your screen. Open the reprice window in game first, then drag a box around the number.">Price box</label>
+              <div class="rp-cal-row">
+                <button id="reprice-calibrate" class="set-login-btn" data-i18n="ui.settings.reprice.calibrate_button">Calibrate</button>
+                <span id="reprice-cal-status" class="set-sub" data-i18n="ui.settings.reprice.calibrate_none">not set</span>
+              </div>
+            </div>
+          </section>
+
           <section class="set-card" id="sec-hotkeys">
             <div class="set-card-lab" data-i18n="ui.settings.hotkeys.heading">Command Hotkeys</div>
             <div class="cmdhk-head">
@@ -336,6 +390,7 @@
   <script src="i18n/rumor-names.js"></script>
   <script src="i18n/i18n.js"></script>
   <script src="release-notes.js"></script>
+  <script src="reprice-rules.js"></script>
   <script src="renderer.js"></script>
   <script src="tutorial.js"></script>
   <script src="item-tab.bundle.js"></script>

@@ -1926,6 +1926,111 @@ async function initSettings() {
     return ok;
   });
 
+  // ---------- reprice (Settings → Reprice) ----------
+  // Reads the price the game already has in the box, applies one arithmetic rule and
+  // puts the result on the clipboard. The renderer owns the settings only; the reading
+  // happens in main, where the screen capture and the right-click hook live.
+  const rpHkInput = $('reprice-hotkey-input');
+  if (rpHkInput) bindHotkeyInput(rpHkInput, () => config.repriceHotkey || '', async (acc) => {
+    const ok = await window.api.setRepriceHotkey(acc);
+    if (ok) config.repriceHotkey = acc;
+    return ok;
+  });
+
+  const rpEls = {
+    combine: $('reprice-combine'), threshold: $('reprice-threshold'), thresholdRow: $('reprice-threshold-row'),
+    op: $('reprice-op'), value: $('reprice-value'), mode: $('reprice-mode'),
+    op2: $('reprice-op2'), value2: $('reprice-value2'), mode2: $('reprice-mode2'),
+    rule2: document.querySelector('.rp-rule2'),
+    leadA: document.querySelector('.rp-lead-a'), leadB: document.querySelector('.rp-lead-b'),
+    example: $('reprice-example'), calStatus: $('reprice-cal-status'),
+  };
+
+  function rpSyncVisibility() {
+    const c = config.repriceCombine || 'single';
+    const pair = c !== 'single';
+    const ifElse = c === 'threshold';
+    if (rpEls.rule2) rpEls.rule2.classList.toggle('hidden', !pair);
+    if (rpEls.thresholdRow) rpEls.thresholdRow.classList.toggle('hidden', !ifElse);
+    // "then"/"otherwise" only read correctly for the if/else; for the comparisons the
+    // two rows are alternatives, not branches
+    if (rpEls.leadA) rpEls.leadA.classList.toggle('hidden', !ifElse);
+    if (rpEls.leadB) rpEls.leadB.classList.toggle('hidden', !ifElse);
+  }
+
+  function rpRenderExample() {
+    if (!rpEls.example || !window.RepriceRules) return;
+    const ex = window.RepriceRules.examples(window.RepriceRules.fromConfig(config));
+    rpEls.example.innerHTML = '';
+    for (const e of ex) {
+      const line = document.createElement('div');
+      line.className = 'set-sub';
+      line.textContent = t('ui.settings.reprice.example_line', { base: e.base, result: e.result });
+      rpEls.example.appendChild(line);
+    }
+  }
+
+  function rpRenderCal() {
+    if (!rpEls.calStatus) return;
+    const r = config.repriceRegion;
+    const set = !!(r && r.w > 0 && r.h > 0);
+    rpEls.calStatus.textContent = set ? t('ui.settings.reprice.calibrate_done') : t('ui.settings.reprice.calibrate_none');
+    rpEls.calStatus.classList.toggle('rp-set', set);
+  }
+
+  const rpSave = () => window.api.setRepriceConfig({
+    combine: config.repriceCombine, threshold: config.repriceThreshold,
+    op: config.repriceOp, value: config.repriceValue, mode: config.repriceMode,
+    op2: config.repriceOp2, value2: config.repriceValue2, mode2: config.repriceMode2,
+  });
+  const rpChanged = () => { rpSyncVisibility(); rpRenderExample(); rpSave(); };
+
+  const rpNum = (el, key) => {
+    if (!el) return;
+    el.addEventListener('input', () => {
+      const n = Number(el.value);
+      config[key] = Number.isFinite(n) && n >= 0 ? n : 0;
+      rpChanged();
+    });
+  };
+  const rpSel = (el, key) => {
+    if (!el) return;
+    el.addEventListener('change', () => { config[key] = el.value; rpChanged(); });
+  };
+  rpSel(rpEls.combine, 'repriceCombine');
+  rpSel(rpEls.op, 'repriceOp'); rpSel(rpEls.mode, 'repriceMode');
+  rpSel(rpEls.op2, 'repriceOp2'); rpSel(rpEls.mode2, 'repriceMode2');
+  rpNum(rpEls.value, 'repriceValue'); rpNum(rpEls.value2, 'repriceValue2');
+  rpNum(rpEls.threshold, 'repriceThreshold');
+
+  // paint the controls from whatever was saved
+  function rpInit() {
+    // Seed the defaults into config FIRST. They used to live only in the HTML value=
+    // attributes, so a fresh install had repriceValue undefined, fromConfig() produced
+    // NaN, and the worked example read "100 becomes 100" - the rule silently doing
+    // nothing while the controls showed numbers.
+    const dflt = {
+      repriceCombine: 'single', repriceThreshold: 20,
+      repriceOp: 'subtract', repriceValue: 10, repriceMode: 'percent',
+      repriceOp2: 'subtract', repriceValue2: 1, repriceMode2: 'flat',
+    };
+    for (const k of Object.keys(dflt)) if (config[k] == null) config[k] = dflt[k];
+    const set = (el, v) => { if (el && v != null) el.value = v; };
+    set(rpEls.combine, config.repriceCombine || 'single');
+    set(rpEls.op, config.repriceOp || 'subtract'); set(rpEls.mode, config.repriceMode || 'percent');
+    set(rpEls.value, config.repriceValue != null ? config.repriceValue : 10);
+    set(rpEls.op2, config.repriceOp2 || 'subtract'); set(rpEls.mode2, config.repriceMode2 || 'flat');
+    set(rpEls.value2, config.repriceValue2 != null ? config.repriceValue2 : 1);
+    set(rpEls.threshold, config.repriceThreshold != null ? config.repriceThreshold : 20);
+    rpSyncVisibility(); rpRenderExample(); rpRenderCal();
+  }
+  rpInit();
+
+  if ($('reprice-calibrate')) $('reprice-calibrate').addEventListener('click', async () => {
+    const r = await window.api.repriceCalibrate();
+    if (r && r.w > 0) { config.repriceRegion = r; rpRenderCal(); }
+  });
+
   // ---------- command hotkeys (Settings → Hotkeys) ----------
   // Rows of {command, accelerator}. Curated dropdown + a Custom… option for
   // anything else (argument commands, new patch commands). The fences (must

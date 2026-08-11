@@ -1765,6 +1765,21 @@ footer {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hl) 85%, transparent);
 }
 
+/* Reprice settings. The adjustment reads as one sentence left to right - verb, number,
+   unit - so the three controls sit on one row and size to their content rather than
+   stretching to the card. */
+.rp-adjust { display: flex; align-items: center; gap: 8px; }
+.rp-adjust select { width: auto; flex: 0 0 auto; }
+.rp-adjust input { width: 84px; flex: 0 0 auto; text-align: right; }
+.rp-adjust + .rp-adjust { margin-top: 6px; }
+.rp-lead { color: var(--tx-dim); font-size: 11px; flex: 0 0 auto; }
+#reprice-threshold { width: 84px; }
+.rp-examples { margin-top: 6px; }
+.rp-examples .set-sub { display: block; }
+.rp-cal-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rp-cal-row .set-login-btn { flex: 0 0 auto; }
+#reprice-cal-status.rp-set { color: var(--ok-tx2); }
+
 /* Corner resize grip. The window is frameless, so there is no OS border to drag.
    It MUST have a real background: the window is transparent, and several Linux
    compositors hit-test on the alpha channel, so a box whose pixels are transparent
