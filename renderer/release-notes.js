@@ -11,7 +11,6 @@ window.RELEASE_NOTES = [
     title: "New Theme, Random Fixes",
     notes: [
       "New Theme - Industry. Enjoy.",
-      "Fixes:",
       "Currency:",
       "Arb values under 3% were unreadable (1.81:1 → 4.78:1)",
       "Fixed an issue where clicking into a Fix Rate input would unpin the tooltip",
