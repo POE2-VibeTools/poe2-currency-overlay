@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Reprice mode</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../themes.css">
+<style>
+  /* A small always-on-top badge over the game saying the mode is live. Click-through, so
+     it can never eat a click meant for the game. Drawn from the same tokens as the app so
+     it follows the theme. */
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
+    user-select: none; -webkit-app-region: no-drag; }
+  #wrap { display: flex; align-items: center; gap: 9px; height: 100%;
+    padding: 0 12px; box-sizing: border-box;
+    background: color-mix(in srgb, var(--s-root) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--am) 55%, transparent);
+    font: 600 12px/1 system-ui, sans-serif; color: var(--tx-hi); white-space: nowrap; }
+  #dot { width: 8px; height: 8px; border-radius: 50%; background: var(--am);
+    box-shadow: 0 0 8px var(--am); flex: 0 0 auto; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  #label { letter-spacing: 0.06em; text-transform: uppercase; }
+  #rule { color: var(--tx-dim); font-weight: 500; text-transform: none; letter-spacing: 0; }
+  #last { color: var(--ok-tx2); font-weight: 700; font-variant-numeric: tabular-nums; }
+  #last:empty { display: none; }
+</style>
+</head>
+<body>
+  <div id="wrap">
+    <span id="dot"></span>
+    <span id="label">Reprice</span>
+    <span id="rule"></span>
+    <span id="last"></span>
+  </div>
+<script src="reprice-indicator-client.js"></script>
+</body>
+</html>

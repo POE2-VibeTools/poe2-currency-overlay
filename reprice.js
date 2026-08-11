@@ -122,10 +122,13 @@ function create(deps) {
       if (out === base) { say(`read ${base}, rule leaves it unchanged - clipboard untouched`); return; }
       clipboard.writeText(String(out));
       say(`read ${base}${ctx.currency ? ' ' + ctx.currency : ''} -> ${out} (after ${wait}ms)`);
-      if (onChange) onChange({ base, result: out, currency: ctx.currency || null });
+      const info = { base, result: out, currency: ctx.currency || null };
+      if (onChange) onChange(info);
+      try { if (deps.onRead) deps.onRead(info); } catch { }
       return;
     }
     say('no number found in the price box');
+    try { if (deps.onRead) deps.onRead(null); } catch { }
   }
 
   function onRightClick() {
@@ -148,6 +151,7 @@ function create(deps) {
       await closeStream();
     }
     notify();
+    try { if (deps.onModeChange) deps.onModeChange(on); } catch { }
     return on;
   }
 

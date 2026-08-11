@@ -1642,6 +1642,54 @@ ipcMain.handle('set-stash-dup', (_e, on) => { config.stashDupTabs = !!on; saveCo
 ipcMain.handle('set-stash-sort', (_e, on) => { config.stashSortLayout = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-missing', (_e, on) => { config.stashShowMissing = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-confidence', (_e, on) => { config.stashShowConfidence = !!on; saveConfig(); return true; });
+// ===== REPRICE-INDICATOR-START ==================================================
+// A small badge over the game while the mode is on. Click-through and never focusable,
+// so it cannot eat a click meant for the game or pull focus mid-trade.
+let repriceBadge = null;
+
+function repriceRuleSummary() {
+  const R = require('./renderer/reprice-rules.js');
+  const c = R.fromConfig(config);
+  const one = (r) => (r.op === 'add' ? '+' : '-') + r.value + (r.mode === 'percent' ? '%' : '');
+  const a = one(c.rules[0]), b = one(c.rules[1]);
+  if (c.combine === 'single') return a;
+  if (c.combine === 'threshold') return `${a} at ${c.threshold}+, else ${b}`;
+  return (c.combine === 'smaller' ? 'min' : 'max') + `(${a}, ${b})`;
+}
+
+function showRepriceBadge() {
+  if (repriceBadge && !repriceBadge.isDestroyed()) return;
+  const wa = screen.getPrimaryDisplay().workArea;
+  const W = 300, H = 30;
+  repriceBadge = new BrowserWindow({
+    width: W, height: H,
+    x: Math.round(wa.x + (wa.width - W) / 2), y: wa.y + 12,
+    frame: false, transparent: true, alwaysOnTop: true, skipTaskbar: true,
+    focusable: false, resizable: false, movable: false, show: false,
+    webPreferences: { preload: path.join(__dirname, 'renderer', 'stash', 'reprice-indicator-preload.js') },
+  });
+  repriceBadge.setAlwaysOnTop(true, 'screen-saver');
+  repriceBadge.setIgnoreMouseEvents(true);
+  repriceBadge.loadFile(path.join(__dirname, 'renderer', 'stash', 'reprice-indicator.html'));
+  repriceBadge.once('ready-to-show', () => {
+    try {
+      repriceBadge.showInactive();   // never steal focus from the game
+      sendRepriceState({ rule: repriceRuleSummary() });
+    } catch { }
+  });
+  repriceBadge.on('closed', () => { repriceBadge = null; });
+}
+
+function hideRepriceBadge() {
+  try { if (repriceBadge && !repriceBadge.isDestroyed()) repriceBadge.close(); } catch { }
+  repriceBadge = null;
+}
+
+function sendRepriceState(s) {
+  try { if (repriceBadge && !repriceBadge.isDestroyed()) repriceBadge.webContents.send('reprice-state', s); } catch { }
+}
+// ===== REPRICE-INDICATOR-END ====================================================
+
 // ===== REPRICE-WIRING-START =====================================================
 // Reprice mode. The engine is in reprice.js; main owns the hotkey, the config, the
 // input hook and the calibration window.
@@ -1665,6 +1713,8 @@ const reprice = repriceMod.create({
   getHook: () => loadHook(),
   // Until the template set exists the mode still arms and still sees the click; it
   // simply finds no number and leaves the clipboard alone, which is the right failure.
+  onModeChange: (on) => { if (on) showRepriceBadge(); else hideRepriceBadge(); },
+  onRead: (r) => sendRepriceState(r && r.result != null ? { read: r } : { miss: 'no number' }),
   readPrice: async (shot) => {
     try {
       const tpl = repriceTemplates();
