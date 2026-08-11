@@ -2018,7 +2018,12 @@ async function initSettings() {
       repriceOp: 'subtract', repriceValue: 10, repriceMode: 'percent',
       repriceOp2: 'subtract', repriceValue2: 1, repriceMode2: 'flat',
     };
-    for (const k of Object.keys(dflt)) if (config[k] == null) config[k] = dflt[k];
+    let seeded = false;
+    for (const k of Object.keys(dflt)) if (config[k] == null) { config[k] = dflt[k]; seeded = true; }
+    // and PERSIST them. Seeding only the renderer's copy is what made the rule appear to
+    // do nothing: main had no values, so it applied the rule to undefined and handed the
+    // price straight back.
+    if (seeded) setTimeout(() => rpSave(), 0);
     const set = (el, v) => { if (el && v != null) el.value = v; };
     set(rpEls.combine, config.repriceCombine || 'single');
     set(rpEls.op, config.repriceOp || 'subtract'); set(rpEls.mode, config.repriceMode || 'percent');

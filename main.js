@@ -207,6 +207,13 @@ const DEFAULT_CONFIG = {
   currencyIcons: false, // show currency icons instead of names next to denominations/prices (dyslexia aid)
   dyslexicFont: false, // render the whole app in the bundled OpenDyslexic typeface (accessibility)
   theme: 'default', // 'default' | 'industry' - alternate palette, see renderer/themes.css
+  // Reprice rules. These live HERE, not only in the settings screen: main is what applies
+  // them, and a renderer that seeds its own defaults without persisting them leaves main
+  // computing on undefined - which reads as "the rule does nothing" (12345 -> 12345).
+  repriceCombine: 'single',   // 'single' | 'bigger' | 'smaller' | 'threshold'
+  repriceThreshold: 20,
+  repriceOp: 'subtract', repriceValue: 10, repriceMode: 'percent',
+  repriceOp2: 'subtract', repriceValue2: 1, repriceMode2: 'flat',
   // Live currency-rate polling, two independent rates. Each: 'quiet' (no auto poll) |
   // 'low' | 'medium' | 'high'. Tab = while the Currency tab is the visible view;
   // Bg = while the overlay is up but you're on another tab.
