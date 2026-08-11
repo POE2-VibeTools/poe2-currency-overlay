@@ -20,7 +20,7 @@
   const fmtDiv = (n) => n == null ? null : (n >= 100 ? Math.round(n) : n.toFixed(1)).toLocaleString('en-US') + ' ' + unit(t('networth.unit.div_label'), 'divine');
   const fmtCount = (n) => Number(n).toLocaleString('en-US');
 
-  const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, showMissing: false, showConfidence: false, calibrated: false, hotkey: 'F7', dragId: null, busy: false, phase: 'idle', pendingTab: null, notice: null, modal: null };
+  const state = { rows: [], expanded: {}, nextId: 1, dup: false, sortLayout: false, showMissing: false, showConfidence: false, calibrated: false, hotkey: 'F7', dragId: null, busy: false, phase: 'idle', pendingTab: null, queued: 0, notice: null, modal: null };
   const TAB_LABEL = { currency: t('networth.tab.currency'), abyss: t('networth.tab.abyss'), essence: t('networth.tab.essence'), runes: t('networth.tab.runes'), 'runes-kalguuran': t('networth.tab.runes_kalguuran'), ritual: t('networth.tab.ritual'), soulcore: t('networth.tab.soulcore'), idol: t('networth.tab.idol'), 'ancient-augment': t('networth.tab.ancient_augment'), delirium: t('networth.tab.delirium'), breach: t('networth.tab.breach'), expedition: t('networth.tab.expedition') };
   const MIRROR_ICON = 'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lEdXBsaWNhdGUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/26bc31680e/CurrencyDuplicate.png';
 
@@ -32,7 +32,16 @@
     const base = TAB_LABEL[row.tab] || row.tab;
     return same.length <= 1 ? base : t('networth.row.label_with_index', { tabName: base, index: same.indexOf(row) + 1 });
   }
-  function addRow(res) { const row = { id: state.nextId++, tab: res.tab, result: res, included: true }; state.rows.push(row); state.expanded[row.id] = false; return row; }
+  // Rows land in CAPTURE order, not completion order. Reads run in a pool so a small tab
+  // can finish before a big one grabbed earlier; main stamps each capture with a sequence
+  // and the row is inserted against it.
+  function addRow(res) {
+    const row = { id: state.nextId++, tab: res.tab, result: res, included: true, seq: res.seq };
+    const at = res.seq == null ? -1 : state.rows.findIndex((r) => r.seq != null && r.seq > res.seq);
+    if (at < 0) state.rows.push(row); else state.rows.splice(at, 0, row);
+    state.expanded[row.id] = false;
+    return row;
+  }
   function reorderRow(dragId, targetId, before) {
     const from = state.rows.findIndex((r) => r.id === dragId);
     if (from < 0) return;
@@ -44,7 +53,8 @@
   }
 
   function capture() {
-    if (state.busy) return;
+    // no busy gate: grabs queue in main and reads run behind them, so pressing the
+    // hotkey tab-after-tab is the point rather than something to guard against
     state.notice = null;
     try { window.api.stashCaptureStart(); } catch (e) { state.notice = { kind: 'err', msg: t('networth.notice.capture_unavailable') }; render(); }
   }
@@ -158,8 +168,15 @@
     grip.ondragstart = (e) => { state.dragId = row.id; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(row.id)); } catch {} };
     grip.ondragend = () => { state.dragId = null; render(); };
     head.appendChild(grip);
-    card.ondragover = (e) => { if (state.dragId == null || state.dragId === row.id) return; e.preventDefault(); card.classList.add('nw-drop'); };
-    card.ondragleave = () => card.classList.remove('nw-drop');
+    card.ondragover = (e) => {
+      if (state.dragId == null || state.dragId === row.id) return;
+      e.preventDefault();
+      const r = card.getBoundingClientRect();
+      const after = (e.clientY - r.top) > r.height / 2;
+      card.classList.remove('nw-drop', 'nw-drop-before', 'nw-drop-after');
+      card.classList.add(after ? 'nw-drop-after' : 'nw-drop-before');
+    };
+    card.ondragleave = () => card.classList.remove('nw-drop', 'nw-drop-before', 'nw-drop-after');
     card.ondrop = (e) => {
       if (state.dragId == null) return; e.preventDefault();
       const rect = card.getBoundingClientRect();
@@ -373,7 +390,6 @@
         strip.appendChild(cell);
       });
       box.appendChild(strip);
-      box.appendChild(el('div', 'nw-sample-note', t('networth.sample.preview_note')));
     }
 
     // The grab hides the overlay, screenshots the game and runs the whole reader before
@@ -436,7 +452,10 @@
     cancel.onclick = async () => { await window.api.stashSampleReset(); state.sample = null; render(); };
     box.appendChild(cancel);
     back.appendChild(box);
-    back.onclick = (e) => { if (e.target === back) { cancel.onclick(); } };
+    // NO backdrop dismissal here. Clicking beside the dialog used to run Cancel, which
+    // calls stashSampleReset() and throws away every capture - one misclick and the user
+    // starts the whole run again. This modal closes only via the Cancel button.
+    back.onclick = null;
     return back;
   }
 
@@ -446,23 +465,20 @@
   function reliabilityLegend() {
     const anyLow = state.rows.some((r) => (r.result.lines || []).some((ln) => ln.rel === 'low' && ln.userCount == null));
     const anyMixed = state.rows.some((r) => (r.result.lines || []).some((ln) => ln.rel === 'mixed' && ln.userCount == null));
-    if (!anyLow && !anyMixed) return null;
+    const anyEdited = state.rows.some((r) => (r.result.lines || []).some((ln) => ln.userCount != null));
+    if (!anyLow && !anyMixed && !anyEdited) return null;
     const wrap = el('div', 'nw-legend');
-    wrap.appendChild(el('span', 'nw-legend-lab', t('networth.legend.label')));
-    if (anyMixed) {
+    // one key per marker actually on screen; a key for a colour that is not showing
+    // explains nothing and just crowds the row
+    const key = (swClass, text) => {
       const k = el('span', 'nw-legend-key');
-      k.appendChild(el('span', 'nw-legend-sw nw-legend-sw-mixed'));
-      k.appendChild(el('span', null, t('networth.legend.mixed')));
-      k.title = t('networth.line.unreliable_mixed');
+      k.appendChild(el('span', 'nw-legend-sw ' + swClass));
+      k.appendChild(el('span', null, text));
       wrap.appendChild(k);
-    }
-    if (anyLow) {
-      const k = el('span', 'nw-legend-key');
-      k.appendChild(el('span', 'nw-legend-sw nw-legend-sw-low'));
-      k.appendChild(el('span', null, t('networth.legend.low')));
-      k.title = t('networth.line.unreliable_low');
-      wrap.appendChild(k);
-    }
+    };
+    if (anyMixed) key('nw-legend-sw-mixed', t('networth.legend.mixed'));
+    if (anyLow) key('nw-legend-sw-low', t('networth.legend.low'));
+    if (anyEdited) key('nw-legend-sw-edited', t('networth.legend.edited'));
     return wrap;
   }
 
@@ -499,7 +515,10 @@
     totBox.appendChild(gline);
     header.appendChild(totBox);
     const controls = el('div', 'nw-controls');
-    if (state.busy) controls.appendChild(el('span', 'nw-scanning', t('networth.status.scanning')));
+    if (state.busy) {
+      const q = state.queued > 1 ? ' (' + state.queued + ')' : '';
+      controls.appendChild(el('span', 'nw-scanning', t('networth.status.scanning') + q));
+    }
     const gear = el('button', 'nw-gear', '⚙'); gear.title = t('networth.header.settings_tooltip', { hotkey: state.hotkey });
     gear.onclick = () => { if (window.openNetWorthSettings) window.openNetWorthSettings(); };
     controls.appendChild(gear);
@@ -518,6 +537,30 @@
         ));
     } else {
       for (const row of state.rows) wrap.appendChild(rowCard(row));
+      // Dropping BELOW the last card had no target at all: every handler sat on a card, so
+      // the gap under the list showed the no-drop cursor and no indicator. The container
+      // takes the drop past the last card and sends it to the end, which is what dragging
+      // down there obviously means.
+      wrap.ondragover = (e) => {
+        if (state.dragId == null) return;
+        const cards = wrap.querySelectorAll('.nw-card');
+        const last = cards[cards.length - 1];
+        if (!last || e.clientY <= last.getBoundingClientRect().bottom) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        wrap.querySelectorAll('.nw-card').forEach((n) => n.classList.remove('nw-drop', 'nw-drop-before', 'nw-drop-after'));
+        last.classList.add('nw-drop-after');
+      };
+      wrap.ondrop = (e) => {
+        if (state.dragId == null) return;
+        const cards = wrap.querySelectorAll('.nw-card');
+        const last = cards[cards.length - 1];
+        if (!last || e.clientY <= last.getBoundingClientRect().bottom) return;
+        e.preventDefault();
+        const moved = state.rows.find((r) => r.id === state.dragId);
+        if (moved) { state.rows.splice(state.rows.indexOf(moved), 1); state.rows.push(moved); }
+        state.dragId = null; render();
+      };
       if (state.busy) wrap.appendChild(busyCard(pending));
       if (rows) {
         const footer = el('div', 'nw-footer');
@@ -549,7 +592,17 @@
       render();
     });
     if (window.api.onStashDetected) window.api.onStashDetected((tab) => { state.busy = true; state.phase = 'detecting'; state.pendingTab = tab; render(); });
-    if (window.api.onStashCaptured) window.api.onStashCaptured((res) => { state.busy = false; state.phase = 'idle'; state.pendingTab = null; applyResult(res); });
+    if (window.api.onStashCaptured) window.api.onStashCaptured((res) => {
+      // another capture may still be in flight - only clear the spinner when the queue
+      // has actually drained, which main reports
+      if (!state.queued) { state.busy = false; state.phase = 'idle'; state.pendingTab = null; }
+      applyResult(res);
+    });
+    if (window.api.onStashQueued) window.api.onStashQueued((info) => {
+      state.queued = (info && info.depth) || 0;
+      if (!state.queued) { state.busy = false; state.phase = 'idle'; state.pendingTab = null; }
+      render();
+    });
     if (window.api.onStashCalibrated) window.api.onStashCalibrated((res) => {
       state.busy = false; state.phase = 'idle'; state.pendingTab = null; state.calibrated = true;
       const scale = res && typeof res.calScale === 'number' ? res.calScale : 1;

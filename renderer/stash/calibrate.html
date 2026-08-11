@@ -2,17 +2,18 @@
 <html>
 <head>
 <meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../themes.css">
 <style>
-  :root { --am: #e0a04c; --am2: #f0c070; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; cursor: default;
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--scrim); cursor: default;
     font-family: system-ui, "Segoe UI", sans-serif; user-select: none; }
   #shot { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: fill; display: block; }
   /* dragged-corner guide lines spanning the whole screen (pixel alignment) */
-  #vguide, #hguide { position: fixed; background: rgba(240,192,112,.55); pointer-events: none; display: none; z-index: 5; }
+  #vguide, #hguide { position: fixed; background: color-mix(in srgb, var(--am-hi) 55%, transparent); pointer-events: none; display: none; z-index: 5; }
   #vguide { top: 0; bottom: 0; width: 1px; }
   #hguide { left: 0; right: 0; height: 1px; }
-  #box { position: absolute; border: 1.5px solid var(--am2); box-shadow: 0 0 0 9999px rgba(0,0,0,.5);
+  #box { position: absolute; border: 1.5px solid var(--am2); box-shadow: 0 0 0 9999px color-mix(in srgb, var(--scrim) 50%, transparent);
     z-index: 10; cursor: move; }
   .hand { position: absolute; width: 16px; height: 16px; background: var(--am); border: 2px solid #1a1205;
     border-radius: 50%; z-index: 11; }
@@ -25,15 +26,15 @@
   .hand.w { left: -9px; top: 50%; margin-top: -8px; cursor: ew-resize; }
   .hand.e { right: -9px; top: 50%; margin-top: -8px; cursor: ew-resize; }
   #loupe { position: fixed; width: 168px; height: 168px; border-radius: 50%; z-index: 20;
-    border: 3px solid var(--am2); box-shadow: 0 4px 18px rgba(0,0,0,.6); display: none; pointer-events: none;
-    background: #000; overflow: hidden; }
+    border: 3px solid var(--am2); box-shadow: 0 4px 18px color-mix(in srgb, var(--scrim) 60%, transparent); display: none; pointer-events: none;
+    background: var(--scrim); overflow: hidden; }
   #loupe canvas { display: block; }
   #bar { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 30;
-    background: rgba(18,16,12,.94); border: 1px solid rgba(240,192,112,.35); border-radius: 12px;
+    background: color-mix(in srgb, var(--s-root) 94%, transparent); border: 1px solid color-mix(in srgb, var(--am-hi) 35%, transparent); border-radius: 12px;
     padding: 12px 18px 14px; display: flex; flex-direction: column; gap: 11px; max-width: 92vw;
-    box-shadow: 0 8px 30px rgba(0,0,0,.5); }
-  .bar-note { text-align: center; font-size: 13px; color: #f0c070; background: rgba(240,192,112,.1);
-    border: 1px solid rgba(240,192,112,.3); border-radius: 8px; padding: 8px 12px; line-height: 1.4; }
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--scrim) 50%, transparent); }
+  .bar-note { text-align: center; font-size: 13px; color: var(--am-hi); background: color-mix(in srgb, var(--am-hi) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--am-hi) 30%, transparent); border-radius: 8px; padding: 8px 12px; line-height: 1.4; }
   .bar-note b { color: #ffe0a0; }
   .bar-main { display: flex; align-items: center; gap: 16px; }
   #bar .msg { color: #e8dcc4; font-size: 13px; line-height: 1.45; max-width: 520px; }
@@ -46,13 +47,13 @@
   #snap { background: rgba(126,224,106,.16); color: #9ee08a; border: 1px solid rgba(126,224,106,.5); }
   #snap:hover { background: rgba(126,224,106,.28); }
   #box.snapped { animation: snapflash .5s ease; }
-  @keyframes snapflash { 0% { box-shadow: 0 0 0 9999px rgba(0,0,0,.5), 0 0 0 3px #7ee06a; } 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,.5); } }
-  #cancel { background: transparent; color: #b9ab8e; border: 1px solid rgba(240,192,112,.3); }
+  @keyframes snapflash { 0% { box-shadow: 0 0 0 9999px color-mix(in srgb, var(--scrim) 50%, transparent), 0 0 0 3px #7ee06a; } 100% { box-shadow: 0 0 0 9999px color-mix(in srgb, var(--scrim) 50%, transparent); } }
+  #cancel { background: transparent; color: #b9ab8e; border: 1px solid color-mix(in srgb, var(--am-hi) 30%, transparent); }
   #cancel:hover { color: #e8dcc4; }
   #ex { position: fixed; right: 22px; top: 22px; z-index: 30; width: 240px;
-    background: rgba(18,16,12,.94); border: 1px solid rgba(240,192,112,.3); border-radius: 10px; padding: 12px; }
+    background: color-mix(in srgb, var(--s-root) 94%, transparent); border: 1px solid color-mix(in srgb, var(--am-hi) 30%, transparent); border-radius: 10px; padding: 12px; }
   #ex h4 { color: var(--am2); font-size: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
-  #ex .demo { position: relative; height: 118px; background: #14110b; border-radius: 6px; overflow: hidden; }
+  #ex .demo { position: relative; height: 118px; background: var(--s-root); border-radius: 6px; overflow: hidden; }
   #ex .frame { position: absolute; left: 12%; top: 10%; right: 12%; bottom: 10%; border: 2px solid #7ee06a;
     border-radius: 3px; box-shadow: 0 0 6px rgba(126,224,106,.6); }
   #ex .yourbox { position: absolute; left: 12%; top: 10%; right: 12%; bottom: 10%; border: 1.5px solid var(--am2);
@@ -60,6 +61,12 @@
   #ex .cell { position: absolute; width: 11px; height: 11px; background: rgba(120,140,200,.35); border: 1px solid rgba(160,180,240,.4); border-radius: 2px; }
   #ex p { color: #9a8c70; font-size: 10.5px; margin-top: 8px; line-height: 1.4; }
 </style>
+<script>
+  // separate document: themes.css keys off data-theme, and main passes the
+  // active palette in the query string so this paints themed on first frame
+  try { var t = new URLSearchParams(location.search).get('theme');
+    document.documentElement.dataset.theme = t === 'industry' ? 'industry' : 'default'; } catch (e) {}
+</script>
 </head>
 <body>
   <img id="shot" alt="">

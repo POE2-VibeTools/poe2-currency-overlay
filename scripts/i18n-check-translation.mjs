@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const I18N = path.join(HERE, "..", "renderer", "i18n");
+const STRICT = process.argv.includes("--strict");
 const META = JSON.parse(fs.readFileSync(path.join(HERE, "..", "dev-docs", "i18n", "_meta.json"), "utf8"));
 
 function load(code) {
@@ -29,8 +30,9 @@ function load(code) {
 }
 
 const en = load("en");
-const langs = process.argv.slice(2).length
-  ? process.argv.slice(2)
+const argLangs = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const langs = argLangs.length
+  ? argLangs
   : fs.readdirSync(I18N).filter((f) => /^[a-z]{2}\.js$/.test(f)).map((f) => f.slice(0, 2)).filter((c) => c !== "en" && c !== "qa");
 
 const ph = (s) => (String(s).match(/\{\w+\}/g) || []).sort();
@@ -67,7 +69,14 @@ for (const code of langs) {
   const pct = (((Object.keys(en).length - missing.length) / Object.keys(en).length) * 100).toFixed(1);
   console.log(`\n${code}: ${Object.keys(en).length - missing.length}/${Object.keys(en).length} keys (${pct}%)`);
   if (extra.length) problems.push(`${extra.length} key(s) not in English: ${extra.slice(0, 5).join(", ")}`);
-  if (missing.length) console.log(`  missing ${missing.length} (falls back to English, not an error)`);
+  // --strict is the pre-release gate. Missing keys are not an error day to day - they
+  // fall back to English and nothing breaks - but every release that ships English-only
+  // strings makes the next translation pass bigger, and coverage had drifted to ~92%
+  // one session at a time before anyone looked.
+  if (missing.length) {
+    if (STRICT) problems.push(`${missing.length} untranslated key(s): ${missing.slice(0, 8).join(", ")}${missing.length > 8 ? ", ..." : ""}`);
+    else console.log(`  missing ${missing.length} (falls back to English, not an error)`);
+  }
   if (identical.length) console.log(`  identical to English: ${identical.length} (check these are deliberate: ${identical.slice(0, 6).join(", ")}${identical.length > 6 ? ", ..." : ""})`);
   if (problems.length) {
     bad++;

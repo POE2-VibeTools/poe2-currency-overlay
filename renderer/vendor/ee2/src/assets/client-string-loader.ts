@@ -3,15 +3,24 @@
 // Upstream:
 //   await import(`${import.meta.env.BASE_URL}data/${lang}/client_strings.js`)
 // A runtime-templated dynamic import cannot be statically bundled, and dynamic ESM
-// import over a custom Electron scheme from a file:// page is unsupported. This app
-// ships English only, so the "en" dictionary is imported statically (esbuild inlines
-// it into the bundle). Both CLIENT_STRINGS and CLIENT_STRINGS_REF resolve to "en".
-// If more languages are ever shipped, add them to the map below - the signature is
-// unchanged from upstream.
+// import over a custom Electron scheme from a file:// page is unsupported, so every
+// shipped dictionary is imported statically here (esbuild inlines them).
+//
+// This map held ONLY "en" until 2026-08-11. Multi-language shipped in 2.6.0, and the
+// Settings copy says the language "reads your items in this language too" - but the
+// parser fell back to the English dictionary for every language, so the class-line
+// check failed and every non-English item was rejected with "item.wrong_language".
+// The app could only ever read English items. If a language is added to the UI, its
+// dictionary MUST be added here too.
 import { TranslationDict } from "./data/interfaces";
 import en from "../../data/en/client_strings.js";
+import ru from "../../data/ru/client_strings.js";
+import de from "../../data/de/client_strings.js";
+import fr from "../../data/fr/client_strings.js";
+import es from "../../data/es/client_strings.js";
+import pt from "../../data/pt/client_strings.js";
 
-const DICTS: Record<string, TranslationDict> = { en };
+const DICTS: Record<string, TranslationDict> = { en, ru, de, fr, es, pt };
 
 export async function loadClientStrings(
   lang: string,

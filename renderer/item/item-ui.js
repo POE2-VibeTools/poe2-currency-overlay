@@ -727,8 +727,10 @@
     const cmpRow = (lab, c, title) => {
       if (!c || c.val == null) return '';
       const d = c.delta;
+      // arrow first, then the signed number. Two independent signals, so the row still
+      // reads when the two hues are hard to tell apart or the palette is muted.
       const dl = d == null ? '<span class="pk-delta"></span>'
-        : `<span class="pk-delta ${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${d}</span>`;
+        : `<span class="pk-delta ${d > 0 ? 'up' : 'down'}"><span class="pk-arrow">${d > 0 ? '↑' : '↓'}</span>${d > 0 ? '+' : ''}${d}</span>`;
       return `<div class="pk-cmp" title="${esc(title)}"><span class="pk-cmp-lab">${lab}</span>`
         + `<b>${c.val}</b>${dl}</div>`;
     };
@@ -1096,7 +1098,7 @@
     }
     // the prompt shows the user's ACTUAL bind (config-driven, default Ctrl+F)
     const hk = (state.itemHotkey || 'Ctrl+F').replace(/Control|CommandOrControl/g, 'Ctrl')
-      .split('+').map((k) => `<kbd>${esc(k)}</kbd>`).join('+');
+      .split('+').map((k) => `<kbd>${esc(k)}</kbd>`).join('<span class="kbd-plus">+</span>');
     wrap.appendChild(el('div', 'paste-prompt', `${t('item.history.paste_prompt_main', { hotkey: hk })}<br><span class="pp-alt">${t('item.history.paste_prompt_alt')}</span>`));
     // Search by NAME, for the things Ctrl+C cannot reach: runestones and Verisium
     // gems inside the rune-combination dialogue, and Ritual remnant reward choices.
@@ -1226,7 +1228,11 @@
     // a scope entry is either a plain string ("explicit") or {key,label} when the
     // pill's display name differs from the trade key it selects ("Greater Runes")
     const scKey = (s) => (typeof s === 'string' ? s : s.key);
-    const scLabel = (s) => (typeof s === 'string' ? s : s.label);
+    // A plain-string scope is a trade-site term ('explicit', 'crafted'); route it through
+    // the SAME labels the mod rows use, so the picker pill and the row tag always read
+    // alike and either picks up a translation the moment one exists. These stayed
+    // hardcoded English even where a translation was present (ru 'skill' -> 'навык').
+    const scLabel = (s) => (typeof s === 'string' ? (KIND_LABEL[s] || s) : s.label);
     let scope = (opts.scopes && scKey(opts.scopes[0])) || null;
     let scopeRow = null;
     if (opts.scopes && opts.scopes.length > 1) {

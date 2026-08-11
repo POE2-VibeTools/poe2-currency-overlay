@@ -26,6 +26,10 @@
             border-radius: 2px; transition: width .35s ease; box-shadow: 0 0 6px rgba(232, 200, 138, .5); }
     .ver { font-size: 10px; color: #9a927e; margin-top: -8px; letter-spacing: .04em;
            text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+    /* The display-mode requirement lives HERE and nowhere in the overlay: a user in
+       exclusive fullscreen cannot see the overlay at all, so an in-app note never
+       reaches them. The splash shows at launch, before the game is usually in front. */
+    .msg2 { font-size: 10.5px; color: #9a927e; margin-top: -2px; }
     .msg { font-size: 11.5px; color: #ddd6c6; height: 16px; opacity: 0; transition: opacity .35s ease;
            text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
     .msg.show { opacity: 1; }
@@ -39,6 +43,7 @@
     <div class="ver" id="ver"></div>
     <div class="bar"><div class="fill" id="fill"></div></div>
     <div class="msg" id="msg"></div>
+    <div class="msg msg2" id="msg2"></div>
   </div>
   <script>
     const params = new URLSearchParams(location.search);
@@ -50,9 +55,12 @@
     // soft, unhurried fill
     const steps = [[150, '16%'], [550, '42%'], [1000, '68%'], [1500, '88%'], [1950, '100%']];
     for (const [t, w] of steps) setTimeout(() => { fill.style.width = w; }, t);
+    const msg2 = document.getElementById('msg2');
     setTimeout(() => {
       msg.innerHTML = 'Press <b>' + hotkey + '</b> to toggle the overlay';
       msg.classList.add('show');
+      msg2.textContent = 'Game must be in Windowed or Windowed Fullscreen';
+      msg2.classList.add('show');
     }, 2100);
     setTimeout(() => document.getElementById('wrap').classList.add('out'), 5100);
   </script>

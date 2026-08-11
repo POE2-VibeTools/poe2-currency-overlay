@@ -1337,6 +1337,33 @@ function render() {
       el.appendChild(row);
     }
 
+    // same gap problem inside a bucket: past the last pair there was no drop target, so
+    // moving a currency to the bottom of its bucket was near-impossible
+    el.addEventListener('dragover', (e) => {
+      if (!dragState || dragState.bucketId !== bucket.id) return;
+      const rows = el.querySelectorAll('.row');
+      const last = rows[rows.length - 1];
+      if (!last || e.clientY <= last.getBoundingClientRect().bottom) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      clearDropMarkers();
+      last.classList.add('drop-after');
+    });
+    el.addEventListener('drop', (e) => {
+      if (!dragState || dragState.bucketId !== bucket.id) return;
+      const rows = el.querySelectorAll('.row');
+      const last = rows[rows.length - 1];
+      if (!last || e.clientY <= last.getBoundingClientRect().bottom) return;
+      e.preventDefault();
+      const items = bucket.items || [];
+      const lastId = items.length ? items[items.length - 1].apiId : null;
+      if (lastId && lastId !== dragState.apiId) {
+        dragReordered = true; // an in-bucket reorder, not a drop-outside removal
+        reorderWithinBucket(bucket.id, dragState.apiId, lastId, true);
+      }
+      clearDropMarkers();
+    });
+
     container.appendChild(el);
   }
 
@@ -1352,6 +1379,31 @@ function render() {
   const allDecoded = Promise.all(imgs.map((im) => (im.decode ? im.decode().catch(() => {}) : null)));
   // don't let a slow icon hold the UI hostage; 250ms then swap regardless
   Promise.race([allDecoded, new Promise((r) => setTimeout(r, 250))]).then(() => {
+    // A drop below the LAST bucket had no target - the handlers are all on bucket
+    // elements - so the empty space under the list showed the no-drop cursor and never
+    // drew an indicator. The container takes it and sends the bucket to the end.
+    container.addEventListener('dragover', (e) => {
+      if (!bucketDrag) return;
+      const all = container.querySelectorAll('.bucket');
+      const last = all[all.length - 1];
+      if (!last || e.clientY <= last.getBoundingClientRect().bottom) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      clearDropMarkers();
+      last.classList.add('drop-after');
+    });
+    container.addEventListener('drop', (e) => {
+      if (!bucketDrag) return;
+      const all = container.querySelectorAll('.bucket');
+      const last = all[all.length - 1];
+      if (!last || e.clientY <= last.getBoundingClientRect().bottom) return;
+      e.preventDefault();
+      const ids = (config.buckets || []).map((b) => b.id);
+      const lastId = ids[ids.length - 1];
+      if (lastId && lastId !== bucketDrag) moveBucket(bucketDrag, lastId, true);
+      clearDropMarkers();
+      bucketDrag = null;
+    });
     if (token === renderToken) $('buckets').replaceChildren(container);
   });
 }
@@ -2063,6 +2115,17 @@ async function initSettings() {
     if (window.NetWorth && window.NetWorth.render) window.NetWorth.render();
   });
 
+  const themeSel = $('theme-select');
+  if (themeSel) {
+    themeSel.value = config.theme === 'industry' ? 'industry' : 'default';
+    themeSel.addEventListener('change', async () => {
+      config.theme = themeSel.value;
+      document.documentElement.dataset.theme = themeSel.value;
+      logAction(`theme: ${themeSel.value}`);
+      await window.api.setTheme(themeSel.value);
+    });
+  }
+
   const dysFont = $('dyslexic-font');
   if (dysFont) {
     dysFont.checked = !!config.dyslexicFont;
@@ -2298,23 +2361,18 @@ function applyScaleCompensation() {
   root.setProperty('--pad-k', padK.toFixed(4));
 }
 
+// Where prices come from is STATUS, not configuration - it told the user something
+// without offering them anything to change, while occupying a row on the Settings page
+// and reading as a checkbox. It rides on the titlebar freshness label instead, next to
+// the thing it actually describes, costing no space.
 async function updateFeedStatus() {
   try {
     const s = await window.api.getFeedStatus();
-    const el = $('feed-status');
-    if (s.live) {
-      el.textContent = t('currency.footer.feed_live', { upstream: s.upstream });
-      el.classList.add('live');
-      el.title = s.base;
-    } else if (s.cx) {
-      el.textContent = t('currency.footer.feed_ggg');
-      el.classList.add('live');
-      el.title = t('currency.footer.feed_ggg_title', { cxPairs: s.cxPairs });
-    } else {
-      el.textContent = t('currency.footer.feed_public');
-      el.classList.remove('live');
-      el.title = t('currency.footer.feed_public_title');
-    }
+    const el = $('fresh-label');
+    if (!el) return;
+    if (s.live) el.title = t('currency.footer.feed_live', { upstream: s.upstream }) + ' - ' + s.base;
+    else if (s.cx) el.title = t('currency.footer.feed_ggg') + ' - ' + t('currency.footer.feed_ggg_title', { cxPairs: s.cxPairs });
+    else el.title = t('currency.footer.feed_public') + ' - ' + t('currency.footer.feed_public_title');
   } catch {}
 }
 
@@ -2625,6 +2683,9 @@ async function main() {
   document.documentElement.style.setProperty('--bg-alpha', String((config.bgOpacity != null ? config.bgOpacity : 100) / 100));
   // dyslexia-friendly font (OpenDyslexic) - applied app-wide via a root class
   document.documentElement.classList.toggle('dyslexic-font', !!config.dyslexicFont);
+  // alternate palette - every colour resolves through the tokens in styles.css, so this
+  // one attribute reskins the whole app (see renderer/themes.css)
+  document.documentElement.dataset.theme = config.theme === 'industry' ? 'industry' : 'default';
 
   // footer items are role=button spans - wire click AND Enter/Space so they work by keyboard
   const onActivate = (id, fn) => {

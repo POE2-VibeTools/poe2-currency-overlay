@@ -35,6 +35,8 @@ import {
 } from "@/parser";
 import { CATEGORY_TO_TRADE_ID } from "@/web/price-check/trade/pathofexile-trade";
 import { setAppConfig } from "@/web/Config";
+import type { VendorAppConfig } from "@/web/Config";
+type VendorLanguage = VendorAppConfig["language"];
 import { setTradeData } from "@/web/background/TradeData";
 
 let ready = false;
@@ -52,6 +54,11 @@ const EE2 = {
     // the data module's default augment filter rejects EVERY rune (upstream's app
     // installs a real one before init); keep them all so augment lookups work
     setLocalAugmentFilter(() => true);
+    // Parser.ts checks the item's detected language against AppConfig().language, NOT
+    // against the data that was loaded. Without this, loading the Russian data still
+    // left the config on "en", so every non-English item was rejected with
+    // "item.wrong_language" - i.e. the app could only ever parse English items.
+    setAppConfig({ language: lang as VendorLanguage });
     await init(lang);
     ready = true;
     readyLang = lang;

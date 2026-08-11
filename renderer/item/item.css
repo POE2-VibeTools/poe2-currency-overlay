@@ -1,30 +1,19 @@
 /* item.css - styles for the Items tab (price-check). Shares the app palette. */
 
 /* Refined Ember design tokens (identical to styles.css if defined there - harmless) */
-:root{
-  --s-root:#14120f; --s-card:#1c1916; --s-band:#282219; --s-band-peek:#221e18; --s-strip:#181512;
-  --bd-06:rgba(232,210,180,.06); --bd-08:rgba(232,210,180,.08); --bd-09:rgba(232,210,180,.09);
-  --bd-12:rgba(232,210,180,.12); --bd-14:rgba(232,210,180,.14); --bd-16:rgba(232,210,180,.16);
-  --tx-hi:#ece4d4; --tx-body:#c9c1b0; --tx-body2:#d5cdbc; --tx-dim:#8d8574; --tx-faint:#6b6355; --tx-gold:#f0d9a8;
-  --am:#e8a04c; --am-hi:#f0c078; --am-grad-a:#eaa653; --am-grad-b:#c07828; --am-on:#1a1410;
-  --green:#8ec97a; --green-hi:#c6e6b4; --red:#d08a80; --red2:#c98a80; --red-pen:#a8756c;
-  --blue:#8db4d0; --blue-hi:#a9cbe2; --desec:#9ade4a; --desec-dim:#8fae6f; --desec-tab:#7ad42e; --desec-lab:#b8e678;
-  --k-prop:#a8a294; --k-rune:#7ec8a0; --k-impl:#8db4d0; --k-expl:#e0a050; --k-craft:#a9cbe2;
-  --f-corr:#e0554a; --f-desec:#8fd44f; --f-frac:#c8a05a;
-  --in-bg:rgba(0,0,0,.3); --in-bd:rgba(232,210,180,.12);
-}
+
 
 /* exactly two modes, forever: a half-and-half segmented switch, not a tab strip */
 .tabs {
   display: flex;
-  border-bottom: 1px solid rgba(214, 126, 44, 0.16);
+  border-bottom: 1px solid color-mix(in srgb, var(--am-2) 16%, transparent);
 }
 .tab {
   appearance: none;
   flex: 1;
   background: transparent;
   border: none;
-  color: #8a8372;
+  color: var(--tx-dim);
   font: 600 12px/1 "Segoe UI", system-ui, sans-serif;
   letter-spacing: 0.02em;
   text-align: center;
@@ -33,8 +22,8 @@
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
 }
-.tab:hover { color: #c8c2b2; background: rgba(214, 126, 44, 0.04); }
-.tab.active { color: #e8c88a; border-bottom-color: #d67e2c; }
+.tab:hover { color: var(--tx-body); background: color-mix(in srgb, var(--am-2) 4%, transparent); }
+.tab.active { color: var(--tx-gold2); border-bottom-color: var(--am-2); }
 
 /* the items tab mirrors #buckets: it owns the scroll, so the footer stays pinned
    to the window bottom and the sticky search bar stays reachable at any height */
@@ -46,29 +35,29 @@
 #desecrate-root { padding: 8px 12px 18px; }
 #item-root.hidden, #desecrate-root.hidden { display: none; }
 #item-root::-webkit-scrollbar, #desecrate-root::-webkit-scrollbar { width: 8px; }
-#item-root::-webkit-scrollbar-thumb, #desecrate-root::-webkit-scrollbar-thumb { background: rgba(214, 126, 44, 0.3); border-radius: 4px; }
+#item-root::-webkit-scrollbar-thumb, #desecrate-root::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--am-2) 30%, transparent); border-radius: 4px; }
 
 /* ---------- Desecrate tab: the Well of Souls' sickly neon green ---------- */
-#tab-desecrate.active { color: #b4ff5c; border-bottom-color: #7ad42e; text-shadow: 0 0 8px rgba(140, 255, 60, 0.45); }
+#tab-desecrate.active { color: var(--desec-tab-tx); border-bottom-color: var(--desec-tab); text-shadow: 0 0 8px color-mix(in srgb, var(--desec-glow) 45%, transparent); }
 /* redesecrate? chip in the price-check header (quiet green, no glow) */
-.des-corner { font-size: 10px; color: var(--desec); border: 1px solid rgba(154, 222, 74, 0.35); border-radius: 999px; padding: 2px 9px; cursor: pointer; white-space: nowrap; transition: background 0.12s, color 0.12s; }
-.des-corner:hover { background: rgba(154, 222, 74, 0.12); color: var(--desec); }
+.des-corner { font-size: 10px; color: var(--desec); border: 1px solid color-mix(in srgb, var(--desec) 35%, transparent); border-radius: 999px; padding: 2px 9px; cursor: pointer; white-space: nowrap; transition: background 0.12s, color 0.12s; }
+.des-corner:hover { background: color-mix(in srgb, var(--desec) 12%, transparent); color: var(--desec); }
 /* no desecrated mod = nothing to strip and reroll: visibly dead, not clickable */
-.des-corner.off { color: #5c5a52; border-color: rgba(154, 222, 74, 0.14); cursor: default; }
-.des-corner.off:hover { background: transparent; color: #5c5a52; }
-.des-prompt b { color: #a7ff4a; }
+.des-corner.off { color: var(--tx-placeholder); border-color: color-mix(in srgb, var(--desec) 14%, transparent); cursor: default; }
+.des-corner.off:hover { background: transparent; color: var(--tx-placeholder); }
+.des-prompt b { color: var(--des-prompt); }
 /* Refined Ember: numbered pipeline of neutral cards, green as a flat accent
    (no glowing borders / box-shadows / text-shadows) */
 .des-item { margin: 0; padding: 10px 13px; background: var(--s-card); border: 1px solid var(--bd-09); border-radius: 8px; }
 .des-ichips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.des-ichip { font-size: 11px; font-weight: 700; color: var(--tx-gold); background: rgba(232, 200, 138, 0.08); border: 1px solid rgba(232, 200, 138, 0.18); border-radius: 5px; padding: 2px 8px; white-space: nowrap; }
+.des-ichip { font-size: 11px; font-weight: 700; color: var(--tx-gold); background: color-mix(in srgb, var(--tx-gold2) 8%, transparent); border: 1px solid color-mix(in srgb, var(--tx-gold2) 18%, transparent); border-radius: 5px; padding: 2px 8px; white-space: nowrap; }
 .des-imods { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
-.des-imod { font-size: 11px; color: #9c9484; line-height: 1.4; }
-.des-imod.aux { color: #6f7d64; }
-.des-imod.cur { color: #cfe6a8; background: rgba(154, 222, 74, 0.09); box-shadow: inset 2px 0 0 var(--desec); border-radius: 4px; padding: 1px 6px; margin-left: -6px; }
+.des-imod { font-size: 11px; color: var(--tx-dim2); line-height: 1.4; }
+.des-imod.aux { color: var(--des-aux); }
+.des-imod.cur { color: var(--des-tx); background: color-mix(in srgb, var(--desec) 9%, transparent); box-shadow: inset 2px 0 0 var(--desec); border-radius: 4px; padding: 1px 6px; margin-left: -6px; }
 .des-imod-tag { font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--desec); margin-left: 6px; white-space: nowrap; }
 /* rerolled-mod strip: green tint + inset bar, no glow */
-.des-cur { margin: 10px 0 0; padding: 8px 11px; background: rgba(154, 222, 74, 0.08); box-shadow: inset 2px 0 0 var(--desec); border-radius: 4px; font-size: 11.5px; color: #cfe6a8; }
+.des-cur { margin: 10px 0 0; padding: 8px 11px; background: color-mix(in srgb, var(--desec) 8%, transparent); box-shadow: inset 2px 0 0 var(--desec); border-radius: 4px; font-size: 11.5px; color: var(--des-tx); }
 .des-cur b { color: var(--desec); }
 .des-meta .des-inline-num { margin-left: 2px; }
 .des-sec { margin: 10px 0 0; padding: 10px 13px; background: var(--s-card); border: 1px solid var(--bd-09); border-radius: 8px; }
@@ -79,26 +68,26 @@
 .des-dim { color: var(--tx-faint); font-weight: 400; text-transform: none; letter-spacing: 0; }
 .des-hit-filter { width: 100%; box-sizing: border-box; margin-bottom: 8px; background: var(--in-bg); color: var(--tx-body); border: 1px solid var(--in-bd); border-radius: 6px; padding: 5px 9px; font-size: 11px; }
 .des-hit-filter::placeholder { color: var(--tx-faint); }
-.des-hit-filter:focus { outline: none; border-color: rgba(154, 222, 74, 0.5); }
+.des-hit-filter:focus { outline: none; border-color: color-mix(in srgb, var(--desec) 50%, transparent); }
 .des-list { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow-y: auto; }
 .des-list::-webkit-scrollbar { width: 8px; }
-.des-list::-webkit-scrollbar-thumb { background: rgba(232, 210, 180, 0.14); border-radius: 4px; }
-.des-mod { display: flex; align-items: center; gap: 8px; padding: 4px 7px; border-radius: 5px; font-size: 11px; color: #b8b2a2; }
+.des-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--tx-cream) 14%, transparent); border-radius: 4px; }
+.des-mod { display: flex; align-items: center; gap: 8px; padding: 4px 7px; border-radius: 5px; font-size: 11px; color: var(--picker-tx); }
 .des-mod input[type=checkbox] { flex: 0 0 auto; margin: 0; }
-.des-mod.on { background: rgba(154, 222, 74, 0.08); box-shadow: inset 2px 0 0 var(--desec); }
-.des-mod.on .des-text { color: #d8ffb0; }
+.des-mod.on { background: color-mix(in srgb, var(--desec) 8%, transparent); box-shadow: inset 2px 0 0 var(--desec); }
+.des-mod.on .des-text { color: var(--des-tx-hi); }
 .des-mod input[type=checkbox] { accent-color: var(--desec-tab); }
 .des-mod .des-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tx-dim); }
 .des-lich { flex: 0 0 88px; font-size: 11px; font-weight: 600; color: var(--desec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* otherworldly (Altered-bone) mods read cold/violet, distinct from the lich green */
-.des-lich.des-other { color: #c9b6ff; }
-.des-subhead { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #c9b6ff; margin: 10px 0 4px; }
-.des-subhead .des-dim { color: #8a80a8; text-transform: none; letter-spacing: 0; }
+.des-lich.des-other { color: var(--des-other); }
+.des-subhead { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--des-other); margin: 10px 0 4px; }
+.des-subhead .des-dim { color: var(--des-dim-tx); text-transform: none; letter-spacing: 0; }
 .des-list-other { }
-.des-price.des-price-req input { border-color: rgba(201, 182, 255, 0.7); }
-.des-tier { flex: 0 0 100px; width: 100px; background: var(--in-bg); color: #d8ffb0; border: 1px solid rgba(154, 222, 74, 0.35); border-radius: 5px; font-size: 10px; padding: 2px 4px; }
-.des-tier option { background: #1c1f16; color: #d8ffb0; }
-.des-tier option:checked { background: #2a3320; color: #eaffcf; }
+.des-price.des-price-req input { border-color: color-mix(in srgb, var(--des-other) 70%, transparent); }
+.des-tier { flex: 0 0 100px; width: 100px; background: var(--in-bg); color: var(--des-tx-hi); border: 1px solid color-mix(in srgb, var(--desec) 35%, transparent); border-radius: 5px; font-size: 10px; padding: 2px 4px; }
+.des-tier option { background: var(--s-card); color: var(--des-tx-hi); }
+.des-tier option:checked { background: var(--des-opt-bg); color: var(--des-opt-tx); }
 .des-price { display: flex; flex-direction: column; gap: 4px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--tx-faint); }
 /* input, unit toggle and the price-it button share one horizontal row; inputs
    are content-width (numbers are short) so nothing is needlessly wide */
@@ -122,10 +111,10 @@
 .des-price input[type=checkbox] { accent-color: var(--desec-tab); }
 .des-routes { border: 1px solid var(--bd-09); border-radius: 7px; overflow: hidden; }
 .des-rt-head, .des-rt { display: grid; grid-template-columns: 1.4fr 0.9fr 0.9fr 1fr 1fr; gap: 6px; padding: 6px 10px; font-size: 11px; align-items: center; }
-.des-rt-head { background: rgba(232, 210, 180, 0.03); color: var(--tx-faint); font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; }
+.des-rt-head { background: color-mix(in srgb, var(--tx-cream) 3%, transparent); color: var(--tx-faint); font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; }
 .des-rt { border-top: 1px solid var(--bd-06); color: var(--tx-body); }
-.des-rt.des-rt-best { background: rgba(154, 222, 74, 0.06); box-shadow: inset 2px 0 0 var(--desec); }
-.des-rt-chip { font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--desec); background: rgba(154, 222, 74, 0.12); border-radius: 999px; padding: 1px 6px; margin-left: 6px; }
+.des-rt.des-rt-best { background: color-mix(in srgb, var(--desec) 6%, transparent); box-shadow: inset 2px 0 0 var(--desec); }
+.des-rt-chip { font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--desec); background: color-mix(in srgb, var(--desec) 12%, transparent); border-radius: 999px; padding: 1px 6px; margin-left: 6px; }
 .des-rt .up { color: var(--desec); font-weight: 700; }
 .des-rt .down { color: var(--red); font-weight: 700; }
 .des-inline-num { width: 58px; background: var(--in-bg); color: var(--tx-body); border: 1px solid var(--in-bd); border-radius: 5px; padding: 2px 5px; font-size: 11px; }
@@ -135,68 +124,79 @@
 .des-verdict .des-vtitle { font-weight: 700; font-size: 12.5px; margin-bottom: 2px; }
 .des-verdict .des-ev { font-size: 18px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; text-align: right; }
 .des-verdict .des-ev small { display: block; font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
-.des-verdict.up { background: rgba(154, 222, 74, 0.08); border: 1px solid rgba(154, 222, 74, 0.3); color: #cfe6a8; }
+.des-verdict.up { background: color-mix(in srgb, var(--desec) 8%, transparent); border: 1px solid color-mix(in srgb, var(--desec) 30%, transparent); color: var(--des-tx); }
 .des-verdict.up .des-vtitle, .des-verdict.up .des-ev { color: var(--desec); }
-.des-verdict.down { background: rgba(208, 138, 128, 0.08); border: 1px solid rgba(208, 138, 128, 0.3); color: #d8a49c; }
+.des-verdict.down { background: color-mix(in srgb, var(--red) 8%, transparent); border: 1px solid color-mix(in srgb, var(--red) 30%, transparent); color: var(--des-down); }
 .des-verdict.down .des-vtitle, .des-verdict.down .des-ev { color: var(--red); }
 
-.item-tab { padding: 8px 12px 10px; color: #c8c2b2; font: 12.5px/1.45 "Segoe UI", system-ui, sans-serif; }
+.item-tab { padding: 8px 12px 10px; color: var(--tx-body); font: 12.5px/1.45 "Segoe UI", system-ui, sans-serif; }
 
 .login-banner {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(141, 180, 208, 0.07);
-  border: 1px solid rgba(141, 180, 208, 0.25);
+  background: color-mix(in srgb, var(--blue) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--blue) 25%, transparent);
   border-radius: 8px;
   padding: 7px 11px;
   margin-bottom: 8px;
-  color: #a9c4d8;
+  color: var(--notice-tx);
   font-size: 11.5px;
 }
 .login-banner span { flex: 1; }
-.login-banner b { color: #cfe0ee; }
+.login-banner b { color: var(--notice-tx-hi); }
 
 /* --- paste prompt (empty state) --- */
 .paste-prompt {
-  border: 1px dashed rgba(214, 126, 44, 0.4);
+  border: 1px dashed color-mix(in srgb, var(--am-2) 40%, transparent);
   border-radius: 10px;
   padding: 22px 16px;
   text-align: center;
-  color: #9a927f;
+  color: var(--tx-dim2);
+  /* the key chips are padded inline-blocks that grow past the line box, so the default
+     line-height let the Ctrl on one row touch the Ctrl on the next. 1.75 clears them by
+     a few px - enough to separate, not enough to read as a gap. */
+  line-height: 1.75;
 }
-.paste-prompt b { color: #e8c88a; }
-.paste-prompt .pp-alt { font-size: 11px; color: #7a7466; }
+.paste-prompt b { color: var(--tx-gold2); }
+.paste-prompt .pp-alt { font-size: 11px; color: var(--tx-faint2); }
 .paste-prompt kbd {
   font: 600 12px ui-monospace, monospace;
-  background: rgba(214, 126, 44, 0.14);
-  color: #e8c88a;
-  border: 1px solid rgba(214, 126, 44, 0.3);
+  background: color-mix(in srgb, var(--am-2) 14%, transparent);
+  color: var(--tx-gold2);
+  border: 1px solid color-mix(in srgb, var(--am-2) 30%, transparent);
   border-radius: 5px;
   padding: 1px 6px;
+  /* Space comes from the CHIPS, not the separator: the second line's "+" is baked into
+     the translated string as a bare character in six languages, so styling the joiner
+     only fixed the generated first line. */
+  margin: 0 4px;
 }
+.paste-prompt kbd:first-of-type { margin-left: 2px; }
+/* the joiner is punctuation, not a key - quieter than the keys it joins */
+.paste-prompt .kbd-plus { color: var(--tx-faint2); font-weight: 400; }
 .sample-btn {
   display: block;
   margin: 10px auto 2px;
   padding: 5px 14px;
-  background: rgba(214, 126, 44, 0.14);
-  border: 1px solid rgba(214, 126, 44, 0.4);
-  color: #e0b070;
+  background: color-mix(in srgb, var(--am-2) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--am-2) 40%, transparent);
+  color: var(--gold-dim);
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
-.sample-btn:hover { background: rgba(214, 126, 44, 0.24); border-color: #d67e2c; color: #f0c888; }
-.des-empty-lead { color: #b7ad97; font-size: 12.5px; line-height: 1.5; text-align: center; margin: 4px 8px 12px; }
-.des-empty-lead b { color: #c98f5a; }
+.sample-btn:hover { background: color-mix(in srgb, var(--am-2) 24%, transparent); border-color: var(--am-2); color: var(--tx-gold2); }
+.des-empty-lead { color: var(--des-lead-tx); font-size: 12.5px; line-height: 1.5; text-align: center; margin: 4px 8px 12px; }
+.des-empty-lead b { color: var(--des-lead-em); }
 
 /* --- parsed item header --- */
 .item-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
-.item-name { color: #e8c88a; font-size: 15px; font-weight: 700; }
-.item-name.rare { color: #e8c88a; }
-.item-base { color: #9a927f; font-size: 12px; }
-.item-meta { margin-left: auto; color: #6f6a5e; font-size: 11px; }
+.item-name { color: var(--tx-gold2); font-size: 15px; font-weight: 700; }
+.item-name.rare { color: var(--tx-gold2); }
+.item-base { color: var(--tx-dim2); font-size: 12px; }
+.item-meta { margin-left: auto; color: var(--tx-hint); font-size: 11px; }
 
 /* Refined Ember: the price-check header is one line ending in a "Rare · ilvl 82"
    chip + the redesecrate? chip. Scoped to .item-tab so the Desecrate tab's shared
@@ -213,11 +213,11 @@
 .hdr-main .item-head { margin: 0 0 6px; }
 .hdr-main .hdr-ctrls { margin: 0; }
 .hd-icon-wrap { position: relative; width: 56px; height: 56px; flex: 0 0 56px; align-self: center; }
-.hd-icon { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.5)); }
+.hd-icon { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 4px color-mix(in srgb, var(--scrim) 50%, transparent)); }
 .li-icon-wrap { position: relative; width: 28px; height: 28px; flex: 0 0 28px; }
 .li-icon { width: 100%; height: 100%; object-fit: contain; }
 .ic-pips { position: absolute; left: 1px; bottom: 1px; display: flex; gap: 2px; }
-.ic-pip { width: 6px; height: 6px; border-radius: 50%; background: #16130f; border: 1px solid rgba(232, 210, 180, 0.55); box-shadow: 0 0 3px rgba(0, 0, 0, 0.8); }
+.ic-pip { width: 6px; height: 6px; border-radius: 50%; background: var(--s-root); border: 1px solid color-mix(in srgb, var(--tx-cream) 55%, transparent); box-shadow: 0 0 3px color-mix(in srgb, var(--scrim) 80%, transparent); }
 .li-icon-wrap .ic-pip { width: 5px; height: 5px; }
 .item-tab .item-name, .item-tab .item-name.rare { color: var(--tx-hi); font-size: 16px; font-weight: 700; }
 /* the base gives way (ellipsis) before the header's editable chips get squeezed */
@@ -229,14 +229,14 @@
 /* Static label, NOT a control: flat fill and no outline. An outlined pill in this app
    means "you can click this" (.des-corner, .gtoggle, .scope-chip, .chip-add), and this
    one sat right beside the redesecrate button wearing the identical costume. */
-.item-tab .item-meta { margin-left: auto; font-size: 10px; color: #d8c48e; background: rgba(232, 200, 138, 0.14); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.item-tab .item-meta { margin-left: auto; font-size: 10px; color: var(--item-meta-tx); background: color-mix(in srgb, var(--tx-gold2) 14%, transparent); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
 /* header controls strip: the item-level search ranges (ilvl / quality /
    sockets), each min defaulting to the item's own value */
 .item-tab .hdr-ctrls { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 8px; }
-.hc-grp { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--bd-12); border-radius: 6px; padding: 2px 7px; background: rgba(0, 0, 0, 0.18); }
+.hc-grp { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--bd-12); border-radius: 6px; padding: 2px 7px; background: color-mix(in srgb, var(--scrim) 18%, transparent); }
 .hc-lab { font-size: 9.5px; color: var(--tx-dim); text-transform: uppercase; letter-spacing: 0.04em; }
 .hc-in { width: 30px; background: var(--in-bg); border: 1px solid var(--in-bd); border-radius: 4px; color: var(--am-hi); font: 600 10.5px "Segoe UI", sans-serif; text-align: center; padding: 1px 2px; }
-.hc-in:focus { outline: none; border-color: rgba(232, 160, 76, 0.5); }
+.hc-in:focus { outline: none; border-color: color-mix(in srgb, var(--am) 50%, transparent); }
 .hc-in::placeholder { color: var(--tx-faint); font-weight: 400; }
 .hc-dash { color: var(--tx-faint); font-size: 10px; }
 
@@ -253,27 +253,27 @@
   align-items: center;
   padding: 4px 10px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.015);
-  box-shadow: inset 2px 0 0 rgba(224, 160, 80, 0.45); /* explicit default bar */
+  background: color-mix(in srgb, var(--paper) 1.5%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--k-expl) 45%, transparent); /* explicit default bar */
 }
 .mod.has-track { padding-bottom: 7px; } /* room for the bottom range track */
 .mod.off { opacity: 0.45; }
 
 /* per-kind inset bar + faint tint (kind name is the flat tag on the rail) */
-.mod.k-implicit, .mod.k-pseudo { background: rgba(141, 180, 208, 0.03); box-shadow: inset 2px 0 0 rgba(141, 180, 208, 0.55); }
-.mod.k-rune, .mod.k-enchant, .mod.k-added-rune { background: rgba(126, 200, 160, 0.03); box-shadow: inset 2px 0 0 rgba(126, 200, 160, 0.5); }
-.mod.k-crafted { background: rgba(169, 203, 226, 0.03); box-shadow: inset 2px 0 0 rgba(169, 203, 226, 0.5); }
-.mod.k-skill { background: rgba(232, 200, 138, 0.03); box-shadow: inset 2px 0 0 rgba(232, 200, 138, 0.5); }
-.mod.k-property { background: rgba(255, 255, 255, 0.02); box-shadow: inset 2px 0 0 rgba(168, 162, 148, 0.55); }
-.mod.k-desecrated { background: rgba(143, 212, 79, 0.03); box-shadow: inset 2px 0 0 rgba(143, 212, 79, 0.45); }
-.mod.k-fractured { background: rgba(200, 160, 90, 0.04); box-shadow: inset 2px 0 0 rgba(200, 160, 90, 0.5); }
+.mod.k-implicit, .mod.k-pseudo { background: color-mix(in srgb, var(--blue) 3%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--blue) 55%, transparent); }
+.mod.k-rune, .mod.k-enchant, .mod.k-added-rune { background: color-mix(in srgb, var(--k-rune) 3%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--k-rune) 50%, transparent); }
+.mod.k-crafted { background: color-mix(in srgb, var(--blue-hi) 3%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--blue-hi) 50%, transparent); }
+.mod.k-skill { background: color-mix(in srgb, var(--tx-gold2) 3%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--tx-gold2) 50%, transparent); }
+.mod.k-property { background: color-mix(in srgb, var(--paper) 2%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--k-prop) 55%, transparent); }
+.mod.k-desecrated { background: color-mix(in srgb, var(--f-desec) 3%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--f-desec) 45%, transparent); }
+.mod.k-fractured { background: color-mix(in srgb, var(--f-frac) 4%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--f-frac) 50%, transparent); }
 /* A desecrated/fractured line that HAS a 1:1 explicit counterpart splits into an
    EXPLICIT head row (the filter that actually runs, since explicit matches desecrated
    listings too) plus the narrower scope row folded under it. The head has to keep the
    EXPLICIT tag to stay honest about what it searches, so it carries the source scope's
    rail instead - otherwise a desecrated line is indistinguishable from a plain one. */
-.mod.src-desecrated { background: rgba(143, 212, 79, 0.03); box-shadow: inset 2px 0 0 rgba(143, 212, 79, 0.45); }
-.mod.src-fractured { background: rgba(200, 160, 90, 0.04); box-shadow: inset 2px 0 0 rgba(200, 160, 90, 0.5); }
+.mod.src-desecrated { background: color-mix(in srgb, var(--f-desec) 3%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--f-desec) 45%, transparent); }
+.mod.src-fractured { background: color-mix(in srgb, var(--f-frac) 4%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, var(--f-frac) 50%, transparent); }
 .kind-tag {
   font: 700 8.5px "Segoe UI", sans-serif;
   letter-spacing: 0.05em;
@@ -281,12 +281,12 @@
   margin-right: 5px;
   vertical-align: 1px;
 }
-.k-implicit .kind-tag { color: #8db4d0; }
-.k-rune .kind-tag, .k-enchant .kind-tag, .k-added-rune .kind-tag { color: #7ec8a0; }
-.k-crafted .kind-tag { color: #78a0dc; }
-.k-skill .kind-tag { color: #e8c88a; }
-.k-desecrated .kind-tag { color: #caa9e0; }
-.k-fractured .kind-tag { color: #e0a050; }
+.k-implicit .kind-tag { color: var(--blue); }
+.k-rune .kind-tag, .k-enchant .kind-tag, .k-added-rune .kind-tag { color: var(--k-rune); }
+.k-crafted .kind-tag { color: var(--k-craft-tag); }
+.k-skill .kind-tag { color: var(--tx-gold2); }
+.k-desecrated .kind-tag { color: var(--k-desec-tag); }
+.k-fractured .kind-tag { color: var(--k-expl); }
 
 /* the mode pill is now a FLAT 8.5px uppercase tag on the 56px rail, colored by
    kind. State (off / fungible) reads from the row (opacity) and the tag text. */
@@ -368,15 +368,15 @@
    position/size changed. Self-contained (the container has no .cslider class) so the
    base .cslider rules in styles.css can't clash. Absolutely positioned => no grid cell. */
 .mod-sl { position: absolute; left: 66px; right: 150px; bottom: 2px; height: 7px; display: flex; align-items: center; gap: 5px; cursor: pointer; z-index: 1; }
-.mod-sl .cs-track { position: relative; flex: 1; min-width: 0; height: 2px; border-radius: 1px; background: rgba(255, 255, 255, 0.06); }
+.mod-sl .cs-track { position: relative; flex: 1; min-width: 0; height: 2px; border-radius: 1px; background: color-mix(in srgb, var(--paper) 6%, transparent); }
 /* the full cross-tier range labels the track's two ends - it IS the slider's scale */
 .mod-sl .sl-end { font-size: 7.5px; line-height: 1; color: var(--tx-faint); flex-shrink: 0; pointer-events: none; font-variant-numeric: tabular-nums; }
-.mod-sl .cs-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 1px; background: rgba(232, 160, 76, 0.55); }
-.mod-sl .cs-thumb { position: absolute; top: 50%; left: 0; width: 7px; height: 7px; border-radius: 50%; background: #e8b062; border: 1px solid #a86a28; transform: translate(-50%, -50%); }
+.mod-sl .cs-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 1px; background: color-mix(in srgb, var(--am) 55%, transparent); }
+.mod-sl .cs-thumb { position: absolute; top: 50%; left: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--slider-thumb); border: 1px solid var(--slider-thumb-bd); transform: translate(-50%, -50%); }
 /* the item's own roll, notched on the slim track (thumb = search minimum) */
 .mod-sl .cs-mark { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 2px; height: 7px; border-radius: 1px; background: var(--am-hi); opacity: 0.85; pointer-events: none; }
 .mod-sl:focus-visible { outline: none; }
-.mod-sl:focus-visible .cs-thumb { outline: 1px solid rgba(232, 160, 76, 0.85); outline-offset: 2px; }
+.mod-sl:focus-visible .cs-thumb { outline: 1px solid color-mix(in srgb, var(--am) 85%, transparent); outline-offset: 2px; }
 
 /* "+ Add a mod" (flex 1) and the Miscellaneous accordion (flex 2) share one row.
    flex-start keeps the add box its natural height when the accordion expands. */
@@ -386,15 +386,15 @@
   border: 1px dashed var(--bd-14); border-radius: 6px; text-align: center;
   user-select: none; transition: color 0.12s, border-color 0.12s;
 }
-.add-mod:hover { color: var(--am-hi); border-color: rgba(232, 160, 76, 0.4); }
+.add-mod:hover { color: var(--am-hi); border-color: color-mix(in srgb, var(--am) 40%, transparent); }
 
 .gtoggle {
-  font-size: 11px; color: #7a7466; cursor: pointer; user-select: none;
-  padding: 2px 9px; border-radius: 999px; border: 1px solid rgba(122, 116, 102, 0.35);
+  font-size: 11px; color: var(--tx-faint2); cursor: pointer; user-select: none;
+  padding: 2px 9px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--tx-faint2) 35%, transparent);
   white-space: nowrap;
 }
-.gtoggle:hover { color: #c8c2b2; }
-.gtoggle.on { color: #1a1410; background: linear-gradient(180deg, #e0a050, #c07828); border-color: transparent; font-weight: 700; }
+.gtoggle:hover { color: var(--tx-body); }
+.gtoggle.on { color: var(--am-on); background: linear-gradient(180deg, var(--k-expl), var(--am-grad-b)); border-color: transparent; font-weight: 700; }
 
 /* --- search bar: sticky inside the scroll container, never buried --- */
 .search-row {
@@ -416,7 +416,7 @@
   padding: 8px 24px;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 1px 8px rgba(214, 126, 44, 0.25);
+  box-shadow: 0 1px 8px color-mix(in srgb, var(--am-2) 25%, transparent);
 }
 .btn-search:hover { filter: brightness(1.07); }
 /* the row degrades by wrapping WHOLE controls, never by breaking a label in
@@ -429,9 +429,9 @@
 .search-row > .btn-search { flex: 0 0 auto; }
 /* the "set mins" cluster is one segmented control: label cell + tier min | exact roll | ↻ */
 .search-opts .opt-grp.seg { align-items: stretch; gap: 0; border: 1px solid var(--bd-12); border-radius: 6px; overflow: hidden; white-space: nowrap; }
-.opt-grp.seg .seg-lab { padding: 3px 9px; color: var(--tx-faint); font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; background: rgba(255, 255, 255, 0.03); display: inline-flex; align-items: center; }
-.opt-grp.seg .seg-btn { appearance: none; background: none; border: none; border-left: 1px solid rgba(232, 210, 180, 0.1); color: #d0b48a; padding: 3px 10px; font-family: inherit; font-size: 10.5px; cursor: pointer; }
-.opt-grp.seg .seg-btn:hover { background: rgba(232, 160, 76, 0.1); color: var(--tx-gold); }
+.opt-grp.seg .seg-lab { padding: 3px 9px; color: var(--tx-faint); font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; background: color-mix(in srgb, var(--paper) 3%, transparent); display: inline-flex; align-items: center; }
+.opt-grp.seg .seg-btn { appearance: none; background: none; border: none; border-left: 1px solid color-mix(in srgb, var(--tx-cream) 10%, transparent); color: var(--tx-sand); padding: 3px 10px; font-family: inherit; font-size: 10.5px; cursor: pointer; }
+.opt-grp.seg .seg-btn:hover { background: color-mix(in srgb, var(--am) 10%, transparent); color: var(--tx-gold); }
 .opt-grp.seg .seg-reset { font-size: 12px; line-height: 1; }
 /* stat range ± box: chrome lives on the CELL so the arrows sit inside the border */
 .search-opts .mm-cell { width: 52px; background: var(--in-bg); border: 1px solid var(--bd-14); border-radius: 5px; }
@@ -439,7 +439,7 @@
   background: none; border: none; color: var(--am-hi); text-align: center; font-size: 10px; font-weight: 600;
 }
 .search-opts .mm-cell input:focus { outline: none; }
-.search-opts .mm-cell:focus-within { border-color: rgba(232, 160, 76, 0.5); }
+.search-opts .mm-cell:focus-within { border-color: color-mix(in srgb, var(--am) 50%, transparent); }
 
 /* --- results --- */
 .results { margin-top: 14px; }
@@ -454,12 +454,12 @@
 /* .rh-floor also carries .suggested (tutorial hook); neutralize the old green box */
 .results-head .rh-floor { flex-shrink: 0; background: none; border: none; border-radius: 0; padding: 0; margin: 0; }
 .rh-floor-lab { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tx-faint); }
-.rh-floor-val { color: #a4d68e; font-size: 16px; font-weight: 700; line-height: 1.25; }
-.rh-floor-val .rh-floor-unit { font-size: 11px; font-weight: 500; color: #7fa871; }
+.rh-floor-val { color: var(--ok-tx2); font-size: 16px; font-weight: 700; line-height: 1.25; }
+.rh-floor-val .rh-floor-unit { font-size: 11px; font-weight: 500; color: var(--floor-unit); }
 .rh-floor-val .cur-div { font-size: 10px; margin-left: 4px; }
 /* the same money in the other majors, on its own line so a 560px window doesn't
    squeeze the floor into the histogram */
-.rh-floor-val .cur-aside { display: block; font-size: 10.5px; font-weight: 500; color: #7fa871; margin-top: 1px; white-space: nowrap; }
+.rh-floor-val .cur-aside { display: block; font-size: 10.5px; font-weight: 500; color: var(--floor-unit); margin-top: 1px; white-space: nowrap; }
 .rh-floor-val .cur-aside .cur-icon-inline { vertical-align: -2px; }
 .rh-floor-sub { font-size: 9px; color: var(--tx-faint); }
 .rh-hist { flex: 1; min-width: 0; position: relative; }
@@ -471,7 +471,7 @@
   position: absolute; top: -5px; transform: translateX(-50%);
   font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--green); background: var(--s-card); padding: 0 5px; border-radius: 3px;
-  border: 1px solid rgba(142, 201, 122, 0.3); white-space: nowrap; pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--green) 30%, transparent); white-space: nowrap; pointer-events: none;
 }
 .rh-ticks { position: relative; height: 11px; margin-top: 1px; font-size: 9px; color: var(--tx-faint); }
 .rh-tick { position: absolute; transform: translateX(-50%); white-space: nowrap; }
@@ -483,34 +483,34 @@
 
 .res-group-title {
   display: flex; align-items: center; gap: 8px;
-  color: #e8c88a; font-size: 12px; font-weight: 700; letter-spacing: .02em;
+  color: var(--tx-gold2); font-size: 12px; font-weight: 700; letter-spacing: .02em;
   margin: 12px 0 6px;
 }
 .res-group-title .tag {
   font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
 }
-.tag.highly { color: #1a1410; background: linear-gradient(180deg,#7ec8a0,#3d9d78); }
-.tag.similar { color: #cfc8b6; background: rgba(255,255,255,.08); }
-.res-group-title .count { color: #6f6a5e; font-weight: 400; }
+.tag.highly { color: var(--am-on); background: linear-gradient(180deg,var(--k-rune),var(--tag-hi-b)); }
+.tag.similar { color: var(--tx-body2); background: color-mix(in srgb, var(--paper) 8%, transparent); }
+.res-group-title .count { color: var(--tx-hint); font-weight: 400; }
 
 .results.updating { opacity: 0.45; pointer-events: none; transition: opacity .15s; }
 .results.stale { opacity: 0.55; }
 .stale-note {
-  background: rgba(224, 160, 80, 0.09); border: 1px solid rgba(224, 160, 80, 0.35);
-  border-radius: 7px; padding: 6px 10px; margin: 8px 0 2px; color: #d8b98a; font-size: 11.5px;
+  background: color-mix(in srgb, var(--k-expl) 9%, transparent); border: 1px solid color-mix(in srgb, var(--k-expl) 35%, transparent);
+  border-radius: 7px; padding: 6px 10px; margin: 8px 0 2px; color: var(--tx-sand); font-size: 11.5px;
 }
-.stale-note b { color: #f0d9a8; }
+.stale-note b { color: var(--tx-gold); }
 /* waiting on the trade site's limiter - informational, not an error, so it
    borrows the stale-note look; the banned variant reads warmer */
 .wait-note {
-  background: rgba(141, 180, 208, 0.08); border: 1px solid rgba(141, 180, 208, 0.3);
-  border-radius: 7px; padding: 6px 10px; margin: 8px 0 2px; color: #a9c4d8; font-size: 11.5px;
+  background: color-mix(in srgb, var(--blue) 8%, transparent); border: 1px solid color-mix(in srgb, var(--blue) 30%, transparent);
+  border-radius: 7px; padding: 6px 10px; margin: 8px 0 2px; color: var(--notice-tx); font-size: 11.5px;
 }
-.wait-note b { color: #cfe0ee; }
-.wait-note.banned { background: rgba(224, 160, 80, 0.09); border-color: rgba(224, 160, 80, 0.4); color: #d8b98a; }
-.wait-note.banned b { color: #f0d9a8; }
+.wait-note b { color: var(--notice-tx-hi); }
+.wait-note.banned { background: color-mix(in srgb, var(--k-expl) 9%, transparent); border-color: color-mix(in srgb, var(--k-expl) 40%, transparent); color: var(--tx-sand); }
+.wait-note.banned b { color: var(--tx-gold); }
 .wait-note .wait-secs { font-variant-numeric: tabular-nums; }
-.btn-search.attn { box-shadow: 0 0 0 1px rgba(240, 217, 168, .7), 0 0 12px rgba(214, 126, 44, .55); }
+.btn-search.attn { box-shadow: 0 0 0 1px color-mix(in srgb, var(--tx-gold) 70%, transparent), 0 0 12px color-mix(in srgb, var(--am-2) 55%, transparent); }
 
 /* two-line listings: price column | name + text flags over base | age | whisper.
    Full detail lives in the hover peek. */
@@ -519,12 +519,12 @@
   padding: 6px 10px; border-radius: 7px; border: 1px solid var(--bd-08);
   margin-bottom: 3px;
 }
-.listing:hover { border-color: rgba(232, 160, 76, 0.3); background: rgba(232, 160, 76, 0.04); }
+.listing:hover { border-color: color-mix(in srgb, var(--am) 30%, transparent); background: color-mix(in srgb, var(--am) 4%, transparent); }
 /* the listing the suggested floor anchored on: quiet amber outline */
-.listing.li-anchor { border-color: rgba(232, 160, 76, 0.35); }
+.listing.li-anchor { border-color: color-mix(in srgb, var(--am) 35%, transparent); }
 /* click-pinned row: its detail card stays up until released */
 .listing { cursor: pointer; }
-.listing.li-pinned { border-color: rgba(232, 160, 76, 0.5); background: rgba(232, 160, 76, 0.05); }
+.listing.li-pinned { border-color: color-mix(in srgb, var(--am) 50%, transparent); background: color-mix(in srgb, var(--am) 5%, transparent); }
 /* results group dividers: the Highly-similar / Similar buckets, surfaced quietly
    - a faint caption, its count, and a hairline rule filling the rest of the line */
 .res-group { display: flex; align-items: center; gap: 8px; margin: 13px 2px 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tx-dim); }
@@ -536,16 +536,16 @@
    ("3199 exalted (7.2 div)"), and a hard width made that overrun the name beside
    it. Content-sized with a minimum keeps short prices aligned without overlap. */
 .listing .price { flex: 0 0 auto; min-width: 92px; color: var(--tx-gold); font-weight: 700; font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.listing .price .cur { color: #b89968; font-size: 10.5px; font-weight: 500; }
+.listing .price .cur { color: var(--price-cur); font-size: 10.5px; font-weight: 500; }
 .li-center { flex: 1; min-width: 0; }
 .li-nameline { display: flex; align-items: center; gap: 7px; }
 .li-name { color: var(--tx-body2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .li-whisper {
-  font-size: 10.5px; color: var(--am-hi); border: 1px solid rgba(232, 160, 76, 0.35);
+  font-size: 10.5px; color: var(--am-hi); border: 1px solid color-mix(in srgb, var(--am) 35%, transparent);
   border-radius: 6px; padding: 3px 10px; white-space: nowrap; cursor: pointer; flex-shrink: 0;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
-.li-whisper:hover { background: rgba(232, 160, 76, 0.12); }
+.li-whisper:hover { background: color-mix(in srgb, var(--am) 12%, transparent); }
 /* on row hover the whisper button goes solid amber (mock hover state) */
 .listing:hover .li-whisper { color: var(--am-on); font-weight: 700; border-color: transparent; background: linear-gradient(180deg, var(--am-grad-a), var(--am-grad-b)); }
 .li-hidden { display: none; }
@@ -555,45 +555,45 @@
    next page of 10. Full-width, quiet, matches the app's amber-on-dark surfaces. */
 .load-more {
   display: block; width: 100%; margin: 8px 0 2px; padding: 7px 0;
-  background: rgba(214, 126, 44, 0.08); color: var(--tx-gold);
-  border: 1px solid rgba(214, 126, 44, 0.28); border-radius: 6px;
+  background: color-mix(in srgb, var(--am-2) 8%, transparent); color: var(--tx-gold);
+  border: 1px solid color-mix(in srgb, var(--am-2) 28%, transparent); border-radius: 6px;
   font-size: 11.5px; font-family: inherit; cursor: pointer; user-select: none;
   transition: background 0.12s, border-color 0.12s;
 }
-.load-more:hover:not(:disabled) { background: rgba(214, 126, 44, 0.16); border-color: rgba(214, 126, 44, 0.45); }
+.load-more:hover:not(:disabled) { background: color-mix(in srgb, var(--am-2) 16%, transparent); border-color: color-mix(in srgb, var(--am-2) 45%, transparent); }
 .load-more:disabled { opacity: 0.5; cursor: default; }
 /* Miscellaneous accordion - collapsed by default, but never silently: the
    header shows how many toggles are active so a filtered search can't hide */
 .misc-acc { flex: 2; min-width: 0; border: 1px solid var(--bd-09); border-radius: 6px; }
 .misc-head { display: flex; align-items: center; justify-content: space-between;
   padding: 5px 10px; font-size: 11px; color: var(--tx-dim); cursor: pointer; user-select: none; }
-.misc-head:hover { color: #d0b48a; }
-.misc-count { font-size: 9.5px; color: #e0b050; background: rgba(214, 126, 44, 0.15);
+.misc-head:hover { color: var(--tx-sand); }
+.misc-count { font-size: 9.5px; color: var(--tx-attn); background: color-mix(in srgb, var(--am-2) 15%, transparent);
   border-radius: 8px; padding: 0 7px; }
 /* fills DOWN the left column (4) then the right (3), so the order in
    MISC_FILTERS reads top-left to bottom-left, then top-right */
 .misc-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto);
   grid-auto-flow: column; gap: 3px 10px; padding: 2px 9px 8px; }
 .misc-row { display: flex; align-items: center; justify-content: space-between; gap: 6px;
-  font-size: 10.5px; color: #8a8372; cursor: pointer; }
-.misc-row select { background: #241e15; color: #c9c2b2; border: 1px solid rgba(214, 126, 44, 0.25);
+  font-size: 10.5px; color: var(--tx-dim); cursor: pointer; }
+.misc-row select { background: var(--s-band-peek); color: var(--tx-body); border: 1px solid color-mix(in srgb, var(--am-2) 25%, transparent);
   border-radius: 4px; font-size: 10px; padding: 1px 2px; cursor: pointer; }
-.misc-row select.set { color: #f0d9a8; border-color: rgba(214, 126, 44, 0.65); }
+.misc-row select.set { color: var(--tx-gold); border-color: color-mix(in srgb, var(--am-2) 65%, transparent); }
 
 /* the sale type summarised in the collapsed head, so a narrowing default is
    never invisible */
-.misc-sum { margin-left: auto; font-size: 9.5px; color: #7a7466; white-space: nowrap; }
+.misc-sum { margin-left: auto; font-size: 9.5px; color: var(--tx-faint2); white-space: nowrap; }
 .misc-sum + .misc-count { margin-left: 7px; }
 .sale-row { display: flex; align-items: center; gap: 8px;
-  padding: 4px 9px 2px; font-size: 10.5px; color: #8a8372; }
-.sale-row select { flex: 1; min-width: 0; background: #241e15; color: #c9c2b2;
-  border: 1px solid rgba(214, 126, 44, 0.25); border-radius: 4px; font-size: 10px;
+  padding: 4px 9px 2px; font-size: 10.5px; color: var(--tx-dim); }
+.sale-row select { flex: 1; min-width: 0; background: var(--s-band-peek); color: var(--tx-body);
+  border: 1px solid color-mix(in srgb, var(--am-2) 25%, transparent); border-radius: 4px; font-size: 10px;
   padding: 2px 3px; cursor: pointer; }
-.sale-row select.set { color: #f0d9a8; border-color: rgba(214, 126, 44, 0.65); }
+.sale-row select.set { color: var(--tx-gold); border-color: color-mix(in srgb, var(--am-2) 65%, transparent); }
 
 /* folded rows (res lines under their pseudo, desecrated half of a scope split);
    the toggle is now inline in the fold-head's mod text (see .fold-toggle above) */
-.fold-box { display: none; padding-left: 14px; border-left: 1px dashed rgba(214, 126, 44, 0.25); margin: 0 0 3px 40px; }
+.fold-box { display: none; padding-left: 14px; border-left: 1px dashed color-mix(in srgb, var(--am-2) 25%, transparent); margin: 0 0 3px 40px; }
 .fold-box.open { display: block; }
 
 /* "Collapsed Modifiers" bracket: one collapsible row that swallows every mod the
@@ -601,8 +601,8 @@
    garbage-pool lines, at the bottom of the mod list. Reclaims vertical space;
    toggling a mod on inside it graduates the mod back up into the list. */
 .mod-bracket-head { display: flex; align-items: center; gap: 7px; padding: 6px 10px; margin-top: 3px; border: 1px dashed var(--bd-14); border-radius: 7px; font-size: 11px; color: var(--tx-dim); cursor: pointer; user-select: none; }
-.mod-bracket-head:hover { border-color: rgba(232, 160, 76, 0.35); color: var(--tx-body); background: rgba(232, 160, 76, 0.03); }
-.mod-bracket-head.open { border-style: solid; border-color: var(--bd-12); border-radius: 7px 7px 0 0; background: rgba(232, 210, 180, 0.02); }
+.mod-bracket-head:hover { border-color: color-mix(in srgb, var(--am) 35%, transparent); color: var(--tx-body); background: color-mix(in srgb, var(--am) 3%, transparent); }
+.mod-bracket-head.open { border-style: solid; border-color: var(--bd-12); border-radius: 7px 7px 0 0; background: color-mix(in srgb, var(--tx-cream) 2%, transparent); }
 .mb-caret { color: var(--tx-faint); font-size: 9px; width: 9px; flex-shrink: 0; }
 .mb-lab { font-weight: 600; color: var(--tx-body); }
 .mb-hint { margin-left: auto; font-size: 9.5px; color: var(--tx-faint); }
@@ -611,54 +611,54 @@
 /* set-aside rows are dim by default (.mod.off); lift them a bit once expanded so they read + toggle easily */
 .mod-bracket.open .mod.off { opacity: 0.72; }
 /* divine equivalent for big exalt/chaos prices - readable at a glance */
-.cur-div { color: #8db4d0; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+.cur-div { color: var(--blue); font-size: 10.5px; font-weight: 600; white-space: nowrap; }
 /* the base is a dim 10px sub-line under the name (both inside .li-center) */
 .listing .li-base { color: var(--tx-faint); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* quiet text-only flag badges beside the name - colour carries the signal, no borders */
 .listing .li-flag { font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--tx-dim); line-height: 1; white-space: nowrap; flex-shrink: 0; }
-.listing .li-flag-corrupted { color: #e0554a; }
-.listing .li-flag-twice { color: #ff4a3a; }
-.listing .li-flag-desecrated { color: #8fd44f; }
-.listing .li-flag-fractured { color: #c8a05a; }
-.listing .li-flag-sanctified { color: #e0c060; }
-.listing .li-flag-mirrored { color: #8db4d0; }
-.listing .li-flag-unrevealed { color: #a77fdf; }
+.listing .li-flag-corrupted { color: var(--f-corr); }
+.listing .li-flag-twice { color: var(--li-twice); }
+.listing .li-flag-desecrated { color: var(--f-desec); }
+.listing .li-flag-fractured { color: var(--f-frac); }
+.listing .li-flag-sanctified { color: var(--li-sanctified); }
+.listing .li-flag-mirrored { color: var(--blue); }
+.listing .li-flag-unrevealed { color: var(--li-unrevealed); }
 /* unidentified: teal, the one hue not already taken by another status */
-.listing .li-flag-unidentified { color: #6fc6c0; }
+.listing .li-flag-unidentified { color: var(--li-unidentified); }
 .listing .li-age { color: var(--tx-faint); font-size: 10px; white-space: nowrap; flex-shrink: 0; }
 .listing.flash { animation: li-flash 1.3s ease-out; }
 @keyframes li-flash {
-  0% { background: rgba(232, 160, 76, 0.28); border-color: rgba(232, 160, 76, 0.8); }
-  100% { background: rgba(232, 160, 76, 0); border-color: var(--bd-08); }
+  0% { background: color-mix(in srgb, var(--am) 28%, transparent); border-color: color-mix(in srgb, var(--am) 80%, transparent); }
+  100% { background: color-mix(in srgb, var(--am) 0%, transparent); border-color: var(--bd-08); }
 }
 
 /* (the market-shape dot strip was replaced by the header histogram) */
 
-.no-results { color: #9a927f; font-size: 12px; padding: 10px 2px; }
+.no-results { color: var(--tx-dim2); font-size: 12px; padding: 10px 2px; }
 
 .suggested {
-  background: rgba(126,200,160,.08); border: 1px solid rgba(126,200,160,.3);
-  border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; color: #cfc8b6; font-size: 12px;
+  background: color-mix(in srgb, var(--k-rune) 8%, transparent); border: 1px solid color-mix(in srgb, var(--k-rune) 30%, transparent);
+  border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; color: var(--tx-body2); font-size: 12px;
 }
-.suggested b { color: #7ec8a0; font-size: 14px; }
+.suggested b { color: var(--k-rune); font-size: 14px; }
 
-.back-link { color: #8a8372; font-size: 11px; cursor: pointer; margin-bottom: 6px; user-select: none; }
-.back-link:hover { color: #e8c88a; }
+.back-link { color: var(--tx-dim); font-size: 11px; cursor: pointer; margin-bottom: 6px; user-select: none; }
+.back-link:hover { color: var(--tx-gold2); }
 .notice {
-  background: rgba(141, 180, 208, 0.07); border: 1px solid rgba(141, 180, 208, 0.22);
-  border-radius: 7px; padding: 6px 10px; margin: 2px 0 8px; color: #a9c4d8; font-size: 11.5px;
+  background: color-mix(in srgb, var(--blue) 7%, transparent); border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
+  border-radius: 7px; padding: 6px 10px; margin: 2px 0 8px; color: var(--notice-tx); font-size: 11.5px;
 }
 
-.notice-act { color: #e8c88a; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-.notice-act:hover { color: #f0d9a8; }
+.notice-act { color: var(--tx-gold2); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.notice-act:hover { color: var(--tx-gold); }
 
 /* fungible-group chip (replaces the mode pill for group members) */
 .or-chip {
   font: 700 10px "Segoe UI", sans-serif;
   letter-spacing: 0.04em;
-  color: #caa9e0;
-  background: rgba(176, 138, 208, 0.14);
-  border: 1px solid rgba(176, 138, 208, 0.32);
+  color: var(--k-desec-tag);
+  background: color-mix(in srgb, var(--or-chip) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--or-chip) 32%, transparent);
   padding: 2px 7px;
   border-radius: 999px;
   white-space: nowrap;
@@ -668,29 +668,29 @@
 .ctx-menu {
   position: fixed;
   z-index: 300;
-  background: #201b15;
-  border: 1px solid rgba(214, 126, 44, 0.35);
+  background: var(--s-band-peek);
+  border: 1px solid color-mix(in srgb, var(--am-2) 35%, transparent);
   border-radius: 8px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--scrim) 55%, transparent);
   padding: 4px;
   min-width: 170px;
 }
 .ctx-item {
   padding: 7px 10px;
   border-radius: 5px;
-  color: #cfc8b6;
+  color: var(--tx-body2);
   font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
 }
-.ctx-item:hover { background: rgba(214, 126, 44, 0.14); color: #e8c88a; }
+.ctx-item:hover { background: color-mix(in srgb, var(--am-2) 14%, transparent); color: var(--tx-gold2); }
 
 /* stat picker overlay */
 .ipicker {
   position: fixed;
   inset: 0;
   z-index: 290;
-  background: rgba(0, 0, 0, 0.45);
+  background: color-mix(in srgb, var(--scrim) 45%, transparent);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -698,10 +698,10 @@
 }
 .ipicker-panel {
   width: min(400px, calc(100vw - 40px));
-  background: #1c1712;
-  border: 1px solid rgba(214, 126, 44, 0.35);
+  background: var(--am-on);
+  border: 1px solid color-mix(in srgb, var(--am-2) 35%, transparent);
   border-radius: 10px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--scrim) 60%, transparent);
   display: flex;
   flex-direction: column;
   max-height: min(430px, calc(100vh - 100px));
@@ -711,10 +711,10 @@
   align-items: center;
   gap: 8px;
   padding: 10px 10px 8px;
-  border-bottom: 1px solid rgba(214, 126, 44, 0.16);
+  border-bottom: 1px solid color-mix(in srgb, var(--am-2) 16%, transparent);
 }
 .ipicker-title {
-  color: #e8c88a;
+  color: var(--tx-gold2);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -724,115 +724,115 @@
 }
 .ipicker-head input {
   flex: 1;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(214, 126, 44, 0.25);
+  background: color-mix(in srgb, var(--scrim) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--am-2) 25%, transparent);
   border-radius: 6px;
-  color: #e8c88a;
+  color: var(--tx-gold2);
   font-size: 12px;
   padding: 6px 9px;
 }
-.ipicker-head input:focus { outline: none; border-color: rgba(214, 126, 44, 0.6); }
+.ipicker-head input:focus { outline: none; border-color: color-mix(in srgb, var(--am-2) 60%, transparent); }
 .ipicker-scopes {
   display: flex; flex-wrap: wrap; gap: 4px;
   padding: 7px 10px 6px;
-  border-bottom: 1px solid rgba(214, 126, 44, 0.12);
+  border-bottom: 1px solid color-mix(in srgb, var(--am-2) 12%, transparent);
 }
 .scope-chip {
   font: 600 10px "Segoe UI", sans-serif; letter-spacing: 0.03em;
-  color: #8a8372; padding: 2px 8px; border-radius: 999px;
-  border: 1px solid rgba(122, 116, 102, 0.3); cursor: pointer; user-select: none;
+  color: var(--tx-dim); padding: 2px 8px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--tx-faint2) 30%, transparent); cursor: pointer; user-select: none;
 }
-.scope-chip:hover { color: #c8c2b2; }
-.scope-chip.on { color: #1a1410; background: linear-gradient(180deg, #e0a050, #c07828); border-color: transparent; font-weight: 700; }
+.scope-chip:hover { color: var(--tx-body); }
+.scope-chip.on { color: var(--am-on); background: linear-gradient(180deg, var(--k-expl), var(--am-grad-b)); border-color: transparent; font-weight: 700; }
 /* live per-item search assumptions (q20 / filled runes), inside Miscellaneous */
-.assume-row { margin: 0 9px 8px; padding-top: 7px; border-top: 1px solid rgba(214, 126, 44, 0.12); }
+.assume-row { margin: 0 9px 8px; padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--am-2) 12%, transparent); }
 .assume-lab { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em;
-  color: #7a7466; margin-bottom: 3px; }
+  color: var(--tx-faint2); margin-bottom: 3px; }
 /* same two columns and row shape as .misc-grid / .misc-row above it */
 .assume-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; }
 .assume-item { display: flex; align-items: center; justify-content: space-between; gap: 6px;
-  font-size: 10.5px; color: #8a8372; cursor: pointer; user-select: none; }
-.assume-item:hover { color: #c8c2b2; }
-.assume-item.on { color: #f0d9a8; }
-.assume-item input { accent-color: #d67e2c; margin: 0; }
+  font-size: 10.5px; color: var(--tx-dim); cursor: pointer; user-select: none; }
+.assume-item:hover { color: var(--tx-body); }
+.assume-item.on { color: var(--tx-gold); }
+.assume-item input { accent-color: var(--am-2); margin: 0; }
 /* quick currency price card (fragments/soul cores/runes/alloys/... exchange value) */
-.cur-card { margin: 10px; padding: 14px 16px; border: 1px solid rgba(214, 126, 44, 0.28); border-radius: 8px; background: rgba(30, 24, 16, 0.45); }
+.cur-card { margin: 10px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--am-2) 28%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--am-on) 45%, transparent); }
 .cur-head { display: flex; align-items: center; gap: 10px; }
 .cur-icon { width: 40px; height: 40px; object-fit: contain; flex: 0 0 auto; }
-.cur-name { font-size: 16px; font-weight: 700; color: #e8c88a; }
-.cur-value { margin-top: 12px; font-size: 24px; font-weight: 700; color: #f2e8d2; letter-spacing: 0.01em; }
-.cur-value-sub { font-size: 13px; font-weight: 500; color: #9a917f; }
+.cur-name { font-size: 16px; font-weight: 700; color: var(--tx-gold2); }
+.cur-value { margin-top: 12px; font-size: 24px; font-weight: 700; color: var(--tx-hi); letter-spacing: 0.01em; }
+.cur-value-sub { font-size: 13px; font-weight: 500; color: var(--tx-dim2); }
 .cur-spark { margin-top: 12px; }
 .cur-spark-svg { width: 100%; height: 44px; display: block; }
 .cur-spark-svg path { fill: none; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
-.cur-spark-svg.up path { stroke: #7ad42e; }
-.cur-spark-svg.down path { stroke: #d9683a; }
-.cur-spark-lbl { display: flex; justify-content: space-between; font-size: 10px; color: #8a8372; margin-top: 3px; }
-.cur-note { margin-top: 12px; font-size: 11px; color: #9a917f; line-height: 1.45; }
+.cur-spark-svg.up path { stroke: var(--desec-tab); }
+.cur-spark-svg.down path { stroke: var(--spark-down); }
+.cur-spark-lbl { display: flex; justify-content: space-between; font-size: 10px; color: var(--tx-dim); margin-top: 3px; }
+.cur-note { margin-top: 12px; font-size: 11px; color: var(--tx-dim2); line-height: 1.45; }
 /* curated special pools (Greater Runes / Otherworldly): violet accent, matches the desecrate otherworldly badge */
-.scope-chip-pool { color: #b79adf; border-color: rgba(150, 110, 210, 0.4); }
-.scope-chip-pool:hover { color: #d3bff0; }
-.scope-chip-pool.on { color: #1a1023; background: linear-gradient(180deg, #b892e6, #8f5fd0); border-color: transparent; }
+.scope-chip-pool { color: var(--pool-tx); border-color: color-mix(in srgb, var(--pool-bd) 40%, transparent); }
+.scope-chip-pool:hover { color: var(--pool-tx-hi); }
+.scope-chip-pool.on { color: var(--pool-on-tx); background: linear-gradient(180deg, var(--pool-on-bg-a), var(--pool-on-bg)); border-color: transparent; }
 
 .ipicker-list { overflow-y: auto; padding: 5px; }
 .ipicker-item {
   padding: 6px 9px;
   border-radius: 5px;
-  color: #bdb7a7;
+  color: var(--picker-tx);
   font-size: 12px;
   cursor: pointer;
 }
-.ipicker-item .num { color: #f0d9a8; }
-.ipicker-item:hover { background: rgba(214, 126, 44, 0.12); color: #e8c88a; }
-.ipicker-item.picked { color: #7ec8a0; }
-.pick-mark { color: #7ec8a0; font-weight: 700; }
-.ipicker-empty { color: #6f6a5e; font-size: 12px; padding: 14px; text-align: center; }
+.ipicker-item .num { color: var(--tx-gold); }
+.ipicker-item:hover { background: color-mix(in srgb, var(--am-2) 12%, transparent); color: var(--tx-gold2); }
+.ipicker-item.picked { color: var(--k-rune); }
+.pick-mark { color: var(--k-rune); font-weight: 700; }
+.ipicker-empty { color: var(--tx-hint); font-size: 12px; padding: 14px; text-align: center; }
 
 /* --- history (landing) --- */
-.history-title { color: #8a8372; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; margin: 4px 0 8px; }
+.history-title { color: var(--tx-dim); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; margin: 4px 0 8px; }
 .hist-item {
   display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px;
-  border: 1px solid rgba(214,126,44,.1); margin-bottom: 5px; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--am-2) 10%, transparent); margin-bottom: 5px; cursor: pointer;
 }
-.hist-item:hover { border-color: rgba(214,126,44,.28); background: rgba(214,126,44,.03); }
+.hist-item:hover { border-color: color-mix(in srgb, var(--am-2) 28%, transparent); background: color-mix(in srgb, var(--am-2) 3%, transparent); }
 .hist-body { flex: 1; min-width: 0; } /* min-width:0 lets the summary ellipsis instead of overflowing */
-.hist-base { color: #cfc8b6; font-size: 13px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hist-summary { color: #9a927f; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hist-sum { flex: 1; min-width: 0; color: #9a927f; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* desecrate history summary */
-.hist-age { margin-left: auto; flex-shrink: 0; color: #6f6a5e; font-size: 11px; white-space: nowrap; }
+.hist-base { color: var(--tx-body2); font-size: 13px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-summary { color: var(--tx-dim2); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-sum { flex: 1; min-width: 0; color: var(--tx-dim2); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* desecrate history summary */
+.hist-age { margin-left: auto; flex-shrink: 0; color: var(--tx-hint); font-size: 11px; white-space: nowrap; }
 .hist-icon { width: 28px; height: 28px; object-fit: contain; flex: 0 0 auto; }
 .hist-right { margin-left: auto; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
 .hist-right .hist-age { margin-left: 0; } /* column context: no auto-push needed */
-.hist-floor { color: #e8c88a; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.hist-floor { color: var(--tx-gold2); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .hist-floor .cur-icon-inline { width: 15px; height: 15px; }
-.mod-bracket-warn { border: 1px solid rgba(216,162,74,.35); border-radius: 6px; background: rgba(216,162,74,.08);
+.mod-bracket-warn { border: 1px solid color-mix(in srgb, var(--k-expl) 35%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--k-expl) 8%, transparent);
   color: var(--tx-mid); font-size: 11.5px; line-height: 1.4; padding: 7px 10px; margin: 6px 0 2px; cursor: pointer; }
-.mod-bracket-warn:hover { border-color: var(--am-60, #d8a24a); background: rgba(216,162,74,.14); }
+.mod-bracket-warn:hover { border-color: var(--am-60, var(--k-expl)); background: color-mix(in srgb, var(--k-expl) 14%, transparent); }
 .ipick-ns { color: var(--tx-faint); font-size: 10px; margin-left: 6px; text-transform: lowercase; }
 /* the two empty-state actions, one centred row. Search by name leads (it is a real
    way to get an item in); See an example is the quieter of the two. */
 .empty-actions { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 12px 0 2px; flex-wrap: wrap; }
 .empty-actions .sample-btn { margin: 0; }
 .name-search-btn { font-weight: 600; }
-.sample-btn-quiet { background: none; border-color: rgba(214, 126, 44, 0.22); color: #9a8f7a; }
-.sample-btn-quiet:hover { background: rgba(214, 126, 44, 0.1); border-color: rgba(214, 126, 44, 0.4); color: #c8b48e; }
+.sample-btn-quiet { background: none; border-color: color-mix(in srgb, var(--am-2) 22%, transparent); color: var(--tx-dim2); }
+.sample-btn-quiet:hover { background: color-mix(in srgb, var(--am-2) 10%, transparent); border-color: color-mix(in srgb, var(--am-2) 40%, transparent); color: var(--tx-sand); }
 
 /* the item name doubles as a search box: hint it without shouting */
 .item-name.renamable { cursor: pointer; }
-.item-name.renamable:hover { text-decoration: underline dotted rgba(232,200,138,.5); text-underline-offset: 3px; }
+.item-name.renamable:hover { text-decoration: underline dotted color-mix(in srgb, var(--tx-gold2) 50%, transparent); text-underline-offset: 3px; }
 
 /* Unidentified unique on a shared base: the text can't say which, the art can.
    Picking one switches the search from "any unidentified Sapphire" to "a Voices". */
-.unid-pick { border: 1px solid rgba(216,162,74,.3); background: rgba(216,162,74,.06);
+.unid-pick { border: 1px solid color-mix(in srgb, var(--k-expl) 30%, transparent); background: color-mix(in srgb, var(--k-expl) 6%, transparent);
   border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; }
 .unid-pick-lab { font-size: 11px; color: var(--tx-mid); margin-bottom: 6px; }
 .unid-pick-strip { display: flex; flex-wrap: wrap; gap: 6px; }
 .unid-cand { display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-  background: rgba(0,0,0,.25); border: 1px solid var(--bd-16); border-radius: 6px;
+  background: color-mix(in srgb, var(--scrim) 25%, transparent); border: 1px solid var(--bd-16); border-radius: 6px;
   padding: 4px 9px 4px 5px; color: var(--tx-mid); font-size: 11.5px; }
 .unid-cand img { width: 22px; height: 22px; object-fit: contain; }
-.unid-cand:hover { border-color: var(--am-60, #d8a24a); color: var(--tx-hi); }
-.unid-cand.on { border-color: var(--am-60, #d8a24a); background: rgba(216,162,74,.16); color: var(--tx-hi); }
+.unid-cand:hover { border-color: var(--am-60, var(--k-expl)); color: var(--tx-hi); }
+.unid-cand.on { border-color: var(--am-60, var(--k-expl)); background: color-mix(in srgb, var(--k-expl) 16%, transparent); color: var(--tx-hi); }
 .unid-clear { margin-top: 7px; background: none; border: none; padding: 0; cursor: pointer;
   color: var(--tx-faint); font-size: 11px; text-decoration: underline dotted; }
 .unid-clear:hover { color: var(--tx-mid); }

@@ -5,7 +5,9 @@
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; connect-src 'self' ee2:; img-src 'self' https://web.poecdn.com data:; style-src 'self'; font-src 'self'" />
   <title data-i18n="ui.app.window_title">POE2 Price Overlay</title>
+  <link rel="stylesheet" href="tokens.css" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="themes.css" />
   <link rel="stylesheet" href="item/item.css" />
 </head>
 <body>
@@ -69,11 +71,13 @@
                 <div id="bg-slider" class="cslider"></div>
               </div>
             </div>
-            <div class="set-datarow" data-i18n-title="ui.settings.feed_status_tooltip" title="Where prices come from - the public poe2scout API, or a live feed when one is active.">
-              <span class="live-dot"></span><span id="feed-status" class="feed-status" data-i18n="ui.settings.feed_status_default">public API</span>
-              <span class="set-note" data-i18n="ui.settings.feed_status_note">Game must be in Windowed or Windowed&nbsp;Fullscreen mode.</span>
+            <div class="set-field">
+              <label for="theme-select" data-i18n="ui.settings.theme_label" data-i18n-title="ui.settings.theme_tooltip" title="Colour scheme for the whole overlay.">Theme</label>
+              <select id="theme-select">
+                <option value="default" data-i18n="ui.settings.theme_default">Ember (default)</option>
+                <option value="industry" data-i18n="ui.settings.theme_industry">Industry</option>
+              </select>
             </div>
-            <label class="switch set-excl" data-i18n-title="ui.settings.currency_icons_tooltip" title="Replace currency names/units with their icons next to prices on the Price Check and Desecrate tabs. Hover or screen readers still get the full name."><input type="checkbox" id="currency-icons" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.currency_icons_label">Show currency icons instead of names</span><span class="set-sub" data-i18n="ui.settings.currency_icons_sub">Price Check &amp; Desecrate - hover still shows the name</span></label>
             <div class="set-field set-lang-field">
               <label for="lang-select" data-i18n-title="ui.settings.language_tooltip" title="Language for the app and for reading your items. Item text is read in your game client's language, so pick the one you play in.">
                 <span data-i18n="ui.settings.language_label">Language</span>
@@ -81,7 +85,8 @@
               <select id="lang-select"></select>
               <span class="set-sub" data-i18n="ui.settings.language_sub">reads your items in this language too</span>
             </div>
-            <label class="switch set-excl" data-i18n-title="ui.settings.dyslexic_font_tooltip" title="Render the whole app in OpenDyslexic, a typeface designed to be easier to read with dyslexia. Bundled with the app; off by default."><input type="checkbox" id="dyslexic-font" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.dyslexic_font_label">Dyslexia-friendly font</span><span class="set-sub" data-i18n="ui.settings.dyslexic_font_sub">OpenDyslexic, applied app-wide</span></label>
+            <label class="switch set-excl" data-i18n-title="ui.settings.currency_icons_tooltip" title="Replace currency names/units with their icons next to prices on the Price Check and Desecrate tabs. Hover or screen readers still get the full name."><input type="checkbox" id="currency-icons" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.currency_icons_label">Show currency icons instead of names</span></label>
+            <label class="switch set-excl" data-i18n-title="ui.settings.dyslexic_font_tooltip" title="Render the whole app in OpenDyslexic, a typeface designed to be easier to read with dyslexia. Bundled with the app; off by default."><input type="checkbox" id="dyslexic-font" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.dyslexic_font_label">Dyslexia-friendly font</span></label>
             <label class="switch set-excl" data-i18n-title="ui.settings.show_regex_tab_tooltip" title="Show the Regex tab in the tab bar. Off hides it entirely until you turn it back on here."><input type="checkbox" id="show-regex-tab" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.show_regex_tab_label">Show Regex tab</span></label>
             <label class="switch set-excl" data-i18n-title="ui.settings.show_grandex_tab_tooltip" title="Show the Grand Expedition tab in the tab bar. Off hides it entirely until you turn it back on here."><input type="checkbox" id="show-grandex-tab" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.show_grandex_tab_label">Show Grand Expedition tab</span></label>
             <label class="switch set-excl" data-i18n-title="ui.settings.show_networth_tab_tooltip" title="Show the Net Worth tab in the tab bar. Off hides it entirely until you turn it back on here. The capture hotkey still works either way."><input type="checkbox" id="show-networth-tab" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.show_networth_tab_label">Show Net Worth tab</span></label>
@@ -98,7 +103,6 @@
             <div class="set-rates">
               <div class="set-inline"><label data-i18n="ui.settings.currency.rate_overrides_label" data-i18n-title="ui.settings.currency.rate_overrides_tooltip" title="Manually set exchange rates for the core currencies. Yours override the market; blank cells use live data.">Rate overrides</label><span class="set-sub" data-i18n="ui.settings.currency.rate_overrides_sub">grey = live market; type to pin your own; accepts 0.25, 1/4 or 1:4</span></div>
               <div id="ovr-panel" class="ovr-panel"><div id="ovr-grid" class="ovr-grid"></div></div>
-              <div class="set-legend"><span class="legend-swatch"></span><span data-i18n="ui.settings.currency.rate_overrides_legend">blue border = your override</span></div>
             </div>
             <label class="switch set-excl" data-i18n-title="ui.settings.currency.exclude_exalted_arb_tooltip" title="Ange charges gold per unit traded, so routing thousands of low-value Exalted through a loop drains gold. This skips Exalted as an intermediate hop when building arbitrage routes."><input type="checkbox" id="exclude-exalted-arb" /><span class="sw-track"></span><span class="sw-lab" data-i18n="ui.settings.currency.exclude_exalted_arb_label">Exclude Exalted from arbitrage routes</span><span class="set-sub" data-i18n="ui.settings.currency.exclude_exalted_arb_sub">avoids gold-heavy loops</span></label>
             <div class="set-live-group">

@@ -206,6 +206,7 @@ const DEFAULT_CONFIG = {
   excludeExaltedArb: false, // Ange charges gold per unit; exclude exalted as a route middle
   currencyIcons: false, // show currency icons instead of names next to denominations/prices (dyslexia aid)
   dyslexicFont: false, // render the whole app in the bundled OpenDyslexic typeface (accessibility)
+  theme: 'default', // 'default' | 'industry' - alternate palette, see renderer/themes.css
   // Live currency-rate polling, two independent rates. Each: 'quiet' (no auto poll) |
   // 'low' | 'medium' | 'high'. Tab = while the Currency tab is the visible view;
   // Bg = while the overlay is up but you're on another tab.
@@ -660,6 +661,8 @@ function createSplash() {
     show: false,
     webPreferences: { contextIsolation: true, nodeIntegration: false }
   });
+  // NOT themed on purpose: the splash is brand, not chrome. A theme changing the
+  // loading logo is the same category of wrong as a theme changing the app icon.
   splash.loadFile(path.join(__dirname, 'renderer', 'splash.html'), {
     query: { hotkey: (config && config.hotkey) || 'F6', version: app.getVersion() }
   });
@@ -713,6 +716,8 @@ function createWindow() {
     } catch {}
   });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+
 
   // Bring the window up once, invisible and click-through. From here on it is
   // never hidden again - toggling only flips opacity (see showOverlay/hideOverlay).
@@ -793,6 +798,21 @@ function showOverlay() {
   }
 }
 
+// The window's real state must always match overlayShown. A capture blanks the overlay
+// by dropping opacity, and if the user hides or shows it mid-capture the restore used to
+// set opacity back to 1 unconditionally - leaving a window that is VISIBLE while
+// overlayShown is false and clicks are still passing through it. That is the "app is up
+// but nothing is clickable, press F6 twice" report. Restore through this instead of
+// setting opacity directly.
+function syncOverlayState() {
+  if (!win || win.isDestroyed()) return;
+  try {
+    win.setOpacity(overlayShown ? 1 : 0);
+    win.setIgnoreMouseEvents(!overlayShown);
+    if (overlayShown && !win.isVisible()) win.showInactive();
+  } catch { /* window torn down mid-capture */ }
+}
+
 function hideOverlay(toGame) {
   overlayShown = false;
   try {
@@ -837,6 +857,7 @@ function toggleOverlay(source = 'hotkey') {
   if (overlayShown) hideOverlay();
   else showOverlay();
 }
+
 
 function registerHotkey(accelerator) {
   try {
@@ -1323,6 +1344,12 @@ ipcMain.handle('set-currency-icons', (_e, on) => {
   return config.currencyIcons;
 });
 
+ipcMain.handle('set-theme', (_e, name) => {
+  config.theme = name === 'industry' ? 'industry' : 'default';
+  saveConfig();
+  return config.theme;
+});
+
 ipcMain.handle('set-dyslexic-font', (_e, on) => {
   config.dyslexicFont = !!on;
   saveConfig();
@@ -1493,9 +1520,11 @@ function runReaderWorker(bitmap, W, H, onDetected) {
   });
 }
 
-async function doStashCapture(onDetected) {
-  // Hide the overlay during the grab so it doesn't occlude the panel it's reading
-  // (the screen capture is the composited desktop). Restored in finally.
+// Grabbing hides the overlay for ~70ms, so grabs must not overlap - but a grab is fast
+// (~200ms) while the READ that follows is 1-2s in a worker. Keeping them welded together
+// meant a second F7 was dropped outright while the first was still reading. Split, so the
+// user can walk tab-to-tab at their own speed and the reads catch up behind them.
+async function grabStashFrame() {
   const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
   try {
     await primeCapture(); // before the veil - see primeCapture
@@ -1504,7 +1533,14 @@ async function doStashCapture(onDetected) {
     const ch = Math.round(disp.size.height * disp.scaleFactor);
     if (wasVisible) { win.setOpacity(0); if (process.platform !== 'win32') win.hide(); await new Promise((r) => setTimeout(r, 70)); }
     const shot = await grabScreen(cw, ch, false);
-    if (wasVisible) { win.setOpacity(1); if (process.platform !== 'win32') win.showInactive(); }
+    return shot || null;
+  } finally {
+    syncOverlayState(); // whatever happened during the grab, the window matches the flag
+  }
+}
+
+async function readStashFrame(shot, onDetected) {
+  try {
     if (!shot) return { ok: false, error: 'no screen source' };
     const { bitmap, W, H } = shot;
 
@@ -1543,26 +1579,60 @@ async function doStashCapture(onDetected) {
     };
   } catch (err) {
     return { ok: false, error: String(err && err.message || err) };
-  } finally {
-    if (wasVisible && win && win.getOpacity() === 0) win.setOpacity(1); // never leave it hidden
-    if (wasVisible && win && !win.isDestroyed() && process.platform !== 'win32' && !win.isVisible()) win.showInactive();
   }
 }
 
 // One capture, broadcasting staged progress to the Net Worth panel so it can show
 // "Capturing…", then a placeholder row the instant the tab is detected, then fill.
-let stashCaptureBusy = false;
-async function captureAndBroadcast() {
-  if (stashCaptureBusy) return;
-  stashCaptureBusy = true;
-  const send = (ch, payload) => { if (win && !win.isDestroyed()) win.webContents.send(ch, payload); };
-  send('stash-capturing');
+// Grabs are serialised (each one blanks the overlay); reads run in a small pool behind
+// them. Pressing the hotkey on five tabs in a row now takes five grabs (~1s total) and
+// the reads land as they finish, instead of four presses being thrown away.
+const READ_POOL = 2; // enough to hide the read latency, low enough not to saturate a CPU
+let grabbing = false;
+let captureSeq = 0;        // capture ORDER, so rows land as pressed even though reads finish out of order
+const pendingGrabs = [];   // hotkey presses waiting for the capture hardware
+const pendingReads = [];   // frames waiting for a reader worker
+let activeReads = 0;
+
+const sendToUI = (ch, payload) => { if (win && !win.isDestroyed()) win.webContents.send(ch, payload); };
+const queueDepth = () => pendingGrabs.length + pendingReads.length + activeReads;
+
+async function pumpGrabs() {
+  if (grabbing || !pendingGrabs.length) return;
+  grabbing = true;
   try {
-    const res = await doStashCapture((tab) => send('stash-detected', tab));
-    send('stash-captured', res);
+    while (pendingGrabs.length) {
+      const seq = pendingGrabs.shift();
+      const shot = await grabStashFrame();
+      pendingReads.push({ shot, seq });
+      sendToUI('stash-queued', { depth: queueDepth() });
+      pumpReads();
+    }
   } finally {
-    stashCaptureBusy = false;
+    grabbing = false;
   }
+}
+
+function pumpReads() {
+  while (activeReads < READ_POOL && pendingReads.length) {
+    const { shot, seq } = pendingReads.shift();
+    activeReads++;
+    readStashFrame(shot, (tab) => sendToUI('stash-detected', tab))
+      .then((res) => sendToUI('stash-captured', Object.assign({ seq }, res)))
+      .catch((err) => sendToUI('stash-captured', { ok: false, error: String((err && err.message) || err) }))
+      .finally(() => {
+        activeReads--;
+        sendToUI('stash-queued', { depth: queueDepth() });
+        pumpReads();
+      });
+  }
+}
+
+function captureAndBroadcast() {
+  pendingGrabs.push(++captureSeq);
+  sendToUI('stash-capturing');
+  sendToUI('stash-queued', { depth: queueDepth() });
+  pumpGrabs();
 }
 
 ipcMain.on('stash-capture-start', () => captureAndBroadcast());
@@ -1652,7 +1722,7 @@ async function captureStashSample() {
     const capH = Math.round(disp.size.height * disp.scaleFactor);
     if (wasVisible) { win.setOpacity(0); if (process.platform !== 'win32') win.hide(); await new Promise((r) => setTimeout(r, 70)); }
     const shot = await grabGameWindow(capW, capH);
-    if (wasVisible) { win.setOpacity(1); if (process.platform !== 'win32') win.showInactive(); }
+    syncOverlayState();
     if (!shot) return { ok: false, error: 'game-window-not-found' };
     if (frameLooksBlank(shot.bitmap)) return { ok: false, error: 'game-window-black' };
 
@@ -1712,7 +1782,7 @@ async function captureStashSample() {
       dataUrl: prev(panel), fullDataUrl: prev(full), panelDataUrl: prev(panel),
     };
   } catch (e) {
-    if (wasVisible && win && !win.isDestroyed()) { win.setOpacity(1); }
+    syncOverlayState();
     return { ok: false, error: String((e && e.message) || e) };
   }
 }
@@ -1750,8 +1820,36 @@ ipcMain.handle('stash-sample-preview', async (_e, i) => {
       resizable: true, autoHideMenuBar: true, backgroundColor: '#101010',
       alwaysOnTop: true, // the overlay itself is always-on-top; without this it hides behind
     });
-    pw.loadURL(require('url').pathToFileURL(file).href);
-    pw.once('ready-to-show', () => pw.show());
+    // the overlay pins itself at the 'screen-saver' level, so a plain alwaysOnTop window
+    // slips BEHIND it - the preview has to sit at the same level to stay reachable
+    pw.setAlwaysOnTop(true, 'screen-saver');
+    // Loading the PNG directly gets Chromium's image viewer, which adds its own
+    // click-to-zoom on top of a window that IS the full-size view - a second zoom nobody
+    // asked for. A one-element page instead: fitted, no cursor affordance, no toggle.
+    const title = s.scope === 'panel' ? 'stash-panel.png' : 'game-window.png';
+    const viewer = path.join(dir, 'view.html');
+    fs.writeFileSync(viewer, '<!doctype html><meta charset="utf-8"><title>' + title + '</title>'
+      + '<style>html,body{margin:0;height:100%;background:#101010;overflow:hidden}'
+      + 'img{width:100%;height:100%;object-fit:contain;-webkit-user-select:none;user-select:none;'
+      + '-webkit-user-drag:none;pointer-events:none}</style>'
+      + '<img src="' + path.basename(file).replace(/"/g, '%22') + '" alt="">');
+    pw.loadURL(require('url').pathToFileURL(viewer).href);
+    pw.once('ready-to-show', () => { pw.show(); pw.focus(); });
+
+    // THE RULE: once open, any loss of focus closes it. Bound at creation - no arming
+    // delay, no waiting on a focus or load event. Every attempt to be clever here (bind
+    // after 'focus', bind on a timer, bind after did-finish-load) left a window where a
+    // click did nothing, because a window that never emits the event you waited for
+    // never gets the handler. A window that has never been focused cannot blur, so
+    // binding immediately is safe.
+    pw.on('blur', () => { try { if (!pw.isDestroyed()) pw.close(); } catch { /* already gone */ } });
+    // Esc as well - the other way people dismiss something like this
+    pw.webContents.on('before-input-event', (e, input) => {
+      if (input.type === 'keyDown' && input.key === 'Escape') {
+        e.preventDefault();
+        try { if (!pw.isDestroyed()) pw.close(); } catch { /* already gone */ }
+      }
+    });
     pw.on('closed', () => {
       samplePreviewWins.delete(i);
       try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* temp dir */ }
@@ -1874,7 +1972,8 @@ ipcMain.on('stash-calibrate-start', async () => {
     });
     calibWin.setAlwaysOnTop(true, 'screen-saver');
     calibWin.on('closed', () => { calibWin = null; });
-    calibWin.loadFile(path.join(__dirname, 'renderer', 'stash', 'calibrate.html'));
+    calibWin.loadFile(path.join(__dirname, 'renderer', 'stash', 'calibrate.html'),
+      { search: `theme=${config && config.theme === 'industry' ? 'industry' : 'default'}` });
     calibWin.webContents.once('did-finish-load', () => {
       try { calibWin.webContents.send('calib-init', { dataUrl, capW, capH, seedBox: seed }); } catch {}
     });
@@ -2098,7 +2197,8 @@ ipcMain.on('item-peek-show', (_e, { html, frac }) => {
     peekAnchorY = b.y + Math.round((frac || 0) * b.height);
     const alpha = Math.max(0.1, Math.min(1, (config && config.bgOpacity ? config.bgOpacity : 100) / 100));
     const dyslexic = !!(config && config.dyslexicFont);
-    const send = () => { try { pw.webContents.send('peek-content', { html: String(html || ''), alpha, dyslexic }); } catch {} };
+    const theme = (config && config.theme === 'industry') ? 'industry' : 'default';
+    const send = () => { try { pw.webContents.send('peek-content', { html: String(html || ''), alpha, dyslexic, theme }); } catch {} };
     // first open: the page may still be loading and would miss the message
     if (pw.webContents.isLoading()) pw.webContents.once('did-finish-load', send);
     else send();
@@ -2199,7 +2299,8 @@ ipcMain.handle('poe-login', () => new Promise((resolve) => {
   };
   lw.on('resize', layout);
   layout();
-  lw.loadFile(path.join(__dirname, 'renderer', 'item', 'login-shell.html'));
+  lw.loadFile(path.join(__dirname, 'renderer', 'item', 'login-shell.html'),
+    { search: `theme=${config && config.theme === 'industry' ? 'industry' : 'default'}` });
   view.webContents.loadURL(LOGIN_URL);
 
   const hist = () => view.webContents.navigationHistory;

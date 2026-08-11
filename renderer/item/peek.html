@@ -2,7 +2,9 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://web.poecdn.com data:; style-src 'unsafe-inline'; font-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://web.poecdn.com data:; style-src 'self' 'unsafe-inline'; font-src 'self'">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../themes.css">
 <style>
   /* Refined Ember peek card. This window's CSP allows inline styles; colours are
      hardcoded here (it's a separate document from the main window's tokens). */
@@ -22,66 +24,73 @@
   #card {
     /* peek-client.js overrides background with rgba(16,15,13, alpha) to match the
        overlay's transparency setting; the header band + sections layer on top */
-    background: rgba(28, 25, 22, 0.97);
-    border: 1px solid rgba(232, 210, 180, 0.14);
+    background: color-mix(in srgb, var(--s-card) 97%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tx-cream) 14%, transparent);
     border-radius: 10px;
-    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6);
-    color: #c9c1b0;
+    box-shadow: 0 12px 34px color-mix(in srgb, var(--scrim) 60%, transparent);
+    color: var(--tx-body);
     font: 12.5px/1.5 "Segoe UI", system-ui, sans-serif;
     overflow: hidden;
     font-variant-numeric: tabular-nums;
   }
   /* raised header band */
-  .pk-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #221e18; border-bottom: 1px solid rgba(232,210,180,.12); }
-  .pk-icon { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 1px 4px rgba(0,0,0,.5)); }
+  .pk-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--s-band-peek); border-bottom: 1px solid color-mix(in srgb, var(--tx-cream) 12%, transparent); }
+  .pk-icon { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 1px 4px color-mix(in srgb, var(--scrim) 50%, transparent)); }
   .pk-icon-wrap { position: relative; width: 40px; height: 40px; flex: 0 0 40px; }
   .ic-pips { position: absolute; left: 1px; bottom: 1px; display: flex; gap: 2px; }
-  .ic-pip { width: 6px; height: 6px; border-radius: 50%; background: #16130f; border: 1px solid rgba(232,210,180,.55); box-shadow: 0 0 3px rgba(0,0,0,.8); }
-  .pk-name { color: #ece4d4; font-weight: 700; font-size: 14px; }
-  .pk-base { color: #8d8574; font-size: 11.5px; }
-  .pk-price { margin-left: auto; text-align: right; color: #f0d9a8; font-weight: 700; font-size: 16px; white-space: nowrap; }
-  .pk-price .cur { color: #b89968; font-size: 11px; font-weight: 500; }
+  .ic-pip { width: 6px; height: 6px; border-radius: 50%; background: var(--s-root); border: 1px solid color-mix(in srgb, var(--tx-cream) 55%, transparent); box-shadow: 0 0 3px color-mix(in srgb, var(--scrim) 80%, transparent); }
+  .pk-name { color: var(--tx-hi); font-weight: 700; font-size: 14px; }
+  .pk-base { color: var(--tx-dim); font-size: 11.5px; }
+  .pk-price { margin-left: auto; text-align: right; color: var(--tx-gold); font-weight: 700; font-size: 16px; white-space: nowrap; }
+  .pk-price .cur { color: var(--price-cur); font-size: 11px; font-weight: 500; }
   /* currency-icon toggle: this peek window has its own CSS, so size the inline icon here (not styles.css) - match the 16px price number, not the natural 48px PNG */
   .cur-icon-inline { display: inline-block; height: 15px; width: auto; vertical-align: middle; margin: 0 1px; }
-  .pk-age { color: #6b6355; font-size: 10px; font-weight: 400; }
+  .pk-age { color: var(--tx-faint); font-size: 10px; font-weight: 400; }
 
   /* flags = quiet text badges, no borders */
   .pk-flags { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px 2px; }
   .pk-head .pk-flags { padding: 3px 0 0; gap: 7px; } /* status tags ride the header block */
   .pk-flag { font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #c07a6a; }
-  .pk-flag-corrupted { color: #e0554a; }
-  .pk-flag-desecrated { color: #8fd44f; }
-  .pk-flag-mirrored { color: #8db4d0; }
-  .pk-flag-unidentified { color: #6fc6c0; }
-  .pk-flag-sanctified { color: #e0c060; }
-  .pk-flag-unrevealed { color: #a77fdf; }
+  .pk-flag-corrupted { color: var(--f-corr); }
+  .pk-flag-desecrated { color: var(--f-desec); }
+  .pk-flag-mirrored { color: var(--blue); }
+  .pk-flag-unidentified { color: var(--li-unidentified); }
+  .pk-flag-sanctified { color: var(--li-sanctified); }
+  .pk-flag-unrevealed { color: var(--li-unrevealed); }
 
   .pk-stats { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 12px; }
-  .pk-stat { color: #8d8574; font-size: 12px; }
-  .pk-stat b { color: #f0d9a8; font-size: 14px; font-weight: 700; }
+  .pk-stat { color: var(--tx-dim); font-size: 12px; }
+  .pk-stat b { color: var(--tx-gold); font-size: 14px; font-weight: 700; }
 
   /* section micro-label (VS YOUR ITEM / RUNES & IMPLICITS / EXPLICITS ...) */
-  .pk-seclab { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #6b6355; padding: 8px 12px 3px; border-top: 1px solid rgba(232,210,180,.06); }
-  .pk-seclab .pk-key { text-transform: none; letter-spacing: 0; color: #5c564a; font-size: 9px; }
+  .pk-seclab { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tx-faint); padding: 8px 12px 3px; border-top: 1px solid color-mix(in srgb, var(--tx-cream) 6%, transparent); }
+  .pk-seclab .pk-key { text-transform: none; letter-spacing: 0; color: var(--tx-placeholder); font-size: 9px; }
 
   /* VS YOUR ITEM: label | value | fixed 40px delta */
   .pk-compare { padding: 2px 12px 6px; display: flex; flex-direction: column; gap: 3px; }
-  .pk-cmp { display: grid; grid-template-columns: 1fr auto 40px; align-items: baseline; gap: 8px; font-size: 12px; color: #8d8574; }
-  .pk-cmp b { color: #f0d9a8; font-size: 13px; font-weight: 700; }
+  .pk-cmp { display: grid; grid-template-columns: 1fr auto max-content; align-items: baseline; gap: 8px; font-size: 12px; color: var(--tx-dim); }
+  /* the delta track sizes to its content. A fixed px track here disagreed with the
+     span's own width and clipped "+20" to "+2" at the card edge - twice. */
+  .pk-cmp b { color: var(--tx-gold); font-size: 13px; font-weight: 700; }
   .pk-cmp .pk-delta { text-align: right; }
 
   /* mod lines: text (flex) | fixed 40px delta column */
   .pk-mods { padding: 2px 12px 6px; display: flex; flex-direction: column; gap: 1px; }
-  .pk-mod { display: flex; align-items: baseline; gap: 6px; color: #8a8372; font-size: 12px; line-height: 1.45; }
+  .pk-mod { display: flex; align-items: baseline; gap: 6px; color: var(--tx-dim); font-size: 12px; line-height: 1.45; }
   .pk-mtext { flex: 1; min-width: 0; }
   .pk-mod.match, .pk-mod.match .pk-mtext { color: #e4ddca; }
-  .pk-mod .num { color: #f0d9a8; }
-  .pk-delta { width: 40px; flex-shrink: 0; text-align: right; font-size: 11px; font-weight: 700; }
-  .pk-delta.up { color: #7ec46a; }
-  .pk-delta.down { color: #e08a7a; }
+  .pk-mod .num { color: var(--tx-gold); }
+  /* Better or worse than your item must not rest on hue alone: a colleague with a red
+     green deficiency, or anyone running low background opacity over a bright scene, sees
+     two identical numbers. The arrow carries the meaning, the colour reinforces it. */
+  .pk-delta { min-width: 46px; text-align: right; font-size: 11px; font-weight: 700;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pk-delta.up { color: var(--green-mid); }
+  .pk-delta.down { color: var(--red-hi); }
+  .pk-arrow { font-weight: 400; margin-right: 2px; }
   .pk-tag { font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.85; margin-left: 5px; }
-  .pk-tag-des, .pk-tag-desecrated { color: #8fd44f; }
-  .pk-tag-fractured { color: #c8a05a; }
+  .pk-tag-des, .pk-tag-desecrated { color: var(--f-desec); }
+  .pk-tag-fractured { color: var(--f-frac); }
   .pk-tag-crafted { color: #93c5e8; }
 
   /* runes/implicits read game-green; implicits lean blue when matched */
@@ -93,10 +102,10 @@
   /* crafted blue / fractured tan */
   .pk-mod.crafted { color: #93c5e8; }
   .pk-mod.crafted.match { color: #bfe0f5; }
-  .pk-mod.fractured { color: #c8a05a; }
-  .pk-mod.fractured.match { color: #e0c48a; }
+  .pk-mod.fractured { color: var(--f-frac); }
+  .pk-mod.fractured.match { color: var(--tx-gold2); }
   /* DESECRATED - green-tint bg + inset bar + tag (replaces the old solid fill + glow) */
-  .pk-mod.des { background: rgba(154, 222, 74, 0.09); box-shadow: inset 2px 0 0 #8fd44f; color: #cfe6a8; border-radius: 2px; padding: 1px 6px; margin: 1px -6px; }
+  .pk-mod.des { background: color-mix(in srgb, var(--desec) 9%, transparent); box-shadow: inset 2px 0 0 var(--f-desec); color: var(--des-tx); border-radius: 2px; padding: 1px 6px; margin: 1px -6px; }
   .pk-mod.des.match { color: #e2f2c2; }
 
   .pk-miss { color: #c8705a; font-size: 11.5px; margin: 4px 12px 8px; }

@@ -243,9 +243,14 @@
   }
   function renderCurrency(root) {
     root.innerHTML = '';
+    // Same markup as the equipment header's back link (item-ui.js): the link rides its own
+    // .back-row, which is what gives it its spacing. Appended bare it sat flush against
+    // the tab strip while the equipment one looked deliberate.
+    const backRow = cel('div', 'back-row');
     const back = cel('div', 'back-link', t('itemtab.currency.back_link'));
     back.onclick = () => { state.view = 'empty'; state.item = null; state.currencyResult = null; render(); };
-    root.appendChild(back);
+    backRow.appendChild(back);
+    root.appendChild(backRow);
     const card = cel('div', 'cur-card');
     const head = cel('div', 'cur-head');
     if (state.item.currencyIcon) { const img = cel('img', 'cur-icon'); img.src = state.item.currencyIcon; img.onerror = () => img.remove(); head.appendChild(img); }

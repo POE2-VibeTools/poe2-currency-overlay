@@ -1,0 +1,92 @@
+/* Single source of truth for every colour the app draws.
+   Five documents link this: the main window, the hover peek, the splash, the Net
+   Worth calibration overlay and the login shell. Add a colour HERE, never inline -
+   a literal in a rule is a colour no theme can reach.
+   Themes are generated from this block by dev/gen-theme.js into themes.css. */
+:root{
+  --s-root:#14120f; --s-card:#1c1916; --s-band:#282219; --s-band-peek:#221e18; --s-strip:#181512;
+  --bd-06:rgba(232,210,180,.06); --bd-08:rgba(232,210,180,.08); --bd-09:rgba(232,210,180,.09);
+  --bd-12:rgba(232,210,180,.12); --bd-14:rgba(232,210,180,.14); --bd-16:rgba(232,210,180,.16);
+  --tx-hi:#ece4d4; --tx-body:#c9c1b0; --tx-body2:#d5cdbc; --tx-dim:#8d8574; --tx-faint:#6b6355; --tx-gold:#f0d9a8;
+  --am:#e8a04c; --am-hi:#f0c078; --am-grad-a:#eaa653; --am-grad-b:#c07828; --am-on:#1a1410;
+  --green:#8ec97a; --green-hi:#c6e6b4; --red:#d08a80; --red2:#c98a80; --red-pen:#a8756c;
+  --blue:#8db4d0; --blue-hi:#a9cbe2; --desec:#9ade4a; --desec-dim:#8fae6f; --desec-tab:#7ad42e; --desec-lab:#b8e678;
+  --k-prop:#a8a294; --k-rune:#7ec8a0; --k-impl:#8db4d0; --k-expl:#e0a050; --k-craft:#a9cbe2;
+  --f-corr:#e0554a; --f-desec:#8fd44f; --f-frac:#c8a05a;
+  /* STATUS. Meaning, not decoration - these keep their hue in every theme, like the
+     gain/loss green and red. An amber "check this row" that desaturates to steel stops
+     being a warning, and its legend stops matching what is on screen. */
+  --warn:#e0a050; --danger:#e0554a;
+  /* --info is "you touched this", the third row state. Unlike warn and danger it is
+     re-themed with the palette, then LIFTED - brighter and more saturated than the accent
+     it sits beside (gen-theme.js infoChroma/infoLift). A monochrome theme has no spare
+     hue to give it, so lightness and chroma are the only honest separation available. */
+  --info:#6f9fd8;
+  /* HIGHLIGHT SPEC. One recipe, three states. A highlighted row is built from a single
+     state colour by these three mixes, so a state needs a hue and nothing else, and a
+     theme tunes all of them at once instead of six hand-picked values drifting apart.
+       fill = state into the row background   edge = the endcap rail
+       ink  = state into the row's text       so the text shifts, not just the backdrop */
+  --hl-fill:14%; --hl-edge:75%; --hl-ink:55%;
+  --in-bg:rgba(0,0,0,.3); --in-bd:var(--bd-12);
+  /* Roles that existed in the CSS as hand-typed literals but never had a name. --am-2 is
+     the app's single most-used colour (88 sites) - the amber every border, tint and rail
+     is drawn from - and it had no token, which is why nothing could be re-themed. */
+  --am-2:#d67e2c; --scrim:#000000; --paper:#ffffff;
+  --tx-gold2:#e8c88a; --tx-cream:#e8d2b4; --tx-dim2:#9a927f; --tx-faint2:#7a7466;
+  --gold-dim:#d8b06a; --gold-deep:#786950; --gold-mid:#8a7a5c; --tx-sand:#d0b48a;
+  --red-hi:#e08a7a; --red-warn:#d96a5a; --green-mid:#7ec46a; --blue-link:#6db3f2; --tx-ash:#d8d4c8;
+  /* Referenced by rules but never defined - --tx-mid had no fallback, so those
+     elements silently inherited. Defined here so themes reach them. */
+  --tx-mid:#a89f8c; --am-60:color-mix(in srgb, var(--am) 60%, transparent);
+  --s-raise:color-mix(in srgb, var(--paper) 6%, transparent);
+  /* Below here, every token is named for the JOB IT DOES. They were named for what they
+     looked like (--x-amber-7) until the index in dev/design-system.js gave them roles.
+     A name like --x-amber-7 tells you nothing about whether a theme may move it; a name
+     like --field-bg tells you exactly what breaks if you do. */
+
+  /* text tiers beyond the main ladder */
+  --tx-attn:#e0b34a; --tx-hint:#6f6a5e; --tx-placeholder:#656258; --tx-ghost:#4a4438;
+  --stale-tx:#a89880; --stale-tx2:#a8825a; --notice-tx:#a9c4d8; --notice-tx-hi:#cfe0ee;
+  --banner-tx:#d8c9a8; --item-meta-tx:#d8c48e; --picker-tx:#b8b2a2; --btn-hover-tx:#b8d4e8;
+
+  /* form controls: field fill, the selected option, the slider */
+  --field-bg:#0a0908; --opt-sel-bg:#33291c; --track-bg:#3a3229;
+  --slider-thumb:#e8b062; --slider-thumb-bd:#a86a28;
+
+  /* actions: destructive, report-a-bug, delete, the update prompt */
+  --danger-btn:#c8463c; --danger-tx-hi:#e6a89e; --del:#a06055;
+  --bug:#a3705a; --bug-hover:#e6552e; --status-bg:#3c1410;
+  --update-btn-a:#e2a552; --update-btn-b:#b8752a;
+
+  /* affirmative state (calibrated, saved, in range) */
+  --ok:#7ec97e; --ok-tx:#9ed99e; --ok-tx2:#9ecf8e;
+
+  /* price check: currency unit, sparkline, the floor readout, link hover */
+  --price-cur:#b89968; --spark-src:#c08850; --spark-down:#d9683a;
+  --floor-unit:#7fa871; --tag-hi-b:#3d9d78; --link-hover:#8fc6f7; --rx-bad:#cf9a8e;
+
+  /* listing flags - CATEGORICAL, one hue each, all at the same lightness */
+  --li-sanctified:#e0c060; --li-unidentified:#6fc6c0; --li-unrevealed:#a77fdf; --li-twice:#ff4a3a;
+  --k-craft-tag:#78a0dc; --k-desec-tag:#caa9e0;
+
+  /* desecrate: its own green identity, plus the outcome verdicts */
+  --des-tx:#cfe6a8; --des-tx-hi:#d8ffb0; --des-opt-tx:#eaffcf; --des-prompt:#a7ff4a;
+  --des-aux:#6f7d64; --des-dim-tx:#8a80a8; --des-other:#c9b6ff; --des-down:#d8a49c;
+  --des-opt-bg:#2a3320; --des-lead-tx:#b7ad97; --des-lead-em:#c98f5a;
+  --desec-glow:#8cff3c; --desec-tab-tx:#b4ff5c;
+
+  /* otherworldly / pool scope chips */
+  --pool-on-bg-a:#b892e6; --pool-tx:#b79adf; --pool-tx-hi:#d3bff0; --pool-bd:#966ed2;
+  --pool-on-bg:#9b6ee0; --pool-on-tx:#1a1023; --or-chip:#b08ad0;
+
+  /* Grand Expedition tooltip. This is a self-contained surface with its own dark violet
+     palette - it imitates the in-game item tooltip, so it deliberately does NOT follow
+     the app's surfaces. Kept together so that stays obvious. */
+  --gx-bg-a:#0d0c12; --gx-bg-b:#0a0a0e; --gx-rare-bd:#3a3620; --gx-bd:#2b2a38; --gx-sep:#44435e; --gx-fill:#5f5e8c; --gx-line:#8787e8;
+  --gx-head:#8888ff; --gx-want:#a3a3ff; --gx-prop:#c8c8c8; --gx-base:#d9d977;
+  --gx-rare:#ffff77; --gx-unique:#d98b3c; --gx-low:#b98a80;
+  /* native chrome (select popups, scrollbars) renders in dark mode - without
+     this Windows paints the expanded dropdown list white */
+  color-scheme: dark;
+}
