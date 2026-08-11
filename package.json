@@ -14,7 +14,8 @@
     "design:check": "node dev/design-system.js",
     "i18n:check": "node scripts/i18n-verify.mjs && node scripts/i18n-check-translation.mjs",
     "i18n:build": "node scripts/i18n-merge.mjs && node scripts/i18n-ground-labels.mjs --write && node scripts/i18n-pseudo.mjs",
-    "i18n:strict": "node scripts/i18n-verify.mjs && node scripts/i18n-check-translation.mjs --strict"
+    "i18n:strict": "node scripts/i18n-verify.mjs && node scripts/i18n-check-translation.mjs --strict",
+    "test:reprice": "node dev/test-reprice-rules.js"
   },
   "build": {
     "appId": "com.poe2vibetools.overlay",
