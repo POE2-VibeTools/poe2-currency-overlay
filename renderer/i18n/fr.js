@@ -1051,4 +1051,9 @@ window.I18N_CATALOGS.fr = {
   "ui.settings.reprice.then_lead": "alors",
   "ui.settings.reprice.else_lead": "sinon",
   "ui.settings.reprice.example_line": "{base} devient {result}",
+  "ui.settings.reprice.test_button": "Test de lecture",
+  "ui.settings.reprice.test_running": "lecture...",
+  "ui.settings.reprice.test_failed": "impossible de capturer l'écran",
+  "ui.settings.reprice.test_no_number": "aucun nombre dans ce champ",
+  "ui.settings.reprice.test_no_templates": "le jeu de chiffres n'est pas encore construit",
 };

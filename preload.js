@@ -50,6 +50,7 @@ contextBridge.exposeInMainWorld('api', {
   setRepriceHotkey: (accelerator) => ipcRenderer.invoke('set-reprice-hotkey', accelerator),
   setRepriceConfig: (cfg) => ipcRenderer.invoke('set-reprice-config', cfg),
   repriceCalibrate: () => ipcRenderer.invoke('reprice-calibrate'),
+  repriceTestRead: () => ipcRenderer.invoke('reprice-test-read'),
   onRepriceMode: (fn) => ipcRenderer.on('reprice-mode', (_e, on) => fn(!!on)),
   stashSampleCapture: () => ipcRenderer.invoke('stash-sample-capture'),
   stashSampleDrop: (i) => ipcRenderer.invoke('stash-sample-drop', i),

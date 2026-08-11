@@ -1776,6 +1776,14 @@ footer {
 #reprice-threshold { width: 84px; }
 .rp-examples { margin-top: 6px; }
 .rp-examples .set-sub { display: block; }
+/* What the reader actually sees. Being told the region is "set" proves nothing - a
+   box one row too high looks identical in settings and reads nothing forever. */
+.rp-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.rp-preview img { image-rendering: pixelated; border: 1px solid var(--bd-16);
+  background: var(--field-bg); min-width: 24px; min-height: 20px; transform-origin: left center; }
+.rp-preview .set-sub { white-space: nowrap; }
+#reprice-test-result.ok { color: var(--ok-tx2); }
+#reprice-test-result.bad { color: var(--red-hi); }
 .rp-cal-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .rp-cal-row .set-login-btn { flex: 0 0 auto; }
 #reprice-cal-status.rp-set { color: var(--ok-tx2); }

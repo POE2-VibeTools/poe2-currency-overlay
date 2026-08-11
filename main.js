@@ -720,6 +720,8 @@ function createWindow() {
 
 
 
+
+
   // Bring the window up once, invisible and click-through. From here on it is
   // never hidden again - toggling only flips opacity (see showOverlay/hideOverlay).
   win.once('ready-to-show', () => {
@@ -1642,6 +1644,49 @@ ipcMain.handle('set-stash-dup', (_e, on) => { config.stashDupTabs = !!on; saveCo
 ipcMain.handle('set-stash-sort', (_e, on) => { config.stashSortLayout = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-missing', (_e, on) => { config.stashShowMissing = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-confidence', (_e, on) => { config.stashShowConfidence = !!on; saveConfig(); return true; });
+// Grab one frame of a region and return it as a data URL, opening the capture stream if
+// it is not already up. Used by the calibration preview and the test read.
+async function repricePreview(rect) {
+  const wasOn = reprice.isOn();
+  if (!wasOn) {
+    const ok = await reprice.openStream();
+    if (!ok) return null;
+  }
+  try {
+    const shot = await reprice.grab(rect);
+    return shot && shot.url ? shot.url : null;
+  } finally {
+    if (!wasOn) { try { await reprice.closeStream(); } catch { } }
+  }
+}
+
+// Read the calibrated region right now and say what came back. This is the answer to
+// "is it working?" without opening a trade.
+ipcMain.handle('reprice-test-read', async () => {
+  const region = config.repriceRegion;
+  if (!region || !(region.w > 0)) return { error: 'not-calibrated' };
+  const wasOn = reprice.isOn();
+  if (!wasOn && !(await reprice.openStream())) return { error: 'no-stream' };
+  try {
+    const shot = await reprice.grab(region);
+    if (!shot) return { error: 'no-frame' };
+    let value = null, note = null;
+    try {
+      const tpl = repriceTemplates();
+      if (!tpl) note = 'no-templates';
+      else {
+        const r = require('./renderer/stash/reprice-reader.js').read(shot, tpl, 0.55);
+        value = r.value;
+        if (value == null) note = r.text ? 'unreadable:' + r.text : 'no-digits';
+      }
+    } catch (err) { note = 'read-failed'; }
+    const R = require('./renderer/reprice-rules.js');
+    const result = value == null ? null : R.apply(value, R.fromConfig(config), {});
+    return { preview: shot.url, value, result, note };
+  } finally {
+    if (!wasOn) { try { await reprice.closeStream(); } catch { } }
+  }
+});
 // ===== REPRICE-INDICATOR-START ==================================================
 // A small badge over the game while the mode is on. Click-through and never focusable,
 // so it cannot eat a click meant for the game or pull focus mid-trade.
@@ -1782,7 +1827,10 @@ ipcMain.handle('reprice-calibrate', async () => {
       if (rect && rect.w > 0 && rect.h > 0) {
         config.repriceRegion = rect; saveConfig();
         logToggle('reprice', 'region set to ' + JSON.stringify(rect));
-        resolve(rect);
+        // REPRICE-PREVIEW: hand back the actual pixels. Being told "set" proves nothing;
+        // a box one row too high looks identical in settings and reads nothing forever.
+        repricePreview(rect).then((preview) => resolve(Object.assign({}, rect, { preview })))
+          .catch(() => resolve(rect));
       } else resolve(null);
     };
     const onDone = (_e, rect) => finish(rect);

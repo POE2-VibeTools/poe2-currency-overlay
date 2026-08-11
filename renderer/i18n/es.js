@@ -1051,4 +1051,9 @@ window.I18N_CATALOGS.es = {
   "ui.settings.reprice.then_lead": "entonces",
   "ui.settings.reprice.else_lead": "si no",
   "ui.settings.reprice.example_line": "{base} pasa a {result}",
+  "ui.settings.reprice.test_button": "Probar lectura",
+  "ui.settings.reprice.test_running": "leyendo...",
+  "ui.settings.reprice.test_failed": "no se pudo capturar la pantalla",
+  "ui.settings.reprice.test_no_number": "no hay número en ese campo",
+  "ui.settings.reprice.test_no_templates": "el conjunto de dígitos aún no está creado",
 };

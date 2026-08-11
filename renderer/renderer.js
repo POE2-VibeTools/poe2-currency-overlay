@@ -1944,6 +1944,8 @@ async function initSettings() {
     rule2: document.querySelector('.rp-rule2'),
     leadA: document.querySelector('.rp-lead-a'), leadB: document.querySelector('.rp-lead-b'),
     example: $('reprice-example'), calStatus: $('reprice-cal-status'),
+    previewWrap: $('reprice-preview-wrap'), previewImg: $('reprice-preview'),
+    testBtn: $('reprice-test'), testResult: $('reprice-test-result'),
   };
 
   function rpSyncVisibility() {
@@ -1976,6 +1978,8 @@ async function initSettings() {
     const set = !!(r && r.w > 0 && r.h > 0);
     rpEls.calStatus.textContent = set ? t('ui.settings.reprice.calibrate_done') : t('ui.settings.reprice.calibrate_none');
     rpEls.calStatus.classList.toggle('rp-set', set);
+    // Test read is meaningless without a region, so it only exists once there is one.
+    if (rpEls.testBtn) rpEls.testBtn.classList.toggle('hidden', !set);
   }
 
   const rpSave = () => window.api.setRepriceConfig({
@@ -2026,9 +2030,53 @@ async function initSettings() {
   }
   rpInit();
 
+  const rpPreviewWrap = rpEls.previewWrap, rpPreviewImg = rpEls.previewImg;
+  const rpTestBtn = rpEls.testBtn, rpTestResult = rpEls.testResult;
+
+  // Show the captured strip at a size a human can actually read. The crop is a few dozen
+  // pixels tall; at 1:1 it is unreadable, which defeats the point of showing it.
+  function rpShowPreview(url) {
+    if (!rpPreviewWrap || !rpPreviewImg) return;
+    if (!url) { rpPreviewWrap.classList.add('hidden'); return; }
+    rpPreviewImg.onload = () => {
+      const scale = Math.max(1, Math.min(4, Math.round(64 / Math.max(1, rpPreviewImg.naturalHeight))));
+      rpPreviewImg.style.width = (rpPreviewImg.naturalWidth * scale) + 'px';
+      rpPreviewImg.style.height = (rpPreviewImg.naturalHeight * scale) + 'px';
+    };
+    rpPreviewImg.src = url;
+    rpPreviewWrap.classList.remove('hidden');
+  }
+
   if ($('reprice-calibrate')) $('reprice-calibrate').addEventListener('click', async () => {
     const r = await window.api.repriceCalibrate();
-    if (r && r.w > 0) { config.repriceRegion = r; rpRenderCal(); }
+    if (r && r.w > 0) {
+      config.repriceRegion = { x: r.x, y: r.y, w: r.w, h: r.h };
+      rpRenderCal();
+      rpShowPreview(r.preview);
+      if (rpTestResult) { rpTestResult.textContent = ''; rpTestResult.className = 'set-sub'; }
+    }
+  });
+
+  if (rpTestBtn) rpTestBtn.addEventListener('click', async () => {
+    rpTestBtn.disabled = true;
+    rpTestResult.className = 'set-sub';
+    rpTestResult.textContent = t('ui.settings.reprice.test_running');
+    try {
+      const r = await window.api.repriceTestRead();
+      rpShowPreview(r && r.preview);
+      if (!r || r.error) {
+        rpTestResult.className = 'set-sub bad';
+        rpTestResult.textContent = t('ui.settings.reprice.test_failed');
+      } else if (r.value == null) {
+        rpTestResult.className = 'set-sub bad';
+        rpTestResult.textContent = r.note === 'no-templates'
+          ? t('ui.settings.reprice.test_no_templates')
+          : t('ui.settings.reprice.test_no_number');
+      } else {
+        rpTestResult.className = 'set-sub ok';
+        rpTestResult.textContent = t('ui.settings.reprice.example_line', { base: r.value, result: r.result });
+      }
+    } finally { rpTestBtn.disabled = false; }
   });
 
   // ---------- command hotkeys (Settings → Hotkeys) ----------

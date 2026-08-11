@@ -1051,4 +1051,9 @@ window.I18N_CATALOGS.de = {
   "ui.settings.reprice.then_lead": "dann",
   "ui.settings.reprice.else_lead": "sonst",
   "ui.settings.reprice.example_line": "{base} wird zu {result}",
+  "ui.settings.reprice.test_button": "Testlesung",
+  "ui.settings.reprice.test_running": "lese...",
+  "ui.settings.reprice.test_failed": "Bildschirm konnte nicht erfasst werden",
+  "ui.settings.reprice.test_no_number": "keine Zahl in diesem Feld",
+  "ui.settings.reprice.test_no_templates": "der Ziffernsatz ist noch nicht gebaut",
 };

@@ -1065,4 +1065,9 @@ window.I18N_CATALOGS.ru = {
   "ui.settings.reprice.then_lead": "то",
   "ui.settings.reprice.else_lead": "иначе",
   "ui.settings.reprice.example_line": "{base} станет {result}",
+  "ui.settings.reprice.test_button": "Проверить",
+  "ui.settings.reprice.test_running": "чтение...",
+  "ui.settings.reprice.test_failed": "не удалось снять экран",
+  "ui.settings.reprice.test_no_number": "в этом поле нет числа",
+  "ui.settings.reprice.test_no_templates": "набор цифр ещё не собран",
 };
