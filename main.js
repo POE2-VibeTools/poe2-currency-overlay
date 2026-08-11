@@ -722,6 +722,7 @@ function createWindow() {
 
 
 
+
   // Bring the window up once, invisible and click-through. From here on it is
   // never hidden again - toggling only flips opacity (see showOverlay/hideOverlay).
   win.once('ready-to-show', () => {
@@ -1525,8 +1526,43 @@ async function grabScreen(cw, ch, withDataUrl) {
     const size = img.getSize();
     return { bitmap: img.toBitmap(), W: size.width, H: size.height, dataUrl: withDataUrl ? img.toDataURL() : null };
   }
+  // Linux got the portal path because a GNOME WAYLAND session forces Chromium's PipeWire
+  // capturer, where desktopCapturer waits forever on a consent dialog behind the game.
+  // But that is a Wayland problem, and plenty of Linux users are on X11 - where
+  // desktopCapturer works directly and the portal is pure friction. It was never tried
+  // there, which is one candidate for the standing "Capture failed: no screen source".
+  //
+  // So try it, with a timeout, and keep the portal as the fallback. The timeout is the
+  // whole point: on Wayland this call does not fail, it HANGS, so a plain await would
+  // trade one broken capture for a frozen one.
+  if (process.platform === 'linux') {
+    try {
+      const direct = await Promise.race([
+        desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: cw, height: ch } }),
+        new Promise((r) => setTimeout(() => r(null), 1200)),
+      ]);
+      const src = direct && (direct.find((x) => x.id.startsWith('screen')) || direct[0]);
+      if (src && src.thumbnail && !src.thumbnail.isEmpty()) {
+        const img = src.thumbnail;
+        const size = img.getSize();
+        const bitmap = img.toBitmap();
+        if (size.width && size.height && !frameLooksBlank(bitmap)) {
+          logToggle('stash-capture', 'linux: desktopCapturer worked, portal not needed');
+          return { bitmap, W: size.width, H: size.height, dataUrl: withDataUrl ? img.toDataURL() : null };
+        }
+        logToggle('stash-capture', 'linux: desktopCapturer returned a blank frame, falling back to the portal');
+      } else {
+        logToggle('stash-capture', 'linux: desktopCapturer gave no usable source, falling back to the portal');
+      }
+    } catch (err) {
+      logToggle('stash-capture', 'linux: desktopCapturer threw (' + (err && err.message || err) + '), falling back to the portal');
+    }
+  }
   const f = await requestRendererFrame(withDataUrl);
-  if (!f || !f.data || !f.w || !f.h) return null;
+  if (!f || !f.data || !f.w || !f.h) {
+    logToggle('stash-capture', 'no frame from the portal path either');
+    return null;
+  }
   // the renderer already swapped RGBA->BGRA to match nativeImage.toBitmap()
   return { bitmap: Buffer.from(f.data), W: f.w, H: f.h, dataUrl: f.dataUrl || null };
 }
@@ -2139,6 +2175,13 @@ ipcMain.handle('stash-sample-send', async (_e, payload) => {
 // all - a 1440p+ user could scale the UI but the window stayed the same small square.
 // The renderer drags a corner grip and sends deltas; clamping lives here because only
 // main knows the work area.
+// A Linux user reported the grip showing the resize cursor but not resizing. Everything
+// up to here is fine on their setup (the cursor is CSS, and the drag reaches this
+// handler), so the suspect is the call itself: some window managers ignore setBounds on
+// a frameless always-on-top window. So: ask, then CHECK, and fall back to setSize, which
+// several WMs honour when setBounds is refused. If neither moves the window, say so once
+// - a silent no-op is what made this hard to report in the first place.
+let resizeComplained = false;
 ipcMain.on('resize-window-by', (_e, d) => {
   if (!win || win.isDestroyed() || !d) return;
   try {
@@ -2146,8 +2189,28 @@ ipcMain.on('resize-window-by', (_e, d) => {
     const wa = screen.getDisplayMatching(b).workAreaSize;
     const width = Math.max(320, Math.min(Math.round(b.width + (d.dx || 0)), wa.width));
     const height = Math.max(240, Math.min(Math.round(b.height + (d.dy || 0)), wa.height));
+    if (width === b.width && height === b.height) return;
+
     win.setBounds({ x: b.x, y: b.y, width, height });
-  } catch { /* a bad delta must never take the window down */ }
+    const after = win.getBounds();
+    if (after.width === width && after.height === height) return;
+
+    // setBounds did not take - try the narrower call
+    win.setSize(width, height);
+    const after2 = win.getBounds();
+    if (after2.width === width && after2.height === height) {
+      if (!resizeComplained) { resizeComplained = true; logToggle('resize', 'setBounds ignored; setSize worked'); }
+      return;
+    }
+    if (!resizeComplained) {
+      resizeComplained = true;
+      logToggle('resize', `window manager refused resize: asked ${width}x${height}, `
+        + `setBounds gave ${after.width}x${after.height}, setSize gave ${after2.width}x${after2.height}, `
+        + `resizable=${win.isResizable()}`);
+    }
+  } catch (err) {
+    if (!resizeComplained) { resizeComplained = true; logToggle('resize', 'resize threw: ' + (err && err.message || err)); }
+  }
 });
 
 let calibWin = null;
