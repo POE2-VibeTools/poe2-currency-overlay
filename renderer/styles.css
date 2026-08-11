@@ -218,6 +218,13 @@ html, body {
 .set-half > .set-card { flex: 1; min-width: 0; }
 
 .set-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
+/* Fields laid out by .set-grid2 get its 12px row gap. Fields that sit DIRECTLY in a card
+   got nothing, so Theme sat hard under the Background slider and Language under the Theme
+   select, while every field beside them was properly spaced. Same 12px, so a card reads as
+   one rhythm however its fields are arranged. #sec-help sets its own spacing. */
+.set-card:not(#sec-help) > .set-field + .set-field,
+.set-card:not(#sec-help) > .set-grid2 + .set-field,
+.set-card:not(#sec-help) > .set-field + .set-grid2 { margin-top: 12px; }
 .set-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .set-field > label { font-size: 11px; color: var(--tx-dim); display: flex; align-items: center; gap: 6px; }
 .set-field select, .set-field .kb-input { width: 100%; }
