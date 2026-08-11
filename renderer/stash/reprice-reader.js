@@ -33,11 +33,11 @@
     return V;
   }
 
-  // The number in the price box is SELECTED the moment the dialog opens, so it draws as
-  // dark digits on a bright highlight - the opposite of every other reader in this app,
-  // which expects bright glyphs on a dark field. Rather than assume either, label both
-  // polarities and keep whichever yields a plausible row of digits. Costs one extra pass
-  // over a crop the size of a postage stamp.
+  // The number is SELECTED the moment the dialog opens. That does NOT invert it: the
+  // digits stay bright, and the selection paints a warm mid-tone band behind them. So the
+  // crop holds three tones - dark surround, selection band, bright digits - and a single
+  // Otsu split lands between the first two, welding the band to the glyphs. Both
+  // polarities are tried anyway, cheaply, rather than assuming which way round it is.
   function glyphs(V, w, h) {
     // Three tones live in this crop, not two: the dark surround, the SELECTION highlight
     // behind the number (the game selects it the moment the dialog opens), and the digits
