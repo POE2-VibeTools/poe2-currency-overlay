@@ -1752,22 +1752,8 @@ ipcMain.handle('reprice-test-read', async () => {
         const r = RR.read(shot, tpl, 0.55);
         value = r.value;
         if (value == null) note = r.text ? 'unreadable:' + r.text : 'no-digits';
-        // Keep the pixels and the segmentation from every test read. A wrong number is
-        // only debuggable against the exact crop that produced it - "60 read as 8" could
-        // be a bad region, touching glyphs, or a bad template, and they look identical
-        // from the outside.
-        try {
-          const dbgDir = path.join(app.getPath('userData'), 'reprice-debug');
-          fs.mkdirSync(dbgDir, { recursive: true });
-          const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-          fs.writeFileSync(path.join(dbgDir, stamp + '.png'),
-            Buffer.from(String(shot.url).split(',')[1], 'base64'));
-          const V = RR.valueChannel(Uint8ClampedArray.from(shot.data), shot.w, shot.h);
-          const g = RR.glyphs(V, shot.w, shot.h);
-          logToggle('reprice', `test read: ${shot.w}x${shot.h}, ${g.length} glyph(s) `
-            + g.map((c) => `${c.mask.w}x${c.mask.h}@${c.x}`).join(' ')
-            + ` -> "${r.text}" iou ${r.scores.map((x) => x.toFixed(2)).join(',')}`);
-        } catch (e) { logToggle('reprice', 'debug dump failed: ' + (e && e.message || e)); }
+        logToggle('reprice', `test read: ${shot.w}x${shot.h} -> "${r.text}" `
+          + `iou ${r.scores.map((x) => x.toFixed(2)).join(',')}`);
       }
     } catch (err) { note = 'read-failed'; }
     const R = require('./renderer/reprice-rules.js');
@@ -1850,11 +1836,16 @@ const reprice = repriceMod.create({
   // simply finds no number and leaves the clipboard alone, which is the right failure.
   onModeChange: (on) => { if (on) showRepriceBadge(); else hideRepriceBadge(); },
   onRead: (r) => sendRepriceState(r && r.result != null ? { read: r } : { miss: 'no number' }),
-  readPrice: async (shot) => {
+  readPrice: async (shot, meta) => {
     try {
       const tpl = repriceTemplates();
-      if (!tpl) return null;
-      return require('./renderer/stash/reprice-reader.js').read(shot, tpl, 0.55).value;
+      if (!tpl) { logToggle('reprice', 'no digit templates installed'); return null; }
+      const RR = require('./renderer/stash/reprice-reader.js');
+      const r = RR.read(shot, tpl, 0.55);
+      // One line per successful read only. This runs on every poll of every right-click,
+      // so anything heavier than a string belongs in a test harness, not here.
+      if (r.value != null) logToggle('reprice', `read ${r.value} at ${(meta && meta.at) || 0}ms`);
+      return r.value;
     } catch (err) { logToggle('reprice', 'read failed: ' + (err && err.message || err)); return null; }
   },
 });

@@ -17,11 +17,18 @@ const path = require('path');
 
 const RepriceRules = require('./renderer/reprice-rules.js');
 
-// How long after the right-click to look. The modal is not up instantly, and its draw
-// time varies, so a single fixed delay is either always slow or sometimes wrong. Read
-// early, and if nothing parses, read again - the retry costs nothing when the first
-// read works and covers the tail when the game is slow.
-const READ_AT_MS = [120, 260, 420];
+// Keep looking until a number appears, rather than sampling at a few fixed instants.
+//
+// Two delays stack here and neither is knowable in advance: the game takes a moment to
+// draw the dialog, and the SCREEN CAPTURE PIPELINE ITSELF LAGS - a getDisplayMedia stream
+// buffers, so the frame handed over at t+420ms can be a few hundred ms old. Fixed
+// sampling at 120/260/420ms kept returning pre-dialog frames even when the dialog was
+// plainly on screen, because the frames were current-but-late.
+//
+// So: poll. Stop the instant digits are read, which is what makes this cheap - a fast
+// setup exits on the first look and never pays for the rest.
+const POLL_EVERY_MS = 40;   // a frame at a time, not a paint at a time
+const GIVE_UP_AFTER_MS = 1200;
 
 function create(deps) {
   // deps: { getWin, getConfig, saveConfig, log, getHook }
@@ -58,6 +65,20 @@ function create(deps) {
         __rpStream.getVideoTracks().forEach(t => t.addEventListener('ended', () => {
           window.__rpStream = null; window.__rpVideo = null;
         }));
+        // Wait for a VIDEO FRAME, not a paint. requestAnimationFrame fires when this
+        // window renders, and while the game is in front this window is occluded and
+        // barely renders - so every grab returned the same stale frame, for a second and
+        // a half at a time. requestVideoFrameCallback fires when the capture stream
+        // actually delivers a new frame, which is the thing we are waiting for.
+        window.__rpNextFrame = function () {
+          return new Promise((resolve) => {
+            let done = false;
+            const go = () => { if (!done) { done = true; resolve(); } };
+            if (__rpVideo.requestVideoFrameCallback) __rpVideo.requestVideoFrameCallback(() => go());
+            else requestAnimationFrame(() => go());
+            setTimeout(go, 250); // never hang on a stream that has stopped producing
+          });
+        };
         window.__rpGrab = async function (rect) {
           if (!window.__rpVideo || !__rpVideo.videoWidth) return null;
           const W = __rpVideo.videoWidth, H = __rpVideo.videoHeight;
@@ -65,7 +86,7 @@ function create(deps) {
           const w = Math.max(1, Math.round(rect.w * W)), h = Math.max(1, Math.round(rect.h * H));
           const c = document.createElement('canvas'); c.width = w; c.height = h;
           const g = c.getContext('2d', { willReadFrequently: true });
-          await new Promise(r => requestAnimationFrame(r));
+          await window.__rpNextFrame();
           g.drawImage(__rpVideo, x, y, w, h, 0, 0, w, h);
           const px = g.getImageData(0, 0, w, h);
           return { w, h, data: Array.from(px.data), url: c.toDataURL('image/png') };
@@ -103,13 +124,15 @@ function create(deps) {
     const region = cfg().repriceRegion;
     if (!region || !(region.w > 0)) { say('no calibrated region'); return; }
 
-    // READ_AT_MS are offsets FROM THE CLICK, so each sleep is the gap since the last one
-    for (let i = 0; i < READ_AT_MS.length; i++) {
-      const wait = READ_AT_MS[i];
-      await new Promise((r) => setTimeout(r, i === 0 ? wait : wait - READ_AT_MS[i - 1]));
+    const t0 = Date.now();
+    let looks = 0;
+    while (Date.now() - t0 < GIVE_UP_AFTER_MS) {
+      await new Promise((r) => setTimeout(r, POLL_EVERY_MS));
+      const wait = Date.now() - t0;
+      looks++;
       const shot = await grab(region);
       if (!shot) continue;
-      const base = deps.readPrice ? await deps.readPrice(shot) : null;
+      const base = deps.readPrice ? await deps.readPrice(shot, { at: wait }) : null;
       if (base == null) continue;
 
       const ctx = {};
@@ -127,7 +150,7 @@ function create(deps) {
       try { if (deps.onRead) deps.onRead(info); } catch { }
       return;
     }
-    say('no number found in the price box');
+    say(`no number found in the price box (${looks} looks over ${Date.now() - t0}ms)`);
     try { if (deps.onRead) deps.onRead(null); } catch { }
   }
 
@@ -181,4 +204,4 @@ function create(deps) {
   };
 }
 
-module.exports = { create, READ_AT_MS };
+module.exports = { create, POLL_EVERY_MS, GIVE_UP_AFTER_MS };
