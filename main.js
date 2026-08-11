@@ -2410,8 +2410,10 @@ ipcMain.handle('submit-feedback', async (_e, payload) => {
       // only present when the user ticked "include system information"; the renderer
       // sends '' otherwise and we add nothing of our own here
       system: String((payload && payload.system) || '').slice(0, 2000),
-      // the item text they last copied, for item bugs - same tick box, and the form
-      // shows it to them before sending
+      // the item text they last copied. NOT behind the tick box - it is something the
+      // user handed the app by pasting it in, not something read off their machine, and
+      // only text that already parsed as an item is ever kept. Bug reports only, and the
+      // form shows it to them before sending.
       item: String((payload && payload.item) || '').slice(0, 2000),
       version: app.getVersion(),
       ts: new Date().toISOString()
