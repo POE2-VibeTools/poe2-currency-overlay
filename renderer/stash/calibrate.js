@@ -13,9 +13,13 @@
   // loupe vertically (accurate at the top, drifting toward the bottom). Keep them separate.
   let sX = 1, sY = 1; // css px per capture px
   let box = { x: 120, y: 120, w: 400, h: 400 }; // CSS px
+  let minBox = 40; // smallest box the user can drag to; reprice lowers it
 
   function clampBox() {
-    const W = innerWidth, H = innerHeight, MIN = 40;
+    // 40px is a sensible floor for a stash panel and a ceiling for a price box - the
+    // reprice region is often SMALLER than the old minimum, so the box could not be made
+    // to fit it at all.
+    const W = innerWidth, H = innerHeight, MIN = minBox;
     box.w = Math.max(MIN, box.w); box.h = Math.max(MIN, box.h);
     box.x = Math.max(0, Math.min(box.x, W - box.w));
     box.y = Math.max(0, Math.min(box.y, H - box.h));
@@ -131,6 +135,7 @@
     // a price field, so it is hidden there rather than offered and useless.
     if (data.target === 'reprice') {
       document.body.classList.add('for-reprice');
+      minBox = 8;
       const snapBtn = document.getElementById('snap');
       if (snapBtn) snapBtn.style.display = 'none';
       const msg = document.querySelector('.msg');

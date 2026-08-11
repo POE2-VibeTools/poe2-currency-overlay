@@ -25,6 +25,18 @@
   .hand.s { left: 50%; bottom: -9px; margin-left: -8px; cursor: ns-resize; }
   .hand.w { left: -9px; top: 50%; margin-top: -8px; cursor: ew-resize; }
   .hand.e { right: -9px; top: 50%; margin-top: -8px; cursor: ew-resize; }
+  /* The reprice box is a few dozen pixels across - the stash-sized handles are nearly as
+     big as the region being framed, and they hide the very pixels you are aiming at. Half
+     size, offset to match. Same hit area logic, smaller furniture. */
+  body.for-reprice .hand { width: 8px; height: 8px; border-width: 1px; }
+  body.for-reprice .hand.nw { left: -5px; top: -5px; }
+  body.for-reprice .hand.ne { right: -5px; top: -5px; }
+  body.for-reprice .hand.sw { left: -5px; bottom: -5px; }
+  body.for-reprice .hand.se { right: -5px; bottom: -5px; }
+  body.for-reprice .hand.n { top: -5px; margin-left: -4px; }
+  body.for-reprice .hand.s { bottom: -5px; margin-left: -4px; }
+  body.for-reprice .hand.w { left: -5px; margin-top: -4px; }
+  body.for-reprice .hand.e { right: -5px; margin-top: -4px; }
   #loupe { position: fixed; width: 168px; height: 168px; border-radius: 50%; z-index: 20;
     border: 3px solid var(--am2); box-shadow: 0 4px 18px color-mix(in srgb, var(--scrim) 60%, transparent); display: none; pointer-events: none;
     background: var(--scrim); overflow: hidden; }
