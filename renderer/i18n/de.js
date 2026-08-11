@@ -864,7 +864,7 @@ window.I18N_CATALOGS.de = {
   "ui.feedback_modal.details_placeholder": "Was ist passiert, oder was wünschst du dir?",
   "ui.feedback_modal.log_note": "Ein kurzes Aktivitätsprotokoll wird angehängt, um uns beim Debuggen zu helfen.",
   "ui.feedback_modal.send_button": "Senden",
-  "ui.feedback_modal.sysinfo_item_heading": "-- der zuletzt kopierte Gegenstand --",
+  "ui.feedback_modal.sysinfo_item_heading": "-- der zuletzt gelesene Gegenstand --",
   "ui.feedback_modal.sysinfo_label": "Systeminformationen in diesen Bericht aufnehmen",
   "ui.feedback_modal.sysinfo_what": "Zeig mir, was das ist",
   "ui.feedback_modal.title": "Fehler melden",

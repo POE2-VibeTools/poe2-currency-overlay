@@ -867,7 +867,7 @@ window.I18N_CATALOGS.qa = {
   "ui.feedback_modal.details_placeholder": "[[Whát háppéñéd, ór whát wóúld ýóú líké tó šéé? ················]]",
   "ui.feedback_modal.log_note": "[[Á šhórt áćtívítý lóg áñd thé lášt ítém ýóú páštéd íñ áré áttáćhéd tó hélp úš débúg. ······························]]",
   "ui.feedback_modal.send_button": "[[Šéñd ··]]",
-  "ui.feedback_modal.sysinfo_item_heading": "[[-- thé ítém ýóú lášt ćópíéd -- ···········]]",
+  "ui.feedback_modal.sysinfo_item_heading": "[[-- thé lášt ítém thé ápp réád -- ············]]",
   "ui.feedback_modal.sysinfo_label": "[[Íñćlúdé šýštém íñfórmátíóñ íñ thíš búg répórt ················]]",
   "ui.feedback_modal.sysinfo_what": "[[Šhów mé whát thát íš ·······]]",
   "ui.feedback_modal.title": "[[Répórt á búg ·····]]",

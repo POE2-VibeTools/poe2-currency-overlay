@@ -867,7 +867,7 @@ window.I18N_CATALOGS.en = {
   "ui.feedback_modal.details_placeholder": "What happened, or what would you like to see?",
   "ui.feedback_modal.log_note": "A short activity log and the last item you pasted in are attached to help us debug.",
   "ui.feedback_modal.send_button": "Send",
-  "ui.feedback_modal.sysinfo_item_heading": "-- the item you last copied --",
+  "ui.feedback_modal.sysinfo_item_heading": "-- the last item the app read --",
   "ui.feedback_modal.sysinfo_label": "Include system information in this bug report",
   "ui.feedback_modal.sysinfo_what": "Show me what that is",
   "ui.feedback_modal.title": "Report a bug",

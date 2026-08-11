@@ -864,7 +864,7 @@ window.I18N_CATALOGS.fr = {
   "ui.feedback_modal.details_placeholder": "Qu'est-ce qui s'est passé, ou qu'aimerais-tu voir ?",
   "ui.feedback_modal.log_note": "Un court journal d'activité est joint pour nous aider à débugger.",
   "ui.feedback_modal.send_button": "Envoyer",
-  "ui.feedback_modal.sysinfo_item_heading": "-- le dernier objet copié --",
+  "ui.feedback_modal.sysinfo_item_heading": "-- le dernier objet lu par l'application --",
   "ui.feedback_modal.sysinfo_label": "Inclure les informations système dans ce rapport",
   "ui.feedback_modal.sysinfo_what": "Montrez-moi ce que c'est",
   "ui.feedback_modal.title": "Signaler un bug",

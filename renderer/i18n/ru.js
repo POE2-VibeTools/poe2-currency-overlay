@@ -878,7 +878,7 @@ window.I18N_CATALOGS.ru = {
   "ui.feedback_modal.details_placeholder": "Что случилось, или что бы вы хотели увидеть?",
   "ui.feedback_modal.log_note": "Прикладывается короткий журнал действий, чтобы помочь с отладкой.",
   "ui.feedback_modal.send_button": "Отправить",
-  "ui.feedback_modal.sysinfo_item_heading": "-- предмет, скопированный последним --",
+  "ui.feedback_modal.sysinfo_item_heading": "-- последний предмет, прочитанный приложением --",
   "ui.feedback_modal.sysinfo_label": "Включить сведения о системе в этот отчёт",
   "ui.feedback_modal.sysinfo_what": "Показать, что именно",
   "ui.feedback_modal.title": "Сообщить об ошибке",

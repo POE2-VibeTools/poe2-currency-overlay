@@ -214,9 +214,19 @@
           it = { apiId: cx.apiId, price: cx.price, text: cx.text || state.item.currencyName, icon: cx.icon, logs: null, source: 'cx' };
         }
       }
-      state.currencyResult = it || null;
-      if (!it) state.notice = t('itemtab.currency.no_price_found_yet');
-      else pushCurrencyHistory(it); // currency lookups belong in Recent searches too
+      if (!it) {
+        // Nothing on the exchange. That is not the same as "no price": Aldur's Legacy is
+        // exchange-traded, so a rune forged from it inherits the currency path - but the
+        // RUNE itself only exists on the market. Reported by a user hunting Legacy of
+        // Adonia's Ego and getting told no price existed while listings were up.
+        // So drop the currency tag and search the market like any other item.
+        state.item.currencyTag = null;
+        state.currencyResult = null;
+        state.searching = false;
+        return doSearch();
+      }
+      state.currencyResult = it;
+      pushCurrencyHistory(it); // currency lookups belong in Recent searches too
     } catch (err) {
       state.notice = t('itemtab.currency.price_lookup_failed', { error: (err && err.message || err) });
     }
