@@ -723,6 +723,7 @@ function createWindow() {
 
 
 
+
   // Bring the window up once, invisible and click-through. From here on it is
   // never hidden again - toggling only flips opacity (see showOverlay/hideOverlay).
   win.once('ready-to-show', () => {
@@ -1880,6 +1881,10 @@ let repriceCalWin = null;
 ipcMain.handle('reprice-calibrate', async () => {
   if (repriceCalWin && !repriceCalWin.isDestroyed()) { repriceCalWin.focus(); return null; }
   const b = screen.getPrimaryDisplay().bounds;
+  // The still has to be taken BEFORE the sheet exists. The sheet covers the screen, so a
+  // capture taken after it opens photographs the sheet, not the game behind it.
+  const still = await repricePreview({ x: 0, y: 0, w: 1, h: 1 }).catch(() => null);
+  if (!still) logToggle('reprice', 'calibration: no still, falling back to a bare sheet');
   return await new Promise((resolve) => {
     let done = false;
     const finish = (rect) => {
@@ -1908,7 +1913,10 @@ ipcMain.handle('reprice-calibrate', async () => {
     });
     repriceCalWin.setAlwaysOnTop(true, 'screen-saver');
     repriceCalWin.loadFile(path.join(__dirname, 'renderer', 'stash', 'reprice-calibrate.html'));
-    repriceCalWin.once('ready-to-show', () => { try { repriceCalWin.show(); repriceCalWin.focus(); } catch { } });
+    repriceCalWin.once('ready-to-show', () => {
+      try { repriceCalWin.show(); repriceCalWin.focus(); } catch { }
+      try { repriceCalWin.webContents.send('reprice-calibrate-shot', still); } catch { }
+    });
     // closing it any other way must not leave the settings screen awaiting forever
     repriceCalWin.on('closed', () => finish(null));
   });
@@ -2808,17 +2816,34 @@ if (!gotLock) {
 
   app.whenReady().then(() => {
     protocol.handle('ee2', serveEe2Data);
-    // getDisplayMedia needs a handler or the request is denied outright. Only the
-    // non-Windows capture path uses it (see grabScreen); useSystemPicker hands the
-    // choice to the desktop's own portal dialog, which is what GNOME requires.
-    if (process.platform !== 'win32') {
-      try {
+    // getDisplayMedia needs a handler or the request is DENIED OUTRIGHT. This used to be
+    // gated to non-Windows, because only the portal capture path used it. Reprice mode
+    // uses it on every platform - it holds a stream open and pulls frames, since
+    // desktopCapturer.getSources costs ~1s per grab on Windows (measured) and that is far
+    // more than a reprice can afford. With the gate in place the stream silently failed
+    // to open on Windows and the whole feature was a no-op.
+    //
+    // The two platforms need different answers. GNOME requires its own portal dialog, so
+    // Linux keeps useSystemPicker. Windows has no such requirement, and a picker prompt
+    // every time reprice mode is switched on would be unusable - so the primary screen is
+    // selected directly, and nothing is ever prompted.
+    try {
+      if (process.platform === 'win32') {
+        session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
+          try {
+            const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } });
+            const src = sources.find((x) => x.id.startsWith('screen')) || sources[0];
+            if (!src) return callback({});
+            callback({ video: src, audio: false });
+          } catch { callback({}); }
+        }, { useSystemPicker: false });
+      } else {
         session.defaultSession.setDisplayMediaRequestHandler(
           (_request, callback) => callback({ useSystemPicker: true }),
           { useSystemPicker: true }
         );
-      } catch (err) { console.error('display-media handler failed:', err && err.message); }
-    }
+      }
+    } catch (err) { console.error('display-media handler failed:', err && err.message); }
     // surface rate-limit queuing in the UI so a throttled search never looks hung
     trade2.setOnWait((policy, ms, banned) => {
       try { if (win) win.webContents.send('trade2-wait', { policy, ms, banned: !!banned }); } catch {}
