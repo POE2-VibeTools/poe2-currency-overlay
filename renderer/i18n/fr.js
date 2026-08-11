@@ -1056,4 +1056,6 @@ window.I18N_CATALOGS.fr = {
   "ui.settings.reprice.test_failed": "impossible de capturer l'écran",
   "ui.settings.reprice.test_no_number": "aucun nombre dans ce champ",
   "ui.settings.reprice.test_no_templates": "le jeu de chiffres n'est pas encore construit",
+  "ui.settings.reprice.test_countdown": "retournez dans le jeu... {n}",
+  "ui.settings.reprice.test_unreadable": "a vu {text} mais n'a pas pu le lire",
 };

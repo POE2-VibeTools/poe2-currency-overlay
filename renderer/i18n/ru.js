@@ -1070,4 +1070,6 @@ window.I18N_CATALOGS.ru = {
   "ui.settings.reprice.test_failed": "не удалось снять экран",
   "ui.settings.reprice.test_no_number": "в этом поле нет числа",
   "ui.settings.reprice.test_no_templates": "набор цифр ещё не собран",
+  "ui.settings.reprice.test_countdown": "вернитесь в игру... {n}",
+  "ui.settings.reprice.test_unreadable": "увидел {text}, но не смог прочитать",
 };

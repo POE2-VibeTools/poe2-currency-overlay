@@ -2063,6 +2063,14 @@ async function initSettings() {
   if (rpTestBtn) rpTestBtn.addEventListener('click', async () => {
     rpTestBtn.disabled = true;
     rpTestResult.className = 'set-sub';
+    // Clicking this button takes focus off the game, which drops the selection in the
+    // price field - so reading immediately reads a different thing than the one the
+    // feature will actually see. Count down instead, and let the user click back into
+    // the game first.
+    for (let n = 3; n > 0; n--) {
+      rpTestResult.textContent = t('ui.settings.reprice.test_countdown', { n });
+      await new Promise((r) => setTimeout(r, 1000));
+    }
     rpTestResult.textContent = t('ui.settings.reprice.test_running');
     try {
       const r = await window.api.repriceTestRead();
@@ -2072,9 +2080,12 @@ async function initSettings() {
         rpTestResult.textContent = t('ui.settings.reprice.test_failed');
       } else if (r.value == null) {
         rpTestResult.className = 'set-sub bad';
-        rpTestResult.textContent = r.note === 'no-templates'
-          ? t('ui.settings.reprice.test_no_templates')
-          : t('ui.settings.reprice.test_no_number');
+        if (r.note === 'no-templates') rpTestResult.textContent = t('ui.settings.reprice.test_no_templates');
+        else if (r.note && r.note.indexOf('unreadable:') === 0) {
+          // it found glyphs but could not name them - showing what it thought it saw is
+          // far more useful than "no number"
+          rpTestResult.textContent = t('ui.settings.reprice.test_unreadable', { text: r.note.slice(11) });
+        } else rpTestResult.textContent = t('ui.settings.reprice.test_no_number');
       } else {
         rpTestResult.className = 'set-sub ok';
         rpTestResult.textContent = t('ui.settings.reprice.example_line', { base: r.value, result: r.result });

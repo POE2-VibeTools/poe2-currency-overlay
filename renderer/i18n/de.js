@@ -1056,4 +1056,6 @@ window.I18N_CATALOGS.de = {
   "ui.settings.reprice.test_failed": "Bildschirm konnte nicht erfasst werden",
   "ui.settings.reprice.test_no_number": "keine Zahl in diesem Feld",
   "ui.settings.reprice.test_no_templates": "der Ziffernsatz ist noch nicht gebaut",
+  "ui.settings.reprice.test_countdown": "zurück ins Spiel klicken... {n}",
+  "ui.settings.reprice.test_unreadable": "sah {text}, konnte es aber nicht lesen",
 };

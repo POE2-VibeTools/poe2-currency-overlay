@@ -1056,4 +1056,6 @@ window.I18N_CATALOGS.es = {
   "ui.settings.reprice.test_failed": "no se pudo capturar la pantalla",
   "ui.settings.reprice.test_no_number": "no hay número en ese campo",
   "ui.settings.reprice.test_no_templates": "el conjunto de dígitos aún no está creado",
+  "ui.settings.reprice.test_countdown": "vuelve al juego... {n}",
+  "ui.settings.reprice.test_unreadable": "vio {text} pero no pudo leerlo",
 };
