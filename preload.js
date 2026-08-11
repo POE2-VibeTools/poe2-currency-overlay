@@ -49,7 +49,10 @@ contextBridge.exposeInMainWorld('api', {
   setStashHotkey: (accelerator) => ipcRenderer.invoke('set-stash-hotkey', accelerator),
   setRepriceHotkey: (accelerator) => ipcRenderer.invoke('set-reprice-hotkey', accelerator),
   setRepriceConfig: (cfg) => ipcRenderer.invoke('set-reprice-config', cfg),
-  repriceCalibrate: () => ipcRenderer.invoke('reprice-calibrate'),
+  // the reprice box uses the SAME calibration window as Net Worth - one flow, one
+  // confirm button. It reports back by event, not by resolving a promise.
+  repriceCalibrate: () => ipcRenderer.send('stash-calibrate-start', { target: 'reprice' }),
+  onRepriceCalibrated: (fn) => ipcRenderer.on('reprice-calibrated', (_e, p) => fn(p)),
   repriceTestRead: () => ipcRenderer.invoke('reprice-test-read'),
   onRepriceMode: (fn) => ipcRenderer.on('reprice-mode', (_e, on) => fn(!!on)),
   stashSampleCapture: () => ipcRenderer.invoke('stash-sample-capture'),

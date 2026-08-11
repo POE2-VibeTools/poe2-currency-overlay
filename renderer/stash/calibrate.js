@@ -126,6 +126,25 @@
     sX = innerWidth / data.capW; sY = innerHeight / data.capH;
     const s = data.seedBox;
     box = { x: s.x * sX, y: s.y * sY, w: s.w * sX, h: s.h * sY };
+    // The same window calibrates the Net Worth stash panel and the Reprice price box.
+    // Auto-snap looks for the stash panel's coloured border, which does not exist around
+    // a price field, so it is hidden there rather than offered and useless.
+    if (data.target === 'reprice') {
+      document.body.classList.add('for-reprice');
+      const snapBtn = document.getElementById('snap');
+      if (snapBtn) snapBtn.style.display = 'none';
+      const msg = document.querySelector('.msg');
+      if (msg) msg.innerHTML = 'Drag the box <b>around the number in the price field</b>. '
+        + 'The magnifier shows the exact pixel row and column, so put the edges just outside '
+        + 'the digits. Then Confirm.';
+      // the illustration is a stash grid with item cells - nothing to do with a price box
+      const ex = document.getElementById('ex');
+      if (ex) ex.style.display = 'none';
+      const note = document.querySelector('.bar-note');
+      if (note) note.style.display = 'none';
+      const ok = document.getElementById('ok');
+      if (ok) ok.textContent = 'Confirm';
+    }
     draw();
   });
 })();

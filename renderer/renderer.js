@@ -2047,14 +2047,17 @@ async function initSettings() {
     rpPreviewWrap.classList.remove('hidden');
   }
 
-  if ($('reprice-calibrate')) $('reprice-calibrate').addEventListener('click', async () => {
-    const r = await window.api.repriceCalibrate();
-    if (r && r.w > 0) {
-      config.repriceRegion = { x: r.x, y: r.y, w: r.w, h: r.h };
-      rpRenderCal();
-      rpShowPreview(r.preview);
-      if (rpTestResult) { rpTestResult.textContent = ''; rpTestResult.className = 'set-sub'; }
-    }
+  // Opens the SAME calibration window Net Worth uses - still capture, magnifier,
+  // draggable box with handles, and a Confirm button. It answers by event.
+  if ($('reprice-calibrate')) $('reprice-calibrate').addEventListener('click', () => {
+    window.api.repriceCalibrate();
+  });
+  if (window.api.onRepriceCalibrated) window.api.onRepriceCalibrated((p) => {
+    if (!p || !p.region) return;
+    config.repriceRegion = p.region;
+    rpRenderCal();
+    rpShowPreview(p.preview);
+    if (rpTestResult) { rpTestResult.textContent = ''; rpTestResult.className = 'set-sub'; }
   });
 
   if (rpTestBtn) rpTestBtn.addEventListener('click', async () => {

@@ -724,6 +724,7 @@ function createWindow() {
 
 
 
+
   // Bring the window up once, invisible and click-through. From here on it is
   // never hidden again - toggling only flips opacity (see showOverlay/hideOverlay).
   win.once('ready-to-show', () => {
@@ -1877,50 +1878,6 @@ ipcMain.handle('set-reprice-config', (_e, cfg) => {
 // Guessing where the price box sits does not work well enough to trust with money, so
 // the user draws it over their own screen. Stored as SCREEN FRACTIONS, like the Net
 // Worth calibration, so it survives a resolution change.
-let repriceCalWin = null;
-ipcMain.handle('reprice-calibrate', async () => {
-  if (repriceCalWin && !repriceCalWin.isDestroyed()) { repriceCalWin.focus(); return null; }
-  const b = screen.getPrimaryDisplay().bounds;
-  // The still has to be taken BEFORE the sheet exists. The sheet covers the screen, so a
-  // capture taken after it opens photographs the sheet, not the game behind it.
-  const still = await repricePreview({ x: 0, y: 0, w: 1, h: 1 }).catch(() => null);
-  if (!still) logToggle('reprice', 'calibration: no still, falling back to a bare sheet');
-  return await new Promise((resolve) => {
-    let done = false;
-    const finish = (rect) => {
-      if (done) return;
-      done = true;
-      ipcMain.removeListener('reprice-calibrate-done', onDone);
-      try { if (repriceCalWin && !repriceCalWin.isDestroyed()) repriceCalWin.close(); } catch { }
-      repriceCalWin = null;
-      if (rect && rect.w > 0 && rect.h > 0) {
-        config.repriceRegion = rect; saveConfig();
-        logToggle('reprice', 'region set to ' + JSON.stringify(rect));
-        // REPRICE-PREVIEW: hand back the actual pixels. Being told "set" proves nothing;
-        // a box one row too high looks identical in settings and reads nothing forever.
-        repricePreview(rect).then((preview) => resolve(Object.assign({}, rect, { preview })))
-          .catch(() => resolve(rect));
-      } else resolve(null);
-    };
-    const onDone = (_e, rect) => finish(rect);
-    ipcMain.on('reprice-calibrate-done', onDone);
-
-    repriceCalWin = new BrowserWindow({
-      x: b.x, y: b.y, width: b.width, height: b.height,
-      frame: false, transparent: true, alwaysOnTop: true, skipTaskbar: true,
-      resizable: false, movable: false, fullscreenable: false, show: false,
-      webPreferences: { preload: path.join(__dirname, 'renderer', 'stash', 'reprice-calibrate-preload.js') },
-    });
-    repriceCalWin.setAlwaysOnTop(true, 'screen-saver');
-    repriceCalWin.loadFile(path.join(__dirname, 'renderer', 'stash', 'reprice-calibrate.html'));
-    repriceCalWin.once('ready-to-show', () => {
-      try { repriceCalWin.show(); repriceCalWin.focus(); } catch { }
-      try { repriceCalWin.webContents.send('reprice-calibrate-shot', still); } catch { }
-    });
-    // closing it any other way must not leave the settings screen awaiting forever
-    repriceCalWin.on('closed', () => finish(null));
-  });
-});
 // ===== REPRICE-WIRING-END =======================================================
 
 ipcMain.handle('set-stash-hotkey', (_e, accelerator) => {
@@ -2255,7 +2212,12 @@ function snapFrameToBorder(f) {
   const nx = L != null ? L : f.x, ny = T != null ? T : f.y;
   return { x: nx, y: ny, w: (R != null ? R : f.x + f.w) - nx, h: (B != null ? B : f.y + f.h) - ny };
 }
-ipcMain.on('stash-calibrate-start', async () => {
+// target: 'stash' (the Net Worth panel) or 'reprice' (the price box). Same window, same
+// loupe, same Confirm button - only the seed box, the wording and where the result is
+// saved differ. Reprice had its own sheet for a while; it was a worse copy of this one.
+let calibTarget = 'stash';
+ipcMain.on('stash-calibrate-start', async (_e, opts) => {
+  calibTarget = (opts && opts.target === 'reprice') ? 'reprice' : 'stash';
   try {
     if (calibWin && !calibWin.isDestroyed()) { calibWin.focus(); return; }
     await primeCapture(); // before the veil - see primeCapture
@@ -2272,7 +2234,13 @@ ipcMain.on('stash-calibrate-start', async () => {
     const dataUrl = shot.dataUrl;
     // seed the box at the previous frame, else FRAME_BOX scaled to this capture
     let seed;
-    if (config.stashCalibration) seed = calBoxToFrame(config.stashCalibration);
+    if (calibTarget === 'reprice') {
+      // fractions -> capture px, or a small box near the middle to start from
+      const r = config.repriceRegion;
+      seed = r && r.w > 0
+        ? { x: Math.round(r.x * capW), y: Math.round(r.y * capH), w: Math.round(r.w * capW), h: Math.round(r.h * capH) }
+        : { x: Math.round(capW * 0.45), y: Math.round(capH * 0.55), w: Math.round(capW * 0.05), h: Math.round(capH * 0.04) };
+    } else if (config.stashCalibration) seed = calBoxToFrame(config.stashCalibration);
     else { const s = capW / 1920; seed = { x: Math.round(FRAME_BOX.x * s), y: Math.round(FRAME_BOX.y * s), w: Math.round(FRAME_BOX.w * s), h: Math.round(FRAME_BOX.h * s) }; }
     calibWin = new BrowserWindow({
       x: disp.bounds.x, y: disp.bounds.y, width: disp.size.width, height: disp.size.height,
@@ -2285,7 +2253,7 @@ ipcMain.on('stash-calibrate-start', async () => {
     calibWin.loadFile(path.join(__dirname, 'renderer', 'stash', 'calibrate.html'),
       { search: `theme=${config && config.theme === 'industry' ? 'industry' : 'default'}` });
     calibWin.webContents.once('did-finish-load', () => {
-      try { calibWin.webContents.send('calib-init', { dataUrl, capW, capH, seedBox: seed }); } catch {}
+      try { calibWin.webContents.send('calib-init', { dataUrl, capW, capH, seedBox: seed, target: calibTarget }); } catch {}
     });
   } catch (err) { console.error('calibrate-start failed:', err.message); }
 });
@@ -2300,6 +2268,19 @@ ipcMain.on('stash-calibrate-snap', (_e, frame) => {
 ipcMain.on('stash-calibrate-confirm', async (_e, frame) => {
   try {
     if (!frame || !(frame.w > 0) || !(frame.h > 0)) return closeCalibWin();
+    if (calibTarget === 'reprice') {
+      // stored as SCREEN FRACTIONS so it survives a resolution change
+      const disp = screen.getPrimaryDisplay();
+      const capW = Math.round(disp.size.width * disp.scaleFactor);
+      const capH = Math.round(disp.size.height * disp.scaleFactor);
+      config.repriceRegion = { x: frame.x / capW, y: frame.y / capH, w: frame.w / capW, h: frame.h / capH };
+      saveConfig();
+      closeCalibWin();
+      logToggle('reprice', 'region set to ' + JSON.stringify(config.repriceRegion));
+      const url = await repricePreview(config.repriceRegion).catch(() => null);
+      if (win && !win.isDestroyed()) win.webContents.send('reprice-calibrated', { region: config.repriceRegion, preview: url });
+      return;
+    }
     config.stashCalibration = frameToCalBox(frame);
     saveConfig();
     closeCalibWin();
