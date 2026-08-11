@@ -2805,10 +2805,15 @@ async function main() {
       else window.api.hide();
     }
   });
-  // clicking anywhere that isn't a tooltip cell releases a pinned tooltip -
-  // but clicks INSIDE the tooltip (copying, selecting text) never unpin it
-  document.addEventListener('click', () => {
-    if (pinnedTipEl) unpinTip();
+  // Clicking anywhere that isn't a tooltip cell releases a pinned tooltip - but clicks
+  // INSIDE the tooltip never do. That was the intent all along; the only guard was a
+  // stopPropagation on MOUSEDOWN, which does nothing to the click event this listens for,
+  // so every click in the tooltip unpinned it. Most visibly: Fix Rate puts four inputs in
+  // there, and clicking into one closed the thing you were trying to edit.
+  document.addEventListener('click', (e) => {
+    if (!pinnedTipEl) return;
+    if (e.target.closest && e.target.closest('#spark-tip')) return;
+    unpinTip();
   });
   const tipEl = $('spark-tip');
   tipEl.addEventListener('mouseenter', () => clearTimeout(tipHideTimer));
