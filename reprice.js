@@ -128,13 +128,16 @@ function create(deps) {
           // cover the rest is what let scenery be mistaken for the price field. With the
           // window's own rectangle the search stays small and is right either way.
           const fx = 0.5, fy = 0.6;
-          const g = gameRect && gameRect.w > 0
+          // gr, not g - the canvas context below is already called g, and shadowing it
+          // threw a SyntaxError on injection, which surfaced as the capture stream
+          // refusing to open and the hotkey looking dead.
+          const gr = gameRect && gameRect.w > 0
             ? { x: gameRect.x * W, y: gameRect.y * H, w: gameRect.w * W, h: gameRect.h * H }
             : { x: 0, y: 0, w: W, h: H };
-          const sx = Math.max(0, Math.round(g.x + g.w * (1 - fx) / 2));
-          const sy = Math.max(0, Math.round(g.y + g.h * (1 - fy) / 2));
-          const sw = Math.min(W - sx, Math.round(g.w * fx));
-          const sh = Math.min(H - sy, Math.round(g.h * fy));
+          const sx = Math.max(0, Math.round(gr.x + gr.w * (1 - fx) / 2));
+          const sy = Math.max(0, Math.round(gr.y + gr.h * (1 - fy) / 2));
+          const sw = Math.min(W - sx, Math.round(gr.w * fx));
+          const sh = Math.min(H - sy, Math.round(gr.h * fy));
           if (sw < 40 || sh < 40) return null;
           const c = document.createElement('canvas'); c.width = sw; c.height = sh;
           const g = c.getContext('2d', { willReadFrequently: true });
@@ -177,7 +180,11 @@ function create(deps) {
       say('stream open: ' + r);
       return true;
     } catch (err) {
-      say('stream failed: ' + (err && err.message || err));
+      // Loud, not toggle-gated. A stream that will not open means the mode silently
+      // refuses to arm - the hotkey appears dead and there is nothing to look at.
+      const msg = 'stream failed: ' + (err && err.message || err);
+      say(msg);
+      console.error('[reprice] ' + msg);
       streamReady = false;
       return false;
     }
@@ -283,7 +290,10 @@ function create(deps) {
     if (next === on) return on;
     if (next) {
       const ok = await openStream();
-      if (!ok) return false;      // no stream, no mode - do not pretend it is armed
+      if (!ok) {
+        console.error('[reprice] mode did not arm: no capture stream');
+        return false;             // no stream, no mode - do not pretend it is armed
+      }
       bindHook();
       on = true;
     } else {
