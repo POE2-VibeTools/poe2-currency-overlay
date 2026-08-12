@@ -66,7 +66,8 @@
   function apply(base, cfg, ctx) {
     base = Number(base);
     if (!Number.isFinite(base) || base <= 0) return null;
-    const node = cfg && cfg.tree ? cfg.tree : treeFromFlat(cfg);
+    const node = cfg && cfg.tree ? cfg.tree
+      : (cfg && cfg.branches ? treeFromBranches(cfg.branches) : treeFromFlat(cfg));
     if (!node) return null;
     return settle(evaluate(base, node, ctx || {}));
   }
@@ -87,6 +88,59 @@
     return { pick: combine === 'smaller' ? 'smaller' : 'bigger', a, b };
   }
 
+  // ---------- branch lists ----------
+  //
+  // What the settings screen actually edits: an ordered list of branches, read top to
+  // bottom, the last one being the catch-all.
+  //
+  //   branch = { when: {type:'always'} | {type:'currency', is} | {type:'price>=', at},
+  //              action: { combine: 'single'|'bigger'|'smaller', rules: [ruleA, ruleB] } }
+  //
+  // A LIST rather than a free-form tree on purpose. Every case anyone described - a
+  // different pairing per currency, a different pairing per price band - is a sequence of
+  // tests with an otherwise at the end, and a list makes that shape impossible to get
+  // wrong. Conditions nested inside conditions would be strictly more expressive and much
+  // easier to build something unreadable with.
+  //
+  // Folding right is what turns the list into the if/else-if chain the evaluator wants:
+  // each branch's else is everything below it.
+  function actionTree(action) {
+    const a = action && action.rules && action.rules[0];
+    if (!a) return null;
+    const b = action.rules[1];
+    const combine = (action && action.combine) || 'single';
+    if (combine === 'single' || !b) return a;
+    return { pick: combine === 'smaller' ? 'smaller' : 'bigger', a, b };
+  }
+
+  function treeFromBranches(branches) {
+    const list = Array.isArray(branches) ? branches.filter(Boolean) : [];
+    if (!list.length) return null;
+    let node = null;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const br = list[i];
+      const act = actionTree(br.action);
+      if (!act) continue;
+      const w = br.when || { type: 'always' };
+      if (w.type === 'currency') node = { if: 'currency', is: w.is, a: act, b: node };
+      else if (w.type === 'price>=') node = { if: 'price>=', at: Number(w.at), a: act, b: node };
+      else node = act;   // always - anything below it is unreachable, which is correct
+    }
+    return node;
+  }
+
+  // A branch whose else is missing would return the price unchanged, so a list that ends
+  // on a condition still needs a floor. Guarantee one rather than trusting the UI.
+  function normaliseBranches(branches) {
+    const list = (Array.isArray(branches) ? branches : []).filter((b) => b && b.action);
+    if (!list.length) return [];
+    const last = list[list.length - 1];
+    if (!last.when || last.when.type !== 'always') {
+      list.push({ when: { type: 'always' }, action: { combine: 'single', rules: [{ op: 'subtract', value: 0, mode: 'flat' }] } });
+    }
+    return list;
+  }
+
   // Two worked examples at different magnitudes. One example cannot show what a paired
   // rule does, because the whole reason to pair rules is that they disagree by size.
   function examples(cfg) {
@@ -94,19 +148,44 @@
     return bases.map((b) => ({ base: b, result: apply(b, cfg) })).filter((e) => e.result != null);
   }
 
-  // Pull a config out of the flat keys the app stores in overlay-config.json.
-  function fromConfig(c) {
-    c = c || {};
-    return {
-      combine: c.repriceCombine || 'single',
-      threshold: Number.isFinite(Number(c.repriceThreshold)) ? Number(c.repriceThreshold) : 20,
-      currency: c.repriceCurrency || 'divine',
-      rules: [
-        { op: c.repriceOp || 'subtract', value: Number(c.repriceValue), mode: c.repriceMode || 'flat' },
-        { op: c.repriceOp2 || 'subtract', value: Number(c.repriceValue2), mode: c.repriceMode2 || 'flat' },
-      ],
-    };
+  // The single flat rule the app stored before branch lists existed, as a one or two
+  // branch list. Runs for anyone upgrading, so their existing setting survives untouched
+  // instead of being replaced by a default.
+  function flatToBranches(c) {
+    const rules = [
+      { op: c.repriceOp || 'subtract', value: Number(c.repriceValue), mode: c.repriceMode || 'flat' },
+      { op: c.repriceOp2 || 'subtract', value: Number(c.repriceValue2), mode: c.repriceMode2 || 'flat' },
+    ];
+    const combine = c.repriceCombine || 'single';
+    // threshold and currency were if/else in one control; as branches they become two
+    // entries, which is the same thing written out
+    if (combine === 'threshold') {
+      return [
+        { when: { type: 'price>=', at: Number.isFinite(Number(c.repriceThreshold)) ? Number(c.repriceThreshold) : 20 },
+          action: { combine: 'single', rules: [rules[0]] } },
+        { when: { type: 'always' }, action: { combine: 'single', rules: [rules[1]] } },
+      ];
+    }
+    if (combine === 'currency') {
+      return [
+        { when: { type: 'currency', is: c.repriceCurrency || 'divine' },
+          action: { combine: 'single', rules: [rules[0]] } },
+        { when: { type: 'always' }, action: { combine: 'single', rules: [rules[1]] } },
+      ];
+    }
+    return [{ when: { type: 'always' }, action: { combine, rules } }];
   }
 
-  return { apply, applyRule, evaluate, treeFromFlat, examples, fromConfig };
+  // Pull a config out of overlay-config.json. Branch lists are the current shape; the old
+  // flat keys are migrated on read.
+  function fromConfig(c) {
+    c = c || {};
+    const branches = Array.isArray(c.repriceBranches) && c.repriceBranches.length
+      ? normaliseBranches(c.repriceBranches)
+      : flatToBranches(c);
+    return { branches };
+  }
+
+  return { apply, applyRule, evaluate, treeFromFlat, treeFromBranches, normaliseBranches,
+    actionTree, flatToBranches, examples, fromConfig };
 });

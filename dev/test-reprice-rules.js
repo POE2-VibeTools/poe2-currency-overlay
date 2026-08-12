@@ -68,6 +68,50 @@ eq(R.apply(100, R.fromConfig({ repriceCombine: 'currency', repriceCurrency: 'cha
   repriceOp2: 'subtract', repriceValue2: 5, repriceMode2: 'percent' }),
   { currency: 'chaos' }), 80, 'fromConfig carries the currency through');
 
+console.log('branch lists');
+const br = (when, action) => ({ when, action });
+const act = (combine, ...rules) => ({ combine, rules });
+// the case that motivated branch lists: a different pairing per currency
+const perCurrency = { branches: [
+  br({ type: 'currency', is: 'divine' }, act('smaller', pct(10), flat(10))),
+  br({ type: 'currency', is: 'chaos' }, act('smaller', pct(20), flat(1))),
+  br({ type: 'always' }, act('single', pct(5))),
+] };
+eq(R.apply(500, perCurrency, { currency: 'divine' }), 490, 'divine: flat 10 is the smaller change');
+eq(R.apply(50, perCurrency, { currency: 'divine' }), 45, 'divine: 10% is the smaller change');
+eq(R.apply(500, perCurrency, { currency: 'chaos' }), 499, 'chaos uses its own pairing');
+eq(R.apply(500, perCurrency, { currency: 'vaal' }), 475, 'an unlisted currency falls to the otherwise');
+eq(R.apply(500, perCurrency, {}), 475, 'an unread currency falls to the otherwise');
+// order matters: the first matching branch wins
+const ordered = { branches: [
+  br({ type: 'price>=', at: 100 }, act('single', flat(50))),
+  br({ type: 'price>=', at: 10 }, act('single', flat(5))),
+  br({ type: 'always' }, act('single', flat(1))),
+] };
+eq(R.apply(500, ordered), 450, 'first band');
+eq(R.apply(50, ordered), 45, 'second band');
+eq(R.apply(5, ordered), 4, 'otherwise');
+// a list that ends on a condition would leave the price untouched; it gets a floor
+const noElse = R.normaliseBranches([br({ type: 'currency', is: 'divine' }, act('single', pct(10)))]);
+eq(noElse.length, 2, 'a missing otherwise is added');
+eq(noElse[1].when.type, 'always', 'and it is the catch-all');
+eq(R.apply(100, { branches: noElse }, { currency: 'chaos' }), 100, 'unmatched leaves the price alone');
+
+console.log('old flat settings still work after the upgrade');
+eq(R.apply(100, R.fromConfig({ repriceCombine: 'smaller', repriceOp: 'subtract',
+  repriceValue: 10, repriceMode: 'percent', repriceOp2: 'subtract', repriceValue2: 2, repriceMode2: 'flat' })),
+  98, 'a flat pairing migrates to one branch');
+eq(R.apply(100, R.fromConfig({ repriceCombine: 'threshold', repriceThreshold: 50,
+  repriceOp: 'subtract', repriceValue: 10, repriceMode: 'percent',
+  repriceOp2: 'subtract', repriceValue2: 1, repriceMode2: 'flat' })), 90, 'threshold migrates: above');
+eq(R.apply(10, R.fromConfig({ repriceCombine: 'threshold', repriceThreshold: 50,
+  repriceOp: 'subtract', repriceValue: 10, repriceMode: 'percent',
+  repriceOp2: 'subtract', repriceValue2: 1, repriceMode2: 'flat' })), 9, 'threshold migrates: below');
+eq(R.apply(100, R.fromConfig({ repriceCombine: 'currency', repriceCurrency: 'chaos',
+  repriceOp: 'subtract', repriceValue: 20, repriceMode: 'percent',
+  repriceOp2: 'subtract', repriceValue2: 5, repriceMode2: 'percent' }), { currency: 'chaos' }),
+  80, 'currency migrates');
+
 console.log('worked examples shown in settings');
 const ex = R.examples({ combine: 'bigger', rules: [pct(10), flat(2)] });
 eq(ex.length, 2, 'two examples');

@@ -1815,14 +1815,26 @@ ipcMain.handle('reprice-test-icon', async () => {
 // so it cannot eat a click meant for the game or pull focus mid-trade.
 let repriceBadge = null;
 
+// One line for the on-screen badge. A branch list can be long, so this shows the first
+// entry and says how many more there are rather than running off the badge.
 function repriceRuleSummary() {
   const R = require('./renderer/reprice-rules.js');
-  const c = R.fromConfig(config);
+  const branches = R.fromConfig(config).branches;
+  if (!branches.length) return '';
   const one = (r) => (r.op === 'add' ? '+' : '-') + r.value + (r.mode === 'percent' ? '%' : '');
-  const a = one(c.rules[0]), b = one(c.rules[1]);
-  if (c.combine === 'single') return a;
-  if (c.combine === 'threshold') return `${a} at ${c.threshold}+, else ${b}`;
-  return (c.combine === 'smaller' ? 'min' : 'max') + `(${a}, ${b})`;
+  const actText = (act) => {
+    const rules = (act && act.rules) || [];
+    if (!rules[0]) return '';
+    if (!act.combine || act.combine === 'single' || !rules[1]) return one(rules[0]);
+    return (act.combine === 'smaller' ? 'min' : 'max') + `(${one(rules[0])}, ${one(rules[1])})`;
+  };
+  const whenText = (w) => {
+    if (!w || w.type === 'always') return '';
+    if (w.type === 'price>=') return `${w.at}+: `;
+    return `${w.is}: `;
+  };
+  const first = whenText(branches[0].when) + actText(branches[0].action);
+  return branches.length > 1 ? `${first} (+${branches.length - 1})` : first;
 }
 
 function showRepriceBadge() {
@@ -1969,20 +1981,46 @@ ipcMain.handle('set-reprice-hotkey', (_e, accelerator) => {
   return true;
 });
 
-ipcMain.handle('set-reprice-config', (_e, cfg) => {
-  if (!cfg || typeof cfg !== 'object') return false;
+// Everything arriving here is rebuilt field by field rather than stored as sent. It comes
+// from the renderer, but it also lands in a config file a user can hand-edit, and the
+// reader applies it to their money.
+function sanitiseBranches(input) {
   const num = (v, d) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : d);
   const op = (v) => (v === 'add' ? 'add' : 'subtract');
   const mode = (v) => (v === 'percent' ? 'percent' : 'flat');
-  config.repriceCombine = ['single', 'bigger', 'smaller', 'threshold', 'currency'].includes(cfg.combine) ? cfg.combine : 'single';
-  config.repriceThreshold = num(cfg.threshold, 20);
-  // Only a family the baked icon set actually contains. Anything else would be a branch
-  // that can never be taken.
   const bank = repriceIconBank();
-  const known = bank ? bank.icons.some((i) => i.family === cfg.currency) : false;
-  config.repriceCurrency = known ? cfg.currency : (config.repriceCurrency || 'divine');
-  config.repriceOp = op(cfg.op); config.repriceValue = num(cfg.value, 0); config.repriceMode = mode(cfg.mode);
-  config.repriceOp2 = op(cfg.op2); config.repriceValue2 = num(cfg.value2, 0); config.repriceMode2 = mode(cfg.mode2);
+  const knownCurrency = (f) => !!(bank && bank.icons.some((i) => i.family === f));
+  const rule = (r) => ({ op: op(r && r.op), value: num(r && r.value, 0), mode: mode(r && r.mode) });
+
+  const out = [];
+  for (const b of (Array.isArray(input) ? input : []).slice(0, 24)) {
+    if (!b || typeof b !== 'object') continue;
+    const act = b.action || {};
+    const rules = (Array.isArray(act.rules) ? act.rules : []).slice(0, 2).map(rule);
+    if (!rules.length) continue;
+    const combine = ['single', 'bigger', 'smaller'].includes(act.combine) ? act.combine : 'single';
+    const w = b.when || {};
+    let when;
+    // An unknown currency would be a branch that can never be taken, so it becomes the
+    // catch-all rather than silently never running.
+    if (w.type === 'currency' && knownCurrency(w.is)) when = { type: 'currency', is: w.is };
+    else if (w.type === 'price>=') when = { type: 'price>=', at: num(w.at, 0) };
+    else when = { type: 'always' };
+    out.push({ when, action: { combine, rules: combine === 'single' ? [rules[0]] : rules } });
+  }
+  const R = require('./renderer/reprice-rules.js');
+  return R.normaliseBranches(out);
+}
+
+ipcMain.handle('set-reprice-config', (_e, cfg) => {
+  if (!cfg || typeof cfg !== 'object') return false;
+  config.repriceBranches = sanitiseBranches(cfg.branches);
+  config.repriceRulesets = (Array.isArray(cfg.rulesets) ? cfg.rulesets : [])
+    .slice(0, 50)
+    .filter((r) => r && typeof r.name === 'string' && r.name.trim())
+    .map((r) => ({ name: String(r.name).slice(0, 40), branches: sanitiseBranches(r.branches) }));
+  const names = config.repriceRulesets.map((r) => r.name);
+  config.repriceActiveRuleset = names.includes(cfg.activeRuleset) ? cfg.activeRuleset : '';
   saveConfig();
   return true;
 });

@@ -199,48 +199,23 @@
               <div class="kb-field"><input id="reprice-hotkey-input" class="kb-input" readonly data-i18n-ph="ui.settings.hotkey_placeholder" placeholder="click, then press keys" /><span class="kb-hint" data-i18n="ui.settings.hotkey_rebind_hint">click to rebind</span></div>
             </div>
             <div class="set-field">
-              <label data-i18n="ui.settings.reprice.adjust_label" data-i18n-title="ui.settings.reprice.adjust_tooltip" title="What to do to the price the app reads. The result is rounded to a whole number, and never goes below 1.">Adjustment</label>
-              <select id="reprice-combine">
-                <option value="single" data-i18n="ui.settings.reprice.combine_single">Always</option>
-                <option value="bigger" data-i18n="ui.settings.reprice.combine_bigger">Whichever changes the price more</option>
-                <option value="smaller" data-i18n="ui.settings.reprice.combine_smaller">Whichever changes the price less</option>
-                <option value="threshold" data-i18n="ui.settings.reprice.combine_threshold">If the price is at least...</option>
-                <option value="currency" data-i18n="ui.settings.reprice.combine_currency">If the currency is...</option>
-              </select>
-              <div id="reprice-threshold-row" class="rp-adjust hidden">
-                <span class="rp-lead" data-i18n="ui.settings.reprice.threshold_lead">If the price is at least</span>
-                <input id="reprice-threshold" type="number" min="0" step="any" value="20" />
+              <div class="set-inline">
+                <label data-i18n="ui.settings.reprice.adjust_label" data-i18n-title="ui.settings.reprice.adjust_tooltip" title="What to do to the price the app reads. Lines are read top to bottom and the first one that matches is used. The result is rounded to a whole number, and never goes below 1.">Adjustment</label>
+                <span class="set-sub" data-i18n="ui.settings.reprice.rules_sub">first matching line wins</span>
               </div>
-              <div id="reprice-currency-row" class="rp-adjust hidden">
-                <span class="rp-lead" data-i18n="ui.settings.reprice.currency_lead">If the currency is</span>
-                <select id="reprice-currency"></select>
-              </div>
+              <div id="reprice-branches" class="rp-branches"></div>
+              <button id="reprice-add-branch" class="chip-add" data-i18n="ui.settings.reprice.add_branch" data-i18n-title="ui.settings.reprice.add_branch_tooltip" title="Add a condition above the catch-all line">+ Add condition</button>
               <div id="reprice-currency-warn" class="set-sub bad hidden" data-i18n="ui.settings.reprice.currency_needs_box">This needs the currency icon box below. Without it the currency is never known, so the "otherwise" rule always runs.</div>
-              <div class="rp-adjust" data-rule="0">
-                <span class="rp-lead rp-lead-a hidden" data-i18n="ui.settings.reprice.then_lead">then</span>
-                <select id="reprice-op">
-                  <option value="subtract" data-i18n="ui.settings.reprice.op_subtract">Subtract</option>
-                  <option value="add" data-i18n="ui.settings.reprice.op_add">Add</option>
-                </select>
-                <input id="reprice-value" type="number" min="0" step="any" value="10" />
-                <select id="reprice-mode">
-                  <option value="flat" data-i18n="ui.settings.reprice.mode_flat">flat</option>
-                  <option value="percent" data-i18n="ui.settings.reprice.mode_percent">percent</option>
-                </select>
-              </div>
-              <div class="rp-adjust rp-rule2 hidden" data-rule="1">
-                <span class="rp-lead rp-lead-b hidden" data-i18n="ui.settings.reprice.else_lead">otherwise</span>
-                <select id="reprice-op2">
-                  <option value="subtract" data-i18n="ui.settings.reprice.op_subtract">Subtract</option>
-                  <option value="add" data-i18n="ui.settings.reprice.op_add">Add</option>
-                </select>
-                <input id="reprice-value2" type="number" min="0" step="any" value="1" />
-                <select id="reprice-mode2">
-                  <option value="flat" data-i18n="ui.settings.reprice.mode_flat">flat</option>
-                  <option value="percent" data-i18n="ui.settings.reprice.mode_percent">percent</option>
-                </select>
-              </div>
               <div id="reprice-example" class="rp-examples"></div>
+            </div>
+            <div class="set-field">
+              <label data-i18n="ui.settings.reprice.ruleset_label" data-i18n-title="ui.settings.reprice.ruleset_tooltip" title="Keep more than one set of rules and switch between them. Saving stores the lines above under a name; picking a saved name loads it.">Saved rulesets</label>
+              <div class="rp-cal-row">
+                <select id="reprice-ruleset"></select>
+                <input id="reprice-ruleset-name" type="text" maxlength="40" data-i18n-ph="ui.settings.reprice.ruleset_name_ph" placeholder="name" />
+                <button id="reprice-ruleset-save" class="set-login-btn" data-i18n="ui.settings.reprice.ruleset_save">Save</button>
+                <button id="reprice-ruleset-delete" class="set-login-btn hidden" data-i18n="ui.settings.reprice.ruleset_delete">Delete</button>
+              </div>
             </div>
             <div class="set-field">
               <label data-i18n="ui.settings.reprice.calibrate_label" data-i18n-title="ui.settings.reprice.calibrate_tooltip" title="Show the app where the price box sits on your screen. Open the reprice window in game first, then drag a box around the number.">Price box</label>

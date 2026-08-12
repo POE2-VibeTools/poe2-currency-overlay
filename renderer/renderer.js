@@ -1938,13 +1938,10 @@ async function initSettings() {
   });
 
   const rpEls = {
-    combine: $('reprice-combine'), threshold: $('reprice-threshold'), thresholdRow: $('reprice-threshold-row'),
-    op: $('reprice-op'), value: $('reprice-value'), mode: $('reprice-mode'),
-    op2: $('reprice-op2'), value2: $('reprice-value2'), mode2: $('reprice-mode2'),
-    rule2: document.querySelector('.rp-rule2'),
-    leadA: document.querySelector('.rp-lead-a'), leadB: document.querySelector('.rp-lead-b'),
-    currencyRow: $('reprice-currency-row'), currency: $('reprice-currency'),
+    branches: $('reprice-branches'), addBranch: $('reprice-add-branch'),
     currencyWarn: $('reprice-currency-warn'),
+    ruleset: $('reprice-ruleset'), rulesetName: $('reprice-ruleset-name'),
+    rulesetSave: $('reprice-ruleset-save'), rulesetDelete: $('reprice-ruleset-delete'),
     example: $('reprice-example'), calStatus: $('reprice-cal-status'),
     previewWrap: $('reprice-preview-wrap'), previewImg: $('reprice-preview'),
     testBtn: $('reprice-test'), testResult: $('reprice-test-result'),
@@ -1953,28 +1950,154 @@ async function initSettings() {
     iconTestBtn: $('reprice-icon-test'), iconTestResult: $('reprice-icon-test-result'),
   };
 
-  function rpSyncVisibility() {
-    const c = config.repriceCombine || 'single';
-    const pair = c !== 'single';
-    const byCurrency = c === 'currency';
-    // both are if/else shapes - one branches on the number, the other on the currency
-    const ifElse = c === 'threshold' || byCurrency;
-    if (rpEls.rule2) rpEls.rule2.classList.toggle('hidden', !pair);
-    if (rpEls.thresholdRow) rpEls.thresholdRow.classList.toggle('hidden', c !== 'threshold');
-    if (rpEls.currencyRow) rpEls.currencyRow.classList.toggle('hidden', !byCurrency);
-    // Branching on a currency the app cannot see means the else branch every single time.
+  // Currencies the icon matcher can name, fetched once and shared by every branch row.
+  let rpCurrencyList = [];
+
+  // ---------- branch list ----------
+  //
+  // config.repriceBranches is the source of truth and rows are rebuilt from it on every
+  // change, rather than edited in place. The list is short, and re-rendering is what makes
+  // the catch-all reliably last and reliably present without a special case per control.
+  function rpBranches() {
+    if (!Array.isArray(config.repriceBranches) || !config.repriceBranches.length) {
+      config.repriceBranches = window.RepriceRules.fromConfig(config).branches;
+    }
+    return config.repriceBranches;
+  }
+
+  function rpOpt(value, label) {
+    const o = document.createElement('option');
+    o.value = value; o.textContent = label;
+    return o;
+  }
+
+  function rpNumInput(get, set) {
+    const el = document.createElement('input');
+    el.type = 'number'; el.min = '0'; el.step = 'any';
+    el.value = get();
+    el.addEventListener('input', () => {
+      const n = Number(el.value);
+      set(Number.isFinite(n) && n >= 0 ? n : 0);
+      rpSaveOnly();
+    });
+    return el;
+  }
+
+  function rpRenderBranches() {
+    const host = rpEls.branches;
+    if (!host || !window.RepriceRules) return;
+    const list = rpBranches();
+    host.innerHTML = '';
+
+    list.forEach((br, i) => {
+      const last = i === list.length - 1;
+      const row = document.createElement('div');
+      row.className = 'rp-branch' + (last ? ' rp-branch-last' : '');
+
+      const when = document.createElement('div');
+      when.className = 'rp-adjust rp-branch-when';
+      const wType = document.createElement('select');
+      // The catch-all cannot be turned into a condition: something has to be guaranteed to
+      // run, and it has to be the last thing in the list.
+      if (last) {
+        wType.appendChild(rpOpt('always', t('ui.settings.reprice.when_always')));
+        wType.disabled = true;
+      } else {
+        wType.appendChild(rpOpt('currency', t('ui.settings.reprice.when_currency')));
+        wType.appendChild(rpOpt('price>=', t('ui.settings.reprice.when_price')));
+      }
+      wType.value = (br.when && br.when.type) || 'always';
+      wType.addEventListener('change', () => {
+        br.when = wType.value === 'price>='
+          ? { type: 'price>=', at: 20 }
+          : { type: 'currency', is: (rpCurrencyList[0] && rpCurrencyList[0].family) || 'divine' };
+        rpChanged();
+      });
+      when.appendChild(wType);
+
+      if (!last && br.when && br.when.type === 'currency') {
+        const sel = document.createElement('select');
+        for (const c of rpCurrencyList) {
+          sel.appendChild(rpOpt(c.family, window.gameName ? window.gameName(c.name) : c.name));
+        }
+        sel.value = br.when.is || 'divine';
+        if (sel.value && sel.value !== br.when.is) br.when.is = sel.value;
+        sel.addEventListener('change', () => { br.when.is = sel.value; rpSaveOnly(); });
+        when.appendChild(sel);
+      } else if (!last) {
+        when.appendChild(rpNumInput(
+          () => (br.when && br.when.at != null ? br.when.at : 20),
+          (v) => { br.when.at = v; }
+        ));
+      }
+
+      if (!last) {
+        const del = document.createElement('button');
+        del.className = 'rp-branch-del';
+        del.textContent = '×';
+        del.title = t('ui.settings.reprice.remove_branch');
+        del.addEventListener('click', () => { list.splice(i, 1); rpChanged(); });
+        when.appendChild(del);
+      }
+      row.appendChild(when);
+
+      const act = br.action || (br.action = { combine: 'single', rules: [{ op: 'subtract', value: 10, mode: 'percent' }] });
+      if (!Array.isArray(act.rules) || !act.rules.length) {
+        act.rules = [{ op: 'subtract', value: 10, mode: 'percent' }];
+      }
+
+      const actRow = document.createElement('div');
+      actRow.className = 'rp-adjust';
+      const cSel = document.createElement('select');
+      cSel.appendChild(rpOpt('single', t('ui.settings.reprice.act_single')));
+      cSel.appendChild(rpOpt('smaller', t('ui.settings.reprice.act_smaller')));
+      cSel.appendChild(rpOpt('bigger', t('ui.settings.reprice.act_bigger')));
+      cSel.value = act.combine || 'single';
+      cSel.addEventListener('change', () => {
+        act.combine = cSel.value;
+        // a pairing needs a second rule to compare against
+        if (act.combine !== 'single' && !act.rules[1]) {
+          act.rules[1] = { op: 'subtract', value: 10, mode: 'flat' };
+        }
+        rpChanged();
+      });
+      actRow.appendChild(cSel);
+      row.appendChild(actRow);
+
+      const nRules = (act.combine && act.combine !== 'single') ? 2 : 1;
+      for (let k = 0; k < nRules; k++) {
+        const rule = act.rules[k] || (act.rules[k] = { op: 'subtract', value: 10, mode: 'flat' });
+        const rr = document.createElement('div');
+        rr.className = 'rp-adjust rp-branch-rule';
+        const op = document.createElement('select');
+        op.appendChild(rpOpt('subtract', t('ui.settings.reprice.op_subtract')));
+        op.appendChild(rpOpt('add', t('ui.settings.reprice.op_add')));
+        op.value = rule.op || 'subtract';
+        op.addEventListener('change', () => { rule.op = op.value; rpSaveOnly(); });
+        const mode = document.createElement('select');
+        mode.appendChild(rpOpt('flat', t('ui.settings.reprice.mode_flat')));
+        mode.appendChild(rpOpt('percent', t('ui.settings.reprice.mode_percent')));
+        mode.value = rule.mode || 'flat';
+        mode.addEventListener('change', () => { rule.mode = mode.value; rpSaveOnly(); });
+        rr.appendChild(op);
+        rr.appendChild(rpNumInput(() => (rule.value != null ? rule.value : 10), (v) => { rule.value = v; }));
+        rr.appendChild(mode);
+        row.appendChild(rr);
+      }
+
+      host.appendChild(row);
+    });
+
+    // Branching on a currency the app cannot see means the catch-all every single time.
     // Say so where the choice is made, not after a confusing paste.
+    const usesCurrency = list.some((b) => b.when && b.when.type === 'currency');
     const noBox = !(config.repriceIconRegion && config.repriceIconRegion.w > 0);
-    if (rpEls.currencyWarn) rpEls.currencyWarn.classList.toggle('hidden', !(byCurrency && noBox));
-    // "then"/"otherwise" only read correctly for the if/else; for the comparisons the
-    // two rows are alternatives, not branches
-    if (rpEls.leadA) rpEls.leadA.classList.toggle('hidden', !ifElse);
-    if (rpEls.leadB) rpEls.leadB.classList.toggle('hidden', !ifElse);
+    if (rpEls.currencyWarn) rpEls.currencyWarn.classList.toggle('hidden', !(usesCurrency && noBox));
   }
 
   function rpRenderExample() {
     if (!rpEls.example || !window.RepriceRules) return;
-    const ex = window.RepriceRules.examples(window.RepriceRules.fromConfig(config));
+    const ex = window.RepriceRules.examples({ branches: rpBranches() });
     rpEls.example.innerHTML = '';
     for (const e of ex) {
       const line = document.createElement('div');
@@ -1984,107 +2107,97 @@ async function initSettings() {
     }
   }
 
-  // Set the key as well as the text. The i18n pass re-translates every [data-i18n]
-  // element from its key, so writing only textContent got silently reverted: the label
-  // read "not set" on every start even though the region was saved and read fine, and
-  // only looked right after a calibration, which happens to run after that pass.
-  function rpCalLabel(el, set) {
-    if (!el) return;
-    el.dataset.i18n = set ? 'ui.settings.reprice.calibrate_done' : 'ui.settings.reprice.calibrate_none';
-    el.textContent = t(el.dataset.i18n);
-    el.classList.toggle('rp-set', set);
-  }
-
-  function rpRenderCal() {
-    if (!rpEls.calStatus) return;
-    const r = config.repriceRegion;
-    const set = !!(r && r.w > 0 && r.h > 0);
-    rpCalLabel(rpEls.calStatus, set);
-    // Test read is meaningless without a region, so it only exists once there is one.
-    if (rpEls.testBtn) rpEls.testBtn.classList.toggle('hidden', !set);
-    rpRenderIconCal();
-  }
-
-  function rpRenderIconCal() {
-    if (!rpEls.iconCalStatus) return;
-    const r = config.repriceIconRegion;
-    const set = !!(r && r.w > 0 && r.h > 0);
-    rpCalLabel(rpEls.iconCalStatus, set);
-    if (rpEls.iconTestBtn) rpEls.iconTestBtn.classList.toggle('hidden', !set);
-  }
-
   const rpSave = () => window.api.setRepriceConfig({
-    combine: config.repriceCombine, threshold: config.repriceThreshold,
-    op: config.repriceOp, value: config.repriceValue, mode: config.repriceMode,
-    op2: config.repriceOp2, value2: config.repriceValue2, mode2: config.repriceMode2,
-    currency: config.repriceCurrency,
+    branches: rpBranches(),
+    rulesets: config.repriceRulesets || [],
+    activeRuleset: config.repriceActiveRuleset || '',
   });
-  const rpChanged = () => { rpSyncVisibility(); rpRenderExample(); rpSave(); };
+  // Typing in a number field must not rebuild the row under the cursor - that loses focus
+  // and the caret on every keystroke. Values that only change a number save without a
+  // re-render; anything that changes the SHAPE of the list re-renders.
+  const rpSaveOnly = () => { rpRenderExample(); rpSave(); };
+  const rpChanged = () => { rpRenderBranches(); rpRenderExample(); rpSave(); };
 
-  const rpNum = (el, key) => {
-    if (!el) return;
-    el.addEventListener('input', () => {
-      const n = Number(el.value);
-      config[key] = Number.isFinite(n) && n >= 0 ? n : 0;
-      rpChanged();
+  if (rpEls.addBranch) rpEls.addBranch.addEventListener('click', () => {
+    const list = rpBranches();
+    // inserted ABOVE the catch-all, because a condition placed after it could never run
+    list.splice(Math.max(0, list.length - 1), 0, {
+      when: { type: 'currency', is: (rpCurrencyList[0] && rpCurrencyList[0].family) || 'divine' },
+      action: { combine: 'smaller', rules: [
+        { op: 'subtract', value: 10, mode: 'percent' },
+        { op: 'subtract', value: 10, mode: 'flat' },
+      ] },
     });
-  };
-  const rpSel = (el, key) => {
-    if (!el) return;
-    el.addEventListener('change', () => { config[key] = el.value; rpChanged(); });
-  };
-  rpSel(rpEls.combine, 'repriceCombine');
-  rpSel(rpEls.op, 'repriceOp'); rpSel(rpEls.mode, 'repriceMode');
-  rpSel(rpEls.op2, 'repriceOp2'); rpSel(rpEls.mode2, 'repriceMode2');
-  rpNum(rpEls.value, 'repriceValue'); rpNum(rpEls.value2, 'repriceValue2');
-  rpNum(rpEls.threshold, 'repriceThreshold');
-  rpSel(rpEls.currency, 'repriceCurrency');
+    rpChanged();
+  });
+
+  // ---------- saved rulesets ----------
+  function rpRulesets() {
+    if (!Array.isArray(config.repriceRulesets)) config.repriceRulesets = [];
+    return config.repriceRulesets;
+  }
+
+  function rpRenderRulesets() {
+    const sel = rpEls.ruleset;
+    if (!sel) return;
+    const sets = rpRulesets();
+    const active = config.repriceActiveRuleset || '';
+    sel.innerHTML = '';
+    sel.appendChild(rpOpt('', t('ui.settings.reprice.ruleset_unsaved')));
+    for (const r of sets) sel.appendChild(rpOpt(r.name, r.name));
+    sel.value = sets.some((r) => r.name === active) ? active : '';
+    if (rpEls.rulesetDelete) rpEls.rulesetDelete.classList.toggle('hidden', !sel.value);
+    if (rpEls.rulesetName && sel.value) rpEls.rulesetName.value = sel.value;
+  }
+
+  if (rpEls.ruleset) rpEls.ruleset.addEventListener('change', () => {
+    const pick = rpEls.ruleset.value;
+    const found = rpRulesets().find((r) => r.name === pick);
+    config.repriceActiveRuleset = pick;
+    // Loading COPIES the saved lines in. Editing afterwards must not quietly rewrite the
+    // saved set - that only happens on an explicit Save.
+    if (found) config.repriceBranches = JSON.parse(JSON.stringify(found.branches));
+    rpRenderRulesets(); rpChanged();
+  });
+
+  if (rpEls.rulesetSave) rpEls.rulesetSave.addEventListener('click', () => {
+    const name = ((rpEls.rulesetName && rpEls.rulesetName.value) || '').trim();
+    if (!name) { if (rpEls.rulesetName) rpEls.rulesetName.focus(); return; }
+    const sets = rpRulesets();
+    const at = sets.findIndex((r) => r.name.toLowerCase() === name.toLowerCase());
+    const entry = { name, branches: JSON.parse(JSON.stringify(rpBranches())) };
+    if (at >= 0) sets[at] = entry; else sets.push(entry);
+    config.repriceActiveRuleset = name;
+    rpRenderRulesets(); rpSave();
+  });
+
+  if (rpEls.rulesetDelete) rpEls.rulesetDelete.addEventListener('click', () => {
+    const pick = rpEls.ruleset && rpEls.ruleset.value;
+    if (!pick) return;
+    config.repriceRulesets = rpRulesets().filter((r) => r.name !== pick);
+    config.repriceActiveRuleset = '';
+    // the lines stay loaded - deleting the bookmark should not change what is in effect
+    rpRenderRulesets(); rpSave();
+  });
 
   // paint the controls from whatever was saved
   function rpInit() {
-    // Seed the defaults into config FIRST. They used to live only in the HTML value=
-    // attributes, so a fresh install had repriceValue undefined, fromConfig() produced
-    // NaN, and the worked example read "100 becomes 100" - the rule silently doing
-    // nothing while the controls showed numbers.
-    const dflt = {
-      repriceCombine: 'single', repriceThreshold: 20, repriceCurrency: 'divine',
-      repriceOp: 'subtract', repriceValue: 10, repriceMode: 'percent',
-      repriceOp2: 'subtract', repriceValue2: 1, repriceMode2: 'flat',
-    };
-    let seeded = false;
-    for (const k of Object.keys(dflt)) if (config[k] == null) { config[k] = dflt[k]; seeded = true; }
-    // and PERSIST them. Seeding only the renderer's copy is what made the rule appear to
-    // do nothing: main had no values, so it applied the rule to undefined and handed the
-    // price straight back.
-    if (seeded) setTimeout(() => rpSave(), 0);
-    const set = (el, v) => { if (el && v != null) el.value = v; };
-    set(rpEls.combine, config.repriceCombine || 'single');
-    set(rpEls.op, config.repriceOp || 'subtract'); set(rpEls.mode, config.repriceMode || 'percent');
-    set(rpEls.value, config.repriceValue != null ? config.repriceValue : 10);
-    set(rpEls.op2, config.repriceOp2 || 'subtract'); set(rpEls.mode2, config.repriceMode2 || 'flat');
-    set(rpEls.value2, config.repriceValue2 != null ? config.repriceValue2 : 1);
-    set(rpEls.threshold, config.repriceThreshold != null ? config.repriceThreshold : 20);
-    rpSyncVisibility(); rpRenderExample(); rpRenderCal();
+    // Migrate the old flat keys into a branch list, once, and PERSIST it. Seeding only the
+    // renderer's copy is what made the rule appear to do nothing once before: main had no
+    // values, so it applied the rule to undefined and handed the price straight back.
+    const had = Array.isArray(config.repriceBranches) && config.repriceBranches.length;
+    config.repriceBranches = window.RepriceRules.fromConfig(config).branches;
+    if (!had) setTimeout(() => rpSave(), 0);
+    rpRenderRulesets(); rpRenderBranches(); rpRenderExample(); rpRenderCal();
     rpFillCurrencies();
   }
+
   // Options come from the baked icon set, so the list is exactly what the matcher can
-  // recognise - never a currency that would make the rule unreachable.
+  // recognise - never a currency that would make a branch unreachable.
   async function rpFillCurrencies() {
-    const el = rpEls.currency;
-    if (!el || !window.api.repriceCurrencies) return;
-    let list = [];
-    try { list = await window.api.repriceCurrencies(); } catch { return; }
-    if (!list.length) return;
-    const want = config.repriceCurrency || 'divine';
-    el.innerHTML = '';
-    for (const c of list) {
-      const o = document.createElement('option');
-      o.value = c.family; o.textContent = window.gameName ? window.gameName(c.name) : c.name;
-      el.appendChild(o);
-    }
-    // the saved family may not be in this build's icon set; fall back to the first
-    el.value = list.some((c) => c.family === want) ? want : list[0].family;
-    if (el.value !== config.repriceCurrency) { config.repriceCurrency = el.value; rpSave(); }
+    if (!window.api.repriceCurrencies) return;
+    try { rpCurrencyList = await window.api.repriceCurrencies(); } catch { return; }
+    if (rpCurrencyList.length) rpRenderBranches();
   }
 
   rpInit();

@@ -1773,7 +1773,18 @@ footer {
 .rp-adjust input { width: 84px; flex: 0 0 auto; text-align: right; }
 .rp-adjust + .rp-adjust { margin-top: 6px; }
 .rp-lead { color: var(--tx-dim); font-size: 11px; flex: 0 0 auto; }
-#reprice-threshold { width: 84px; }
+/* One branch of the rule list. Rules are indented under their condition so the shape of
+   the list - test, then what it does - is readable without reading the words, and the
+   catch-all is marked so the guaranteed line is obvious at a glance. */
+.rp-branches { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.rp-branch { border-left: 2px solid var(--bd-16); padding-left: 10px; }
+.rp-branch-last { border-left-color: var(--ok-tx2); }
+.rp-branch .rp-branch-rule { margin-left: 16px; }
+.rp-branch-when select:first-child { font-weight: 600; }
+.rp-branch-del { margin-left: auto; flex: 0 0 auto; background: none; border: none;
+  color: var(--tx-dim); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 6px; }
+.rp-branch-del:hover { color: var(--red-hi); }
+#reprice-ruleset-name { width: 130px; flex: 0 0 auto; }
 .rp-examples { margin-top: 6px; }
 .rp-examples .set-sub { display: block; }
 /* What the reader actually sees. Being told the region is "set" proves nothing - a
