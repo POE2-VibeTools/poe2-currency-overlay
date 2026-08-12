@@ -1529,7 +1529,12 @@ async function primeCapture() {
 async function grabScreen(cw, ch, withDataUrl) {
   if (process.platform === 'win32') {
     const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: cw, height: ch } });
-    const src = sources.find((s) => s.id.startsWith('screen')) || sources[0];
+    // Same primary-display pin as the reprice stream. Both paths have to be looking at
+    // the same screen or a region measured by one means nothing to the other.
+    const primaryId = String(screen.getPrimaryDisplay().id);
+    const src = sources.find((s) => s.display_id === primaryId)
+      || sources.find((s) => s.id.startsWith('screen'))
+      || sources[0];
     if (!src) return null;
     const img = src.thumbnail;
     const size = img.getSize();
@@ -2934,8 +2939,21 @@ if (!gotLock) {
         session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
           try {
             const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } });
-            const src = sources.find((x) => x.id.startsWith('screen')) || sources[0];
+            // Pin to the PRIMARY display by id. getSources() promises no ordering, so
+            // taking the first screen picked an arbitrary monitor that could differ from
+            // one launch to the next. Calibration always measures the primary display, so
+            // when the two disagreed every saved region pointed at the wrong part of the
+            // screen - consistently wrong, restored by recalibrating, broken again by the
+            // next restart, and with nothing the user did to cause it.
+            const primaryId = String(screen.getPrimaryDisplay().id);
+            const src = sources.find((x) => x.display_id === primaryId)
+              || sources.find((x) => x.id.startsWith('screen'))
+              || sources[0];
             if (!src) return callback({});
+            if (src.display_id !== primaryId) {
+              console.error('capture: no source for primary display ' + primaryId
+                + ' (have ' + sources.map((s) => s.display_id).join(',') + ') - using ' + src.display_id);
+            }
             callback({ video: src, audio: false });
           } catch { callback({}); }
         }, { useSystemPicker: false });
