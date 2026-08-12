@@ -1989,6 +1989,11 @@ async function initSettings() {
     const list = rpBranches();
     host.innerHTML = '';
 
+    // "Otherwise" only means something when there is a something-else above it. On a list
+    // of one it is the whole rule, so showing a locked "Otherwise" made the single default
+    // rule read as a leftover branch and the list look like it could not grow.
+    const sole = list.length === 1;
+
     list.forEach((br, i) => {
       const last = i === list.length - 1;
       const row = document.createElement('div');
@@ -2013,7 +2018,7 @@ async function initSettings() {
           : { type: 'currency', is: (rpCurrencyList[0] && rpCurrencyList[0].family) || 'divine' };
         rpChanged();
       });
-      when.appendChild(wType);
+      if (!sole) when.appendChild(wType);
 
       if (!last && br.when && br.when.type === 'currency') {
         const sel = document.createElement('select');
@@ -2039,7 +2044,7 @@ async function initSettings() {
         del.addEventListener('click', () => { list.splice(i, 1); rpChanged(); });
         when.appendChild(del);
       }
-      row.appendChild(when);
+      if (when.childElementCount) row.appendChild(when);
 
       const act = br.action || (br.action = { combine: 'single', rules: [{ op: 'subtract', value: 10, mode: 'percent' }] });
       if (!Array.isArray(act.rules) || !act.rules.length) {
@@ -2049,9 +2054,13 @@ async function initSettings() {
       const actRow = document.createElement('div');
       actRow.className = 'rp-adjust';
       const cSel = document.createElement('select');
-      cSel.appendChild(rpOpt('single', t('ui.settings.reprice.act_single')));
-      cSel.appendChild(rpOpt('smaller', t('ui.settings.reprice.act_smaller')));
-      cSel.appendChild(rpOpt('bigger', t('ui.settings.reprice.act_bigger')));
+      // Inside a branch these read as the second half of a sentence ("if X ... then Y").
+      // On a lone rule there is no first half, so use the standalone wording - which is
+      // also the wording that already existed and is already translated.
+      const actKey = (base, standalone) => t(sole ? standalone : base);
+      cSel.appendChild(rpOpt('single', actKey('ui.settings.reprice.act_single', 'ui.settings.reprice.combine_single')));
+      cSel.appendChild(rpOpt('smaller', actKey('ui.settings.reprice.act_smaller', 'ui.settings.reprice.combine_smaller')));
+      cSel.appendChild(rpOpt('bigger', actKey('ui.settings.reprice.act_bigger', 'ui.settings.reprice.combine_bigger')));
       cSel.value = act.combine || 'single';
       cSel.addEventListener('change', () => {
         act.combine = cSel.value;
