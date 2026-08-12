@@ -304,10 +304,17 @@
       const bx = fieldBox(sub, rw, rh, probe);
       if (bx) { b = cand; boxLocal = bx; break; }
     }
-    // Nothing verified. Fall back to the best-ranked candidate rather than refusing
-    // outright - a dialog drawn in some way this has not seen should still be readable,
-    // and the digit reader is the second opinion.
-    if (!b) b = hits[0];
+    // Nothing verified: there is no price field here. Say so.
+    //
+    // This used to fall back to the best-ranked candidate, on the reasoning that a dialog
+    // drawn some unfamiliar way should still be readable. In practice the fallback fired
+    // constantly for the opposite reason: reads are polled, most frames have no dialog on
+    // them at all, and every one of those frames handed the reader a patch of scenery. It
+    // read noise as 111111 often enough to land on the clipboard.
+    //
+    // The polling loop will simply look again next frame, and a real dialog verifies -
+    // eleven out of eleven on every capture we have.
+    if (!b) return null;
     // undo the dilation's outward growth, and put it back in full-frame coordinates
     const block = { x: b.x + rx + rad, y: b.y + ry + rad, w: Math.max(1, b.w - rad * 2), h: Math.max(1, b.h - rad * 2) };
     // A STRIP the icon is somewhere inside, not a box the icon is assumed to fill.
