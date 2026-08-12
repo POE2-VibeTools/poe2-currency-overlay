@@ -293,8 +293,21 @@ function create(deps) {
         if (ic) ctx.currency = await deps.readCurrency(ic, auto ? auto.iconAlt : null);
       }
       const out = RepriceRules.apply(base, RepriceRules.fromConfig(cfg()), ctx);
-      if (out == null) { say(`read ${base} but the rule produced nothing`); return; }
-      if (out === base) { say(`read ${base}, rule leaves it unchanged - clipboard untouched`); return; }
+      console.error(`[reprice] read ${base} currency=${ctx.currency || 'none'} -> ${out}`);
+      if (out == null) {
+        say(`read ${base} but the rule produced nothing`);
+        console.error('[reprice] rule produced nothing');
+        // Still report it: a badge frozen on an older result looks like the click did
+        // nothing at all, which is indistinguishable from the feature being broken.
+        try { if (deps.onRead) deps.onRead(null); } catch { }
+        return;
+      }
+      if (out === base) {
+        say(`read ${base}, rule leaves it unchanged - clipboard untouched`);
+        console.error('[reprice] rule left it unchanged');
+        try { if (deps.onRead) deps.onRead({ base, result: out, unchanged: true }); } catch { }
+        return;
+      }
       clipboard.writeText(String(out));
       say(`read ${base}${ctx.currency ? ' ' + ctx.currency : ''} -> ${out} (after ${wait}ms)`);
       const info = { base, result: out, currency: ctx.currency || null };

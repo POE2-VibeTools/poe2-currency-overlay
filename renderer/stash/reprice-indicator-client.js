@@ -16,7 +16,13 @@
     // that is backwards: the number is the receipt for what went on your clipboard, and
     // the clipboard does not expire either. Glancing up after pasting and finding the
     // badge already blank tells you nothing about what you just pasted.
-    if (s.read) lastEl.textContent = s.read.base + ' → ' + s.read.result;
+    // Every outcome updates the badge, including "nothing changed". A badge frozen on an
+    // older result is worse than an unhelpful one: it looks like the click never happened.
+    if (s.read) {
+      lastEl.textContent = s.read.unchanged
+        ? s.read.base + ' → unchanged'
+        : s.read.base + ' → ' + s.read.result;
+    }
     if (s.miss) lastEl.textContent = s.miss;
     report();
   });

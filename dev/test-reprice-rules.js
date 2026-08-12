@@ -134,6 +134,34 @@ eq(R.apply(245, { combine: 'single', rules: [{ op: 'add', value: 10, mode: 'perc
 eq(R.apply(245, { combine: 'smaller', rules: [pctR(10, 'down'), { op: 'subtract', value: 30, mode: 'flat' }] }),
   220, 'smaller change wins after rounding');
 
+console.log('but at least - a floor on how much the price moves');
+// The case that needed it: a cap and a percentage disagree at the bottom of the range.
+// "10% off, never more than 10" is right at 240 and does nothing at 9.
+const capped = { branches: [
+  br({ type: 'currency', is: 'divine' }, { combine: 'smaller', least: 1, rules: [
+    { op: 'subtract', value: 10, mode: 'percent', round: 'up' },
+    { op: 'subtract', value: 10, mode: 'flat', round: 'down' }] }),
+  br({ type: 'always' }, { combine: 'bigger', rules: [
+    { op: 'subtract', value: 10, mode: 'percent', round: 'up' },
+    { op: 'subtract', value: 1, mode: 'flat', round: 'down' }] }),
+] };
+eq(R.apply(240, capped, { currency: 'divine' }), 230, 'divine: the cap holds at the top');
+eq(R.apply(90, capped, { currency: 'divine' }), 81, 'divine: percent while it is under the cap');
+eq(R.apply(21, capped, { currency: 'divine' }), 19, 'divine 21');
+eq(R.apply(19, capped, { currency: 'divine' }), 18, 'divine 19');
+eq(R.apply(9, capped, { currency: 'divine' }), 8, 'divine 9 - floor rescues it from doing nothing');
+eq(R.apply(5, capped, { currency: 'divine' }), 4, 'divine 5');
+eq(R.apply(240, capped, { currency: 'chaos' }), 216, 'chaos is uncapped');
+// the floor pushes the way the rule was already going
+const upFloor = { branches: [br({ type: 'always' }, { combine: 'single', least: 2, rules: [
+  { op: 'add', value: 1, mode: 'percent', round: 'down' }] })] };
+eq(R.apply(50, upFloor), 52, 'a rule that adds is floored upward, not downward');
+// no floor stated means no floor
+const noFloor = { branches: [br({ type: 'always' }, { combine: 'smaller', rules: [
+  { op: 'subtract', value: 10, mode: 'percent', round: 'up' },
+  { op: 'subtract', value: 10, mode: 'flat', round: 'down' }] })] };
+eq(R.apply(9, noFloor), 9, 'without a floor it still does nothing at 9');
+
 console.log('worked examples shown in settings');
 const ex = R.examples({ combine: 'bigger', rules: [pct(10), flat(2)] });
 eq(ex.length, 2, 'two examples');

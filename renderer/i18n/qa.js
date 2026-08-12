@@ -1022,6 +1022,8 @@ window.I18N_CATALOGS.qa = {
   "ui.settings.reprice.icon_no_match": "[[ñó ćúrréñćý réćógñíšéd íñ thát bóx ············]]",
   "ui.settings.reprice.icon_one": "[[réádš áš {name} ···]]",
   "ui.settings.reprice.icon_tooltip": "[[Óptíóñál. Drág á bóx áróúñd thé ćúrréñćý íćóñ ñéxt tó thé príćé, šó rúléš ćáñ téll óñé ćúrréñćý fróm áñóthér. Léávé ít úñšét íf ýóúr rúlé tréátš évérý ćúrréñćý thé šámé. ····························································]]",
+  "ui.settings.reprice.least_lead": "[[bút át léášt ·····]]",
+  "ui.settings.reprice.least_off": "[[óff]]",
   "ui.settings.reprice.mode_flat": "[[flát ··]]",
   "ui.settings.reprice.mode_percent": "[[pérćéñt ···]]",
   "ui.settings.reprice.op_add": "[[Ádd]]",

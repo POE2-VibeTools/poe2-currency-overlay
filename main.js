@@ -2262,7 +2262,16 @@ function sanitiseBranches(input) {
     if (w.type === 'currency' && knownCurrency(w.is)) when = { type: 'currency', is: w.is };
     else if (w.type === 'price>=') when = { type: 'price>=', at: num(w.at, 0) };
     else when = { type: 'always' };
-    out.push({ when, action: { combine, rules: combine === 'single' ? [rules[0]] : rules } });
+    const least = num(act.least, 0);
+    out.push({
+      when,
+      action: {
+        combine,
+        rules: combine === 'single' ? [rules[0]] : rules,
+        // 0 means no floor; the UI leaves the box empty for that
+        least: least > 0 ? least : 0,
+      },
+    });
   }
   const R = require('./renderer/reprice-rules.js');
   return R.normaliseBranches(out);

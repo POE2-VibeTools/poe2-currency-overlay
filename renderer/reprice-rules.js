@@ -67,6 +67,15 @@
       const da = Math.abs(base - ra), db = Math.abs(base - rb);
       return node.pick === 'smaller' ? (da <= db ? ra : rb) : (da >= db ? ra : rb);
     }
+    if (node.atLeast) {
+      const r = evaluate(base, node.a, ctx);
+      // Which way the rule was already moving decides which way the floor pushes. A rule
+      // that adds does not suddenly subtract because its increase was too small.
+      if (r > base) return Math.max(r, base + node.atLeast);
+      if (r < base) return Math.min(r, base - node.atLeast);
+      // It did nothing at all - fall back to the direction the rule asks for.
+      return firstOp(node.a) === 'add' ? base + node.atLeast : base - node.atLeast;
+    }
     if (node.if === 'price>=') {
       const at = Number(node.at);
       if (!Number.isFinite(at)) return evaluate(base, node.a, ctx);
@@ -79,6 +88,13 @@
       return evaluate(base, cur && cur === String(node.is || '').toLowerCase() ? node.a : node.b, ctx);
     }
     return applyRule(base, node); // leaf
+  }
+
+  // Which direction a subtree moves the price, for the case where it moved it nowhere.
+  function firstOp(node) {
+    if (!node) return 'subtract';
+    if (node.op) return node.op;
+    return firstOp(node.a);
   }
 
   function apply(base, cfg, ctx) {
@@ -127,8 +143,16 @@
     if (!a) return null;
     const b = action.rules[1];
     const combine = (action && action.combine) || 'single';
-    if (combine === 'single' || !b) return a;
-    return { pick: combine === 'smaller' ? 'smaller' : 'bigger', a, b };
+    const node = (combine === 'single' || !b) ? a : { pick: combine === 'smaller' ? 'smaller' : 'bigger', a, b };
+    // "but at least N" - a floor on how much the price MOVES, not on the price.
+    //
+    // Needed because a cap and a percentage fight each other at the bottom of the range:
+    // "10% off, never more than 10" is right at 240 and does nothing at all at 9, where
+    // 10% is under a whole unit. Without this the only way to express it is a condition on
+    // the currency AND the price at once, which a one-condition-per-line list cannot do.
+    const least = Number(action && action.least);
+    if (Number.isFinite(least) && least > 0) return { atLeast: least, a: node };
+    return node;
   }
 
   function treeFromBranches(branches) {

@@ -2120,6 +2120,29 @@ async function initSettings() {
         row.appendChild(rr);
       }
 
+      // "but at least N" - a floor on how much the price MOVES. Optional, and empty means
+      // no floor. It exists because a cap and a percentage disagree at the bottom of the
+      // range: "10% off, never more than 10" is right at 240 and does nothing at 9.
+      const leastRow = document.createElement('div');
+      leastRow.className = 'rp-adjust rp-branch-rule';
+      const leastLab = document.createElement('span');
+      leastLab.className = 'rp-lead';
+      leastLab.textContent = t('ui.settings.reprice.least_lead');
+      const leastIn = document.createElement('input');
+      leastIn.type = 'number';
+      leastIn.min = '0';
+      leastIn.step = 'any';
+      leastIn.placeholder = t('ui.settings.reprice.least_off');
+      leastIn.value = act.least > 0 ? act.least : '';
+      leastIn.addEventListener('input', () => {
+        const n = Number(leastIn.value);
+        act.least = Number.isFinite(n) && n > 0 ? n : 0;
+        rpSaveOnly();
+      });
+      leastRow.appendChild(leastLab);
+      leastRow.appendChild(leastIn);
+      row.appendChild(leastRow);
+
       host.appendChild(row);
     });
 

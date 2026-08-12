@@ -1022,6 +1022,8 @@ window.I18N_CATALOGS.en = {
   "ui.settings.reprice.icon_no_match": "no currency recognised in that box",
   "ui.settings.reprice.icon_one": "reads as {name}",
   "ui.settings.reprice.icon_tooltip": "Optional. Drag a box around the currency icon next to the price, so rules can tell one currency from another. Leave it unset if your rule treats every currency the same.",
+  "ui.settings.reprice.least_lead": "but at least",
+  "ui.settings.reprice.least_off": "off",
   "ui.settings.reprice.mode_flat": "flat",
   "ui.settings.reprice.mode_percent": "percent",
   "ui.settings.reprice.op_add": "Add",
