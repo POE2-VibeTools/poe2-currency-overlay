@@ -31,6 +31,9 @@ const SOURCES = [
   ['digits-1440-12345.png', '12345'],
   ['digits-1440-6789.png', '6789'],
   ['digits-1440-0.png', '0'],
+  ['digits-1600-12345.png', '12345'],
+  ['digits-1600-6789.png', '6789'],
+  ['digits-1600-0.png', '0'],
 ];
 
 function load(file) {

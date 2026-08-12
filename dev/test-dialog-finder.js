@@ -51,6 +51,11 @@ const EXPECT = {
   'digits-1440-12345.png': { value: 12345, currency: 'divine' },
   'digits-1440-6789.png': { value: 6789, currency: 'divine' },
   "digits-1440-0.png": { value: 0, currency: "divine" },
+  // same three prices again at 1600x1200 - a different game resolution that renders the
+  // UI at the same physical size, so it exercises the same template set from new pixels
+  'digits-1600-12345.png': { value: 12345, currency: 'divine' },
+  'digits-1600-6789.png': { value: 6789, currency: 'divine' },
+  'digits-1600-0.png': { value: 0, currency: 'divine' },
   'short.png': null,
 };
 
