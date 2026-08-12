@@ -102,7 +102,18 @@ function create(deps) {
             const go = () => { if (!done) { done = true; resolve(); } };
             if (__rpVideo.requestVideoFrameCallback) __rpVideo.requestVideoFrameCallback(() => go());
             else requestAnimationFrame(() => go());
-            setTimeout(go, 250); // never hang on a stream that has stopped producing
+            // Do not wait a quarter second for a frame that may never be announced.
+            //
+            // requestVideoFrameCallback fires when the capture stream delivers, but while
+            // the game is fullscreen and this window is occluded it can go quiet - and
+            // this timeout then became the cost of EVERY look. At 250ms only about a
+            // dozen looks fit in the whole attempt, so reads gave up before the dialog was
+            // drawn and only landed if the user spammed the button.
+            //
+            // 45ms is longer than a frame at 60fps, so a live stream still delivers a
+            // fresh one; a quiet stream just re-reads the latest, which is what we want
+            // anyway.
+            setTimeout(go, 45);
           });
         };
         window.__rpGrab = async function (rect) {
@@ -287,8 +298,13 @@ function create(deps) {
       try { if (deps.onRead) deps.onRead(info); } catch { }
       return;
     }
-    say(`no number found (${looks} looks over ${Date.now() - t0}ms`
+    const spent = Date.now() - t0;
+    say(`no number found (${looks} looks over ${spent}ms`
       + (region && region.w > 0 ? '' : ', no calibrated fallback') + ')');
+    // Loud: how many looks actually fit is the number that says whether the attempt had a
+    // fair chance of seeing the dialog at all.
+    console.error(`[reprice] no number: ${looks} looks over ${spent}ms `
+      + `(${Math.round(spent / Math.max(1, looks))}ms per look)`);
     try { if (deps.onRead) deps.onRead(null); } catch { }
   }
 
