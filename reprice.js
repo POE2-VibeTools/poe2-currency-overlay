@@ -29,7 +29,12 @@ const RepriceRules = require('./renderer/reprice-rules.js');
 // So: poll. Stop the instant digits are read, which is what makes this cheap - a fast
 // setup exits on the first look and never pays for the rest.
 const POLL_EVERY_MS = 40;   // a frame at a time, not a paint at a time
-const GIVE_UP_AFTER_MS = 1200;
+// Long enough for the dialog to actually be drawn. Each look now scans for the field's
+// border rather than glancing at a small saved box, so it costs more and fewer of them
+// fit in the same window - reads started giving up before the dialog appeared, and only
+// landed if the user spammed the right button. This does NOT slow a successful read: the
+// loop stops the instant it finds a number.
+const GIVE_UP_AFTER_MS = 3000;
 
 function create(deps) {
   // deps: { getWin, getConfig, saveConfig, log, getHook }
