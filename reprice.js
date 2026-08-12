@@ -213,7 +213,11 @@ function create(deps) {
       }
       if (!shot) continue;
 
-      const base = deps.readPrice ? await deps.readPrice(shot, { at: wait, auto: usedAuto }) : null;
+      // The measured block height travels with the read so main can tell whether the
+      // glyphs on screen are a size it has templates for.
+      const base = deps.readPrice
+        ? await deps.readPrice(shot, { at: wait, auto: usedAuto, blockH: auto && auto.block ? auto.block.h : 0 })
+        : null;
       if (base == null) continue;
 
       const ctx = {};

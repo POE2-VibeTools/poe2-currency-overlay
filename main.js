@@ -1910,9 +1910,40 @@ function repriceTemplates() {
 // cut scales, and reading is cheap - a handful of glyphs against ten templates. Sets that
 // disagree do not average: the weakest glyph in a parse decides its score, so a set that
 // half-fits loses to one that fits.
-function repriceReadDigits(shot, minScore) {
+// How far the glyphs on screen may be from a scale we actually cut templates at before
+// the read stops being trusted.
+// Tighter than the gap that is known to break a read. The two scales we have cut are
+// 10.5% apart (block h19 against h21) and reading across that gap produces confident
+// nonsense - 12345 as 888 - so anything looser than that would wave through exactly the
+// case this exists to catch. 6% is about a pixel either way on a 20px block, which is
+// measurement noise rather than a different size.
+const RP_SCALE_TOL = 0.06;
+// An unrecognised size does NOT block the read.
+//
+// Refusing was the first instinct and it is the wrong trade. Nobody can capture every
+// resolution, so blocking would turn "we have not tested your monitor" into "the feature
+// does not work" for people we never hear from. And the read is not silent - the badge
+// puts the number on screen before anything is pasted - so a bad read is visible rather
+// than a surprise in someone's listing.
+//
+// What the flag is for instead: knowing which crops are worth collecting, the same way
+// the Net Worth panel samples grew that reader's corpus.
+
+function repriceReadDigits(shot, minScore, blockH) {
   const sets = repriceTemplates();
   if (!sets) return { value: null, text: '', scores: [], set: null };
+
+  // Is the price field on screen the size of anything we have templates for?
+  //
+  // This matters more than it looks. At an uncovered scale the reader does not fail, it
+  // succeeds wrongly - the 1080p set read a windowed "12345" as a confident "888". There
+  // are more resolutions in the world than anyone can sit down and capture, so the honest
+  // position is that an unrecognised size is a size we cannot read, and a refusal is worth
+  // far more than a plausible number pasted into someone's listing.
+  let known = true;
+  if (blockH > 0) {
+    known = sets.some((s) => s.blockH > 0 && Math.abs(s.blockH - blockH) / blockH <= RP_SCALE_TOL);
+  }
   let best = { value: null, text: '', scores: [], set: null }, bestScore = -1;
   const RR = require('./renderer/stash/reprice-reader.js');
   for (const s of sets) {
@@ -1921,6 +1952,13 @@ function repriceReadDigits(shot, minScore) {
     const weakest = Math.min(...r.scores);
     if (weakest > bestScore) { bestScore = weakest; best = Object.assign({}, r, { set: s.blockH }); }
   }
+  if (!known) {
+    logToggle('reprice', `block h${blockH} matches no cut scale `
+      + `(${sets.map((s) => 'h' + s.blockH).join(',')}) - read `
+      + (best.value == null ? 'nothing' : best.value + ' at ' + bestScore.toFixed(2))
+      + ' - a capture at this size would be worth collecting');
+  }
+  best.offScale = !known;
   return best;
 }
 
@@ -1967,7 +2005,7 @@ const reprice = repriceMod.create({
     try {
       const tpl = repriceTemplates();
       if (!tpl) { logToggle('reprice', 'no digit templates installed'); return null; }
-      const r = repriceReadDigits(shot, 0.55);
+      const r = repriceReadDigits(shot, 0.55, meta && meta.blockH);
       // One line per successful read only. This runs on every poll of every right-click,
       // so anything heavier than a string belongs in a test harness, not here.
       if (r.value != null) logToggle('reprice', `read ${r.value} at ${(meta && meta.at) || 0}ms (set h${r.set})`);
