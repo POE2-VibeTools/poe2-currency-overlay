@@ -110,7 +110,7 @@ app.whenReady().then(() => {
     // the digits sit ON the block, so the block IS the number's box
     const numShot = cut(im, hit.block, 3);
     const r = readDigits({ data: numShot.data, w: numShot.w, h: numShot.h });
-    const iconShot = cut(im, hit.icon, 0);
+    const iconShot = cut(im, hit.strip || hit.icon, 0);
     const m = CR.identify({ data: iconShot.data, w: iconShot.w, h: iconShot.h }, bank);
 
     const okNum = r.value === want.value;

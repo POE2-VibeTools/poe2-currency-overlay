@@ -19,6 +19,12 @@ const CASES = [
   ['single-digit.png', 'divine'],
   ['res1600-tall-single.png', 'divine'],
   ['res1440-offcenter.png', 'divine'],
+  ['digits-1440-12345.png', 'divine'],
+  ['digits-1440-6789.png', 'divine'],
+  ['digits-1440-0.png', 'divine'],
+  ['digits-1600-12345.png', 'divine'],
+  ['digits-1600-6789.png', 'divine'],
+  ['digits-1600-0.png', 'divine'],
 ];
 
 function load(file) {
@@ -48,8 +54,8 @@ app.whenReady().then(() => {
   for (const fr of frames) fr.hit = F.find(fr.im.rgba, fr.im.w, fr.im.h);
 
   const results = [];
-  for (let cx = 2.5; cx <= 3.4; cx += 0.15) {
-    for (let size = 0.9; size <= 1.7; size += 0.1) {
+  for (let cx = 2.7; cx <= 3.3; cx += 0.06) {
+    for (let size = 0.8; size <= 1.4; size += 0.05) {
       let ok = 0; let worst = 9; const detail = [];
       for (const fr of frames) {
         if (!fr.hit) continue;

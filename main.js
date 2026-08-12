@@ -2126,6 +2126,22 @@ const reprice = repriceMod.create({
       if (!bank) return null;
       const CR = require('./renderer/stash/currency-reader.js');
       const m = CR.identify(shot, bank);
+      // ===== ICONDIAG - dev builds only, see READDIAG ================================
+      // The Test read button had diagnostics and the live path did not, so a currency
+      // that failed here left nothing behind and the rule silently took its else branch.
+      if (!app.isPackaged) try {
+        const dir = path.join(app.getPath('userData'), 'read-diag');
+        fs.mkdirSync(dir, { recursive: true });
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        if (shot.url) {
+          fs.writeFileSync(path.join(dir, stamp + '_icon-' + (m.family || 'NONE') + '.png'),
+            Buffer.from(String(shot.url).split(',')[1], 'base64'));
+        }
+        console.log('[icon] ' + shot.w + 'x' + shot.h + ' -> ' + (m.family || 'NO MATCH')
+          + ' score ' + m.score.toFixed(3) + ' margin ' + m.margin.toFixed(3)
+          + '  top: ' + m.all.map((a) => a.family + ' ' + a.score.toFixed(2)).join(', '));
+      } catch { }
+      // ===============================================================================
       if (!m.family) return null;
       const name = CR.resolveTier(m.members, null);
       logToggle('reprice', 'currency: ' + (name || m.family) + ' (' + m.score.toFixed(2) + ')');

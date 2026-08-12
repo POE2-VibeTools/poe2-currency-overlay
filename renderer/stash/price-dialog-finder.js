@@ -148,17 +148,35 @@
     const b = hits[0];
     // undo the dilation's outward growth, and put it back in full-frame coordinates
     const block = { x: b.x + rx + rad, y: b.y + ry + rad, w: Math.max(1, b.w - rad * 2), h: Math.max(1, b.h - rad * 2) };
-    // Centred on the icon and deliberately generous: the matcher trims the capture to the
-    // artwork itself, so extra background costs nothing while clipping the orb costs the
-    // match.
-    const size = Math.round(ICON.size * block.h);
-    const icon = {
-      x: Math.round(block.x + ICON.cx * block.h - size / 2),
-      y: Math.round(block.y + block.h / 2 - size / 2),
-      w: size,
-      h: size,
+    // A STRIP the icon is somewhere inside, not a box the icon is assumed to fill.
+    //
+    // A single box positioned by a fixed ratio was tuned at two block heights and missed
+    // at a third: at h20 it clipped the orb's right edge and left dead space on the left,
+    // and the clipped shape matched Mirror of Kalandra at 0.42 with Divine third. Wrong,
+    // and confident. Handing the matcher a strip and letting it find the icon inside is
+    // the same answer the digits needed - search, do not assume.
+    // MEASURED, not guessed. dev/measure-icon-offset.js reads the icon's actual extent
+    // off every capture: it runs from 2.68 to 3.37 block-heights right of the block's left
+    // edge, and the currency NAME starts at about 3.68. So the usable window is narrow, and
+    // the two previous attempts failed at its edges - a box sized 1.1 clipped the orb at a
+    // block height it had not been tuned at, and a wide sliding strip ran into the text.
+    const H = block.h;
+    // Confirmed twice over: measurement puts the icon at 2.68-3.37 block-heights wide
+    // 0.74, and sweeping every capture independently lands on the same place. A box only
+    // a little wider than the icon beats a generous one here, because the artwork it is
+    // compared against is trimmed to the orb - extra background is not neutral, it is
+    // noise. Weakest match across 11 captures went 0.44 -> 0.55 on this change alone.
+    const cx = 3.00, size = 0.82;   // centre and width, in block-heights
+    const sw = Math.round(size * H);
+    const strip = {
+      x: Math.max(0, Math.round(block.x + cx * H - sw / 2)),
+      y: Math.max(0, Math.round(block.y + H / 2 - sw / 2)),
+      w: sw,
+      h: sw,
     };
-    return { block, icon, candidates: hits.length };
+    // Same box under the old name, for callers that still read hit.icon.
+    const icon = { x: strip.x, y: strip.y, w: strip.w, h: strip.h };
+    return { block, icon, strip, candidates: hits.length };
   }
 
   return { find, HL, BLOCK_H, REF_H, ICON };

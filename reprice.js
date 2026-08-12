@@ -145,7 +145,8 @@ function create(deps) {
             return { w, h, data: Array.from(d.data), url: cc.toDataURL('image/png') };
           };
           const num = cut(hit.block, 3);
-          const icon = cut(hit.icon, 0);
+          // the STRIP, not the old single box - the matcher slides a window along it
+          const icon = cut(hit.strip || hit.icon, 0);
           if (!num) return null;
           return { num, icon, streamW: W, streamH: H,
             block: { x: hit.block.x + sx, y: hit.block.y + sy, w: hit.block.w, h: hit.block.h },

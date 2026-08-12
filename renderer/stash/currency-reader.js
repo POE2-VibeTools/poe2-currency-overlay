@@ -145,6 +145,22 @@
   // stay as a fallback for a crop where the brightness split does not separate cleanly.
   function crops(rgba, w, h) {
     const out = [];
+
+    // A region much wider than it is tall is a STRIP the icon sits somewhere inside,
+    // rather than a box framing it. Slide square windows along it. Positioning the icon by
+    // a fixed offset worked at the two sizes it was tuned against and clipped the orb at a
+    // third, where the clipped shape then matched the wrong currency confidently.
+    if (w > h * 1.6) {
+      for (const f of [1.0, 0.85, 0.7]) {
+        const s = Math.max(6, Math.round(h * f));
+        if (s > w) continue;
+        const step = Math.max(1, Math.round(s * 0.18));
+        const y = Math.max(0, Math.round((h - s) / 2));
+        for (let x = 0; x + s <= w; x += step) out.push({ x, y, w: s, h: s });
+      }
+      return out;
+    }
+
     const t = trim(rgba, w, h);
     if (t) {
       out.push(t);
