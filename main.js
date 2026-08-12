@@ -1790,7 +1790,8 @@ ipcMain.handle('reprice-test-icon', async () => {
   // ===== ICONDIAG-START - remove once the icon reader is trusted ==================
   // Keeps the exact crop that produced a verdict, so a miss can be tuned offline
   // instead of costing the user another round of open-the-dialog-and-click.
-  try {
+  // DEV BUILDS ONLY - see READDIAG.
+  if (!app.isPackaged) try {
     const dir = path.join(app.getPath('userData'), 'icon-diag');
     fs.mkdirSync(dir, { recursive: true });
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -1933,6 +1934,27 @@ const reprice = repriceMod.create({
       // One line per successful read only. This runs on every poll of every right-click,
       // so anything heavier than a string belongs in a test harness, not here.
       if (r.value != null) logToggle('reprice', `read ${r.value} at ${(meta && meta.at) || 0}ms`);
+      // ===== READDIAG-START - remove once the reader is trusted ======================
+      // Keeps the exact pixels behind every read, named with what was read from them. A
+      // misread cannot be reported any other way: "14 came out as 8" is not reproducible
+      // from a description, and asking for a screenshot per failure costs the user more
+      // than it costs to write a few KB here.
+      //
+      // DEV BUILDS ONLY. Nobody's installed copy should quietly fill a folder with
+      // screenshots of their trades, and that guarantee should not rest on someone
+      // remembering to delete this block before a release.
+      if (!app.isPackaged) try {
+        const dir = path.join(app.getPath('userData'), 'read-diag');
+        fs.mkdirSync(dir, { recursive: true });
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const tag = (r.value == null ? 'NONE' : 'read-' + r.value)
+          + (r.text && r.value == null ? '-saw-' + r.text.replace(/[^0-9]/g, '') : '');
+        if (shot.url) {
+          fs.writeFileSync(path.join(dir, stamp + '_' + tag + '.png'),
+            Buffer.from(String(shot.url).split(',')[1], 'base64'));
+        }
+      } catch { /* diagnostics must never break a reprice */ }
+      // ===== READDIAG-END ============================================================
       return r.value;
     } catch (err) { logToggle('reprice', 'read failed: ' + (err && err.message || err)); return null; }
   },
