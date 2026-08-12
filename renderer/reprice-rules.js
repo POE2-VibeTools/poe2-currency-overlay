@@ -80,6 +80,10 @@
     const combine = (cfg && cfg.combine) || 'single';
     if (combine === 'single' || !b) return a;
     if (combine === 'threshold') return { if: 'price>=', at: cfg.threshold, a, b };
+    // An unidentified currency takes the else branch - see evaluate(). That is why this
+    // reads "if the currency is X" and not "if it is not X": the fallback has to be the
+    // safe side, and the safe side is the branch that does not assume.
+    if (combine === 'currency') return { if: 'currency', is: cfg.currency, a, b };
     return { pick: combine === 'smaller' ? 'smaller' : 'bigger', a, b };
   }
 
@@ -96,6 +100,7 @@
     return {
       combine: c.repriceCombine || 'single',
       threshold: Number.isFinite(Number(c.repriceThreshold)) ? Number(c.repriceThreshold) : 20,
+      currency: c.repriceCurrency || 'divine',
       rules: [
         { op: c.repriceOp || 'subtract', value: Number(c.repriceValue), mode: c.repriceMode || 'flat' },
         { op: c.repriceOp2 || 'subtract', value: Number(c.repriceValue2), mode: c.repriceMode2 || 'flat' },

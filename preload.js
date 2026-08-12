@@ -58,6 +58,9 @@ contextBridge.exposeInMainWorld('api', {
   onRepriceCalibrated: (fn) => ipcRenderer.on('reprice-calibrated', (_e, p) => fn(p)),
   repriceTestRead: () => ipcRenderer.invoke('reprice-test-read'),
   repriceTestIcon: () => ipcRenderer.invoke('reprice-test-icon'),
+  // the currencies the icon matcher can actually name, for the "if the currency is..."
+  // picker - offering one it cannot detect would be a rule that never fires
+  repriceCurrencies: () => ipcRenderer.invoke('reprice-currencies'),
   onRepriceMode: (fn) => ipcRenderer.on('reprice-mode', (_e, on) => fn(!!on)),
   stashSampleCapture: () => ipcRenderer.invoke('stash-sample-capture'),
   stashSampleDrop: (i) => ipcRenderer.invoke('stash-sample-drop', i),

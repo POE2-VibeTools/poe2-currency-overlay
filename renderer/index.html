@@ -205,11 +205,17 @@
                 <option value="bigger" data-i18n="ui.settings.reprice.combine_bigger">Whichever changes the price more</option>
                 <option value="smaller" data-i18n="ui.settings.reprice.combine_smaller">Whichever changes the price less</option>
                 <option value="threshold" data-i18n="ui.settings.reprice.combine_threshold">If the price is at least...</option>
+                <option value="currency" data-i18n="ui.settings.reprice.combine_currency">If the currency is...</option>
               </select>
               <div id="reprice-threshold-row" class="rp-adjust hidden">
                 <span class="rp-lead" data-i18n="ui.settings.reprice.threshold_lead">If the price is at least</span>
                 <input id="reprice-threshold" type="number" min="0" step="any" value="20" />
               </div>
+              <div id="reprice-currency-row" class="rp-adjust hidden">
+                <span class="rp-lead" data-i18n="ui.settings.reprice.currency_lead">If the currency is</span>
+                <select id="reprice-currency"></select>
+              </div>
+              <div id="reprice-currency-warn" class="set-sub bad hidden" data-i18n="ui.settings.reprice.currency_needs_box">This needs the currency icon box below. Without it the currency is never known, so the "otherwise" rule always runs.</div>
               <div class="rp-adjust" data-rule="0">
                 <span class="rp-lead rp-lead-a hidden" data-i18n="ui.settings.reprice.then_lead">then</span>
                 <select id="reprice-op">

@@ -54,6 +54,20 @@ eq(R.apply(100, tree, { currency: 'chaos' }), 90, 'chaos -> bigger change');
 eq(R.apply(100, tree, {}), 90, 'unknown currency takes the else branch');
 eq(R.apply(100, tree, { currency: 'DIVINE' }), 99, 'currency match is case-insensitive');
 
+console.log('currency branch built from the settings controls');
+const curCfg = { combine: 'currency', currency: 'divine', rules: [pct(10), flat(1)] };
+eq(R.apply(100, curCfg, { currency: 'divine' }), 90, 'the chosen currency takes the first rule');
+eq(R.apply(100, curCfg, { currency: 'chaos' }), 99, 'another currency takes the second');
+// The icon reader returns null when it cannot identify the art. That has to land on the
+// else branch, not on the branch the user picked - otherwise a failed read silently
+// reprices as though it had recognised the currency.
+eq(R.apply(100, curCfg, {}), 99, 'no currency read takes the else branch');
+eq(R.apply(100, curCfg, { currency: null }), 99, 'an unidentified icon takes the else branch');
+eq(R.apply(100, R.fromConfig({ repriceCombine: 'currency', repriceCurrency: 'chaos',
+  repriceOp: 'subtract', repriceValue: 20, repriceMode: 'percent',
+  repriceOp2: 'subtract', repriceValue2: 5, repriceMode2: 'percent' }),
+  { currency: 'chaos' }), 80, 'fromConfig carries the currency through');
+
 console.log('worked examples shown in settings');
 const ex = R.examples({ combine: 'bigger', rules: [pct(10), flat(2)] });
 eq(ex.length, 2, 'two examples');

@@ -1764,6 +1764,16 @@ ipcMain.handle('reprice-test-read', async () => {
   }
 });
 
+// Only what the matcher can name. members[0] is the base tier, which is what a family
+// resolves to.
+ipcMain.handle('reprice-currencies', () => {
+  const bank = repriceIconBank();
+  if (!bank) return [];
+  return bank.icons
+    .map((i) => ({ family: i.family, name: i.members[0] }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+});
+
 // Same countdown-then-look flow as the number test, for the icon box. Reports the runners
 // up as well as the winner: a family that wins by a hair is a calibration problem, and
 // only the margin makes that visible.
@@ -1889,6 +1899,22 @@ const reprice = repriceMod.create({
       return r.value;
     } catch (err) { logToggle('reprice', 'read failed: ' + (err && err.message || err)); return null; }
   },
+  // The icon identifies a FAMILY. Five families cover three tiers each, and telling those
+  // apart needs the word beside the icon, which is not read. Base tier is assumed: it is
+  // what essentially every listing uses, and the cost of being wrong is bounded - currency
+  // only chooses which rule branch runs, never the number, which is read directly.
+  readCurrency: async (shot) => {
+    try {
+      const bank = repriceIconBank();
+      if (!bank) return null;
+      const CR = require('./renderer/stash/currency-reader.js');
+      const m = CR.identify(shot, bank);
+      if (!m.family) return null;
+      const name = CR.resolveTier(m.members, null);
+      logToggle('reprice', 'currency: ' + (name || m.family) + ' (' + m.score.toFixed(2) + ')');
+      return m.family;
+    } catch { return null; }
+  },
 });
 
 function registerRepriceHotkey(accelerator) {
@@ -1923,8 +1949,13 @@ ipcMain.handle('set-reprice-config', (_e, cfg) => {
   const num = (v, d) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : d);
   const op = (v) => (v === 'add' ? 'add' : 'subtract');
   const mode = (v) => (v === 'percent' ? 'percent' : 'flat');
-  config.repriceCombine = ['single', 'bigger', 'smaller', 'threshold'].includes(cfg.combine) ? cfg.combine : 'single';
+  config.repriceCombine = ['single', 'bigger', 'smaller', 'threshold', 'currency'].includes(cfg.combine) ? cfg.combine : 'single';
   config.repriceThreshold = num(cfg.threshold, 20);
+  // Only a family the baked icon set actually contains. Anything else would be a branch
+  // that can never be taken.
+  const bank = repriceIconBank();
+  const known = bank ? bank.icons.some((i) => i.family === cfg.currency) : false;
+  config.repriceCurrency = known ? cfg.currency : (config.repriceCurrency || 'divine');
   config.repriceOp = op(cfg.op); config.repriceValue = num(cfg.value, 0); config.repriceMode = mode(cfg.mode);
   config.repriceOp2 = op(cfg.op2); config.repriceValue2 = num(cfg.value2, 0); config.repriceMode2 = mode(cfg.mode2);
   saveConfig();

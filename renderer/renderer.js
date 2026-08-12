@@ -1943,6 +1943,8 @@ async function initSettings() {
     op2: $('reprice-op2'), value2: $('reprice-value2'), mode2: $('reprice-mode2'),
     rule2: document.querySelector('.rp-rule2'),
     leadA: document.querySelector('.rp-lead-a'), leadB: document.querySelector('.rp-lead-b'),
+    currencyRow: $('reprice-currency-row'), currency: $('reprice-currency'),
+    currencyWarn: $('reprice-currency-warn'),
     example: $('reprice-example'), calStatus: $('reprice-cal-status'),
     previewWrap: $('reprice-preview-wrap'), previewImg: $('reprice-preview'),
     testBtn: $('reprice-test'), testResult: $('reprice-test-result'),
@@ -1954,9 +1956,16 @@ async function initSettings() {
   function rpSyncVisibility() {
     const c = config.repriceCombine || 'single';
     const pair = c !== 'single';
-    const ifElse = c === 'threshold';
+    const byCurrency = c === 'currency';
+    // both are if/else shapes - one branches on the number, the other on the currency
+    const ifElse = c === 'threshold' || byCurrency;
     if (rpEls.rule2) rpEls.rule2.classList.toggle('hidden', !pair);
-    if (rpEls.thresholdRow) rpEls.thresholdRow.classList.toggle('hidden', !ifElse);
+    if (rpEls.thresholdRow) rpEls.thresholdRow.classList.toggle('hidden', c !== 'threshold');
+    if (rpEls.currencyRow) rpEls.currencyRow.classList.toggle('hidden', !byCurrency);
+    // Branching on a currency the app cannot see means the else branch every single time.
+    // Say so where the choice is made, not after a confusing paste.
+    const noBox = !(config.repriceIconRegion && config.repriceIconRegion.w > 0);
+    if (rpEls.currencyWarn) rpEls.currencyWarn.classList.toggle('hidden', !(byCurrency && noBox));
     // "then"/"otherwise" only read correctly for the if/else; for the comparisons the
     // two rows are alternatives, not branches
     if (rpEls.leadA) rpEls.leadA.classList.toggle('hidden', !ifElse);
@@ -1999,6 +2008,7 @@ async function initSettings() {
     combine: config.repriceCombine, threshold: config.repriceThreshold,
     op: config.repriceOp, value: config.repriceValue, mode: config.repriceMode,
     op2: config.repriceOp2, value2: config.repriceValue2, mode2: config.repriceMode2,
+    currency: config.repriceCurrency,
   });
   const rpChanged = () => { rpSyncVisibility(); rpRenderExample(); rpSave(); };
 
@@ -2019,6 +2029,7 @@ async function initSettings() {
   rpSel(rpEls.op2, 'repriceOp2'); rpSel(rpEls.mode2, 'repriceMode2');
   rpNum(rpEls.value, 'repriceValue'); rpNum(rpEls.value2, 'repriceValue2');
   rpNum(rpEls.threshold, 'repriceThreshold');
+  rpSel(rpEls.currency, 'repriceCurrency');
 
   // paint the controls from whatever was saved
   function rpInit() {
@@ -2027,7 +2038,7 @@ async function initSettings() {
     // NaN, and the worked example read "100 becomes 100" - the rule silently doing
     // nothing while the controls showed numbers.
     const dflt = {
-      repriceCombine: 'single', repriceThreshold: 20,
+      repriceCombine: 'single', repriceThreshold: 20, repriceCurrency: 'divine',
       repriceOp: 'subtract', repriceValue: 10, repriceMode: 'percent',
       repriceOp2: 'subtract', repriceValue2: 1, repriceMode2: 'flat',
     };
@@ -2045,7 +2056,28 @@ async function initSettings() {
     set(rpEls.value2, config.repriceValue2 != null ? config.repriceValue2 : 1);
     set(rpEls.threshold, config.repriceThreshold != null ? config.repriceThreshold : 20);
     rpSyncVisibility(); rpRenderExample(); rpRenderCal();
+    rpFillCurrencies();
   }
+  // Options come from the baked icon set, so the list is exactly what the matcher can
+  // recognise - never a currency that would make the rule unreachable.
+  async function rpFillCurrencies() {
+    const el = rpEls.currency;
+    if (!el || !window.api.repriceCurrencies) return;
+    let list = [];
+    try { list = await window.api.repriceCurrencies(); } catch { return; }
+    if (!list.length) return;
+    const want = config.repriceCurrency || 'divine';
+    el.innerHTML = '';
+    for (const c of list) {
+      const o = document.createElement('option');
+      o.value = c.family; o.textContent = window.gameName ? window.gameName(c.name) : c.name;
+      el.appendChild(o);
+    }
+    // the saved family may not be in this build's icon set; fall back to the first
+    el.value = list.some((c) => c.family === want) ? want : list[0].family;
+    if (el.value !== config.repriceCurrency) { config.repriceCurrency = el.value; rpSave(); }
+  }
+
   rpInit();
 
   const rpPreviewWrap = rpEls.previewWrap, rpPreviewImg = rpEls.previewImg;

@@ -136,8 +136,11 @@ function create(deps) {
       if (base == null) continue;
 
       const ctx = {};
-      if (deps.readCurrency && cfg().repriceCurrencyRegion) {
-        const icon = await grab(cfg().repriceCurrencyRegion);
+      // Optional. A rule that does not branch on currency never needs this box, and an
+      // unidentified icon leaves ctx.currency undefined, which the rule engine treats as
+      // "unknown" and sends down the else branch rather than guessing.
+      if (deps.readCurrency && cfg().repriceIconRegion) {
+        const icon = await grab(cfg().repriceIconRegion);
         if (icon) ctx.currency = await deps.readCurrency(icon);
       }
       const out = RepriceRules.apply(base, RepriceRules.fromConfig(cfg()), ctx);
