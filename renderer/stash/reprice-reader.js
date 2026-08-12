@@ -83,6 +83,21 @@
     const on = new Uint8Array(w * h);
     for (let i = 0; i < V.length; i++) on[i] = isOn(V[i]) ? 1 : 0;
 
+    // Blank any column inked for most of the crop's height.
+    //
+    // Two things in this crop look like that and neither is a digit: the price field's
+    // border, and the TEXT CARET sitting just past the selection. The crop is padded a
+    // few pixels around the highlight, which is exactly enough to reach the caret - and a
+    // "7" priced item put the caret one pixel from the 7's top bar, so they merged into a
+    // single blob that matched nothing and the number read as 11.
+    //
+    // A digit covers about half the crop's height; these cover nearly all of it.
+    for (let x = 0; x < w; x++) {
+      let n = 0;
+      for (let y = 0; y < h; y++) if (on[y * w + x]) n++;
+      if (n > h * 0.65) for (let y = 0; y < h; y++) on[y * w + x] = 0;
+    }
+
     const lbl = new Int32Array(w * h);
     const out = [];
     const stack = [];
