@@ -21,14 +21,32 @@
   else root.RepriceRules = api;
 })(typeof self !== 'undefined' ? self : this, function () {
 
+  // A percent of a real price is almost never whole - 10% off 245 is 220.5 - so every
+  // percent rule carries what to do about it. DOWN by default: asking less is a listing
+  // that sells, asking more is one that does not, and a default that silently rounds a
+  // price up is a default that costs the user money.
+  //
+  // The choice applies to the resulting PRICE, not to the size of the change, because the
+  // price is the thing being typed into the game.
+  function roundBy(n, how) {
+    if (how === 'up') return Math.ceil(n);
+    if (how === 'nearest') return Math.round(n);
+    return Math.floor(n);
+  }
+
   function applyRule(base, rule) {
     const v = Number(rule && rule.value);
     if (!Number.isFinite(v) || v < 0) return base;
-    const delta = rule.mode === 'percent' ? base * (v / 100) : v;
-    return rule.op === 'add' ? base + delta : base - delta;
+    const percent = rule.mode === 'percent';
+    const delta = percent ? base * (v / 100) : v;
+    const out = rule.op === 'add' ? base + delta : base - delta;
+    // A flat rule of a whole number is already whole; one with a fraction in it gets the
+    // same treatment rather than being left for settle() to round its own way.
+    return roundBy(out, rule.round || 'down');
   }
 
-  // A listing of 0 is not a listing, and the game wants a whole number.
+  // A listing of 0 is not a listing, and the game wants a whole number. Each rule has
+  // already rounded the way the user asked; this is the floor, not a second opinion.
   function settle(n) {
     if (!Number.isFinite(n)) return null;
     return Math.max(1, Math.round(n));

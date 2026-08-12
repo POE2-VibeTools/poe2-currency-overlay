@@ -20,17 +20,20 @@ eq(R.apply(100, { combine: 'single', rules: [flat(2)] }), 98, '100 -2');
 eq(R.apply(100, { combine: 'single', rules: [flatUp(5)] }), 105, '100 +5');
 
 console.log('rounding and floor');
-eq(R.apply(5, { combine: 'single', rules: [pct(10)] }), 5, '5 -10% rounds back to 5');
+// These three used to expect round-to-nearest. Percent rules round DOWN unless told
+// otherwise now, so 4.5 is 4 and 90.9 is 90 - a default that rounds a price UP quietly
+// asks more than the user set.
+eq(R.apply(5, { combine: 'single', rules: [pct(10)] }), 4, '5 -10% is 4.5, down to 4');
 eq(R.apply(3, { combine: 'single', rules: [flat(10)] }), 1, 'never below 1');
 eq(R.apply(1, { combine: 'single', rules: [pct(50)] }), 1, '1 -50% floors at 1');
-eq(R.apply(101, { combine: 'single', rules: [pct(10)] }), 91, '90.9 rounds to 91');
+eq(R.apply(101, { combine: 'single', rules: [pct(10)] }), 90, '90.9 goes down to 90');
 
 console.log('bigger/smaller compare the CHANGE, not the price');
 const pair = { rules: [pct(10), flat(2)] };
 eq(R.apply(100, { combine: 'bigger', ...pair }), 90, '100: -10% (10) beats -2');
 eq(R.apply(5, { combine: 'bigger', ...pair }), 3, '5: -2 beats -10% (0.5)');
 eq(R.apply(100, { combine: 'smaller', ...pair }), 98, '100: smaller takes -2');
-eq(R.apply(5, { combine: 'smaller', ...pair }), 5, '5: smaller takes -10%');
+eq(R.apply(5, { combine: 'smaller', ...pair }), 4, '5: smaller takes -10% (4.5 down to 4)');
 
 console.log('threshold branches on the price');
 const th = { combine: 'threshold', threshold: 20, rules: [pct(10), flat(2)] };
@@ -111,6 +114,25 @@ eq(R.apply(100, R.fromConfig({ repriceCombine: 'currency', repriceCurrency: 'cha
   repriceOp: 'subtract', repriceValue: 20, repriceMode: 'percent',
   repriceOp2: 'subtract', repriceValue2: 5, repriceMode2: 'percent' }), { currency: 'chaos' }),
   80, 'currency migrates');
+
+console.log('rounding on percent lines');
+const pctR = (v, r) => ({ op: 'subtract', value: v, mode: 'percent', round: r });
+// 10% off 245 is 220.5 - the case that has to differ three ways
+eq(R.apply(245, { combine: 'single', rules: [pctR(10, 'down')] }), 220, 'down');
+eq(R.apply(245, { combine: 'single', rules: [pctR(10, 'nearest')] }), 221, 'nearest');
+eq(R.apply(245, { combine: 'single', rules: [pctR(10, 'up')] }), 221, 'up');
+// 10% off 255 is 229.5, where nearest and up agree the other way
+eq(R.apply(255, { combine: 'single', rules: [pctR(10, 'down')] }), 229, 'down on .5');
+eq(R.apply(255, { combine: 'single', rules: [pctR(10, 'nearest')] }), 230, 'nearest on .5');
+// a rule with no rounding stated rounds DOWN - asking more than intended costs the user
+eq(R.apply(245, { combine: 'single', rules: [{ op: 'subtract', value: 10, mode: 'percent' }] }),
+  220, 'unstated means down');
+// adding: rounding still applies to the resulting price, not to the size of the change
+eq(R.apply(245, { combine: 'single', rules: [{ op: 'add', value: 10, mode: 'percent', round: 'down' }] }),
+  269, 'add rounds the price down too');
+// each rule rounds before they are compared, so the pick sees the real numbers
+eq(R.apply(245, { combine: 'smaller', rules: [pctR(10, 'down'), { op: 'subtract', value: 30, mode: 'flat' }] }),
+  220, 'smaller change wins after rounding');
 
 console.log('worked examples shown in settings');
 const ex = R.examples({ combine: 'bigger', rules: [pct(10), flat(2)] });

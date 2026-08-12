@@ -203,10 +203,22 @@
     const rad = Math.max(1, Math.round(2 * scale));
     const closed = dilate(mask(sub, rw, rh), rw, rh, rad);
 
+    // Rectangles to ignore, in full-frame pixels. The app's own reprice badge is on
+    // screen, always on top, and amber - so the capture contains it, and once it started
+    // holding the last result permanently it also contained DIGITS. Its block is wider
+    // than a real price highlight, and widest wins, so the reader began reading its own
+    // output back to itself.
+    const skip = Array.isArray(o.exclude) ? o.exclude : [];
+    const excluded = (b) => {
+      const cx2 = b.x + rx + b.w / 2, cy2 = b.y + ry + b.h / 2;
+      return skip.some((r) => cx2 >= r.x && cx2 <= r.x + r.w && cy2 >= r.y && cy2 <= r.y + r.h);
+    };
+
     const hits = blobs(closed, rw, rh).filter((b) =>
       b.area >= b.w * b.h * SOLID
       && b.h >= want * (1 - H_TOL) && b.h <= want * (1 + H_TOL)
-      && b.w >= Math.round(4 * scale) && b.w <= Math.round(240 * scale));
+      && b.w >= Math.round(4 * scale) && b.w <= Math.round(240 * scale)
+      && !excluded(b));
     if (!hits.length) return null;
 
     // Widest wins: the block's width follows the number, and the impostors that survive

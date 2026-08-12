@@ -117,7 +117,7 @@ function create(deps) {
         // This runs HERE, next to the canvas, rather than shipping pixels to main: the
         // search region is most of the screen, and handing that over as a plain array
         // costs more than the entire read budget. What crosses the boundary is a few KB.
-        window.__rpAutoGrab = async function () {
+        window.__rpAutoGrab = async function (exclude) {
           if (!window.__rpVideo || !__rpVideo.videoWidth) return null;
           if (!window.PriceDialogFinder) return null;
           const W = __rpVideo.videoWidth, H = __rpVideo.videoHeight;
@@ -132,7 +132,12 @@ function create(deps) {
           const px = g.getImageData(0, 0, sw, sh);
           // search:1 - this frame IS the search region already; screenH keeps the block
           // size scaled against the real display rather than this crop
-          const hit = window.PriceDialogFinder.find(px.data, sw, sh, { search: 1, screenH: H });
+          // exclude arrives as screen fractions; the finder wants pixels of THIS crop
+          const ex = (exclude || []).map((r) => ({
+            x: Math.round(r.x * W) - sx, y: Math.round(r.y * H) - sy,
+            w: Math.round(r.w * W), h: Math.round(r.h * H),
+          }));
+          const hit = window.PriceDialogFinder.find(px.data, sw, sh, { search: 1, screenH: H, exclude: ex });
           if (!hit) return null;
           const cut = (r, pad) => {
             const x = Math.max(0, r.x - pad), y = Math.max(0, r.y - pad);
@@ -180,7 +185,11 @@ function create(deps) {
   // Returns { num, icon, block, ... } or null when no highlighted price field is on
   // screen - which is the honest answer when the dialog is not open yet.
   async function autoGrab() {
-    try { return await js('window.__rpAutoGrab ? window.__rpAutoGrab() : null'); }
+    // The badge is part of the screen the capture sees, so it has to be taken out of the
+    // search or the reader finds its own last result and reads that instead.
+    let ex = [];
+    try { ex = (deps.excludeRects && deps.excludeRects()) || []; } catch { }
+    try { return await js('window.__rpAutoGrab ? window.__rpAutoGrab(' + JSON.stringify(ex) + ') : null'); }
     catch { return null; }
   }
 

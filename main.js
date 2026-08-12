@@ -2136,6 +2136,25 @@ const reprice = repriceMod.create({
   // apart needs the word beside the icon, which is not read. Base tier is assumed: it is
   // what essentially every listing uses, and the cost of being wrong is bounded - currency
   // only chooses which rule branch runs, never the number, which is read directly.
+  // Everything of ours that is on screen during a read, as SCREEN FRACTIONS - the same
+  // units the capture regions use, so it does not matter that the stream may not be the
+  // display's pixel size. Only the badge qualifies today: the main window is behind the
+  // game while repricing, but the badge is deliberately always on top.
+  excludeRects: () => {
+    try {
+      if (!repriceBadge || repriceBadge.isDestroyed() || !repriceBadge.isVisible()) return [];
+      const b = repriceBadge.getBounds();
+      const d = screen.getPrimaryDisplay();
+      const W = d.size.width, H = d.size.height;
+      if (!(W > 0 && H > 0)) return [];
+      // a few pixels of margin, because the badge has a shadow and a border
+      const pad = 6;
+      return [{
+        x: (b.x - d.bounds.x - pad) / W, y: (b.y - d.bounds.y - pad) / H,
+        w: (b.width + pad * 2) / W, h: (b.height + pad * 2) / H,
+      }];
+    } catch { return []; }
+  },
   readCurrency: async (shot, alt) => {
     try {
       const bank = repriceIconBank();
@@ -2208,7 +2227,11 @@ function sanitiseBranches(input) {
   const mode = (v) => (v === 'percent' ? 'percent' : 'flat');
   const bank = repriceIconBank();
   const knownCurrency = (f) => !!(bank && bank.icons.some((i) => i.family === f));
-  const rule = (r) => ({ op: op(r && r.op), value: num(r && r.value, 0), mode: mode(r && r.mode) });
+  const round = (v) => (['down', 'nearest', 'up'].includes(v) ? v : 'down');
+  const rule = (r) => ({
+    op: op(r && r.op), value: num(r && r.value, 0), mode: mode(r && r.mode),
+    round: round(r && r.round),
+  });
 
   const out = [];
   for (const b of (Array.isArray(input) ? input : []).slice(0, 24)) {

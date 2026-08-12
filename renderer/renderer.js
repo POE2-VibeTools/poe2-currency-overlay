@@ -2099,10 +2099,24 @@ async function initSettings() {
         mode.appendChild(rpOpt('flat', t('ui.settings.reprice.mode_flat')));
         mode.appendChild(rpOpt('percent', t('ui.settings.reprice.mode_percent')));
         mode.value = rule.mode || 'flat';
-        mode.addEventListener('change', () => { rule.mode = mode.value; rpSaveOnly(); });
+        // changing to or from percent adds or removes the rounding control beside it, so
+        // this one re-renders rather than just saving
+        mode.addEventListener('change', () => { rule.mode = mode.value; rpChanged(); });
         rr.appendChild(op);
         rr.appendChild(rpNumInput(() => (rule.value != null ? rule.value : 10), (v) => { rule.value = v; }));
         rr.appendChild(mode);
+        // A percent of a real price is rarely whole, so a percent line says what to do
+        // about it. Flat lines have nothing to decide.
+        if (rule.mode === 'percent') {
+          const rnd = document.createElement('select');
+          rnd.appendChild(rpOpt('down', t('ui.settings.reprice.round_down')));
+          rnd.appendChild(rpOpt('nearest', t('ui.settings.reprice.round_nearest')));
+          rnd.appendChild(rpOpt('up', t('ui.settings.reprice.round_up')));
+          rnd.value = rule.round || 'down';
+          if (rnd.value !== rule.round) rule.round = rnd.value;
+          rnd.addEventListener('change', () => { rule.round = rnd.value; rpSaveOnly(); });
+          rr.appendChild(rnd);
+        }
         row.appendChild(rr);
       }
 
