@@ -1753,8 +1753,7 @@ ipcMain.handle('reprice-test-read', async () => {
       const tpl = repriceTemplates();
       if (!tpl) note = 'no-templates';
       else {
-        const RR = require('./renderer/stash/reprice-reader.js');
-        const r = RR.read(shot, tpl, 0.55);
+        const r = repriceReadDigits(shot, 0.55);
         value = r.value;
         if (value == null) note = r.text ? 'unreadable:' + r.text : 'no-digits';
         logToggle('reprice', `test read: ${shot.w}x${shot.h} -> "${r.text}" `
@@ -1877,13 +1876,52 @@ function sendRepriceState(s) {
 const repriceMod = require('./reprice.js');
 
 let _rpTemplates;
+// Digit templates at every scale we have cut, not just one.
+//
+// The game draws the price field at different pixel sizes depending on resolution and
+// window size - about 11px glyphs in a 1440x900 window against 14px at 1080p - and thin
+// strokes do not survive being resampled between the two. A single set read fine where it
+// was cut and produced confident nonsense elsewhere: "14" came back as 8, because two
+// digits that failed to separate matched the most filled template.
+//
+// Same fix as the Net Worth reader: cover the renderings rather than out-think them.
 function repriceTemplates() {
   if (_rpTemplates !== undefined) return _rpTemplates;
+  const DR = require('./renderer/stash/digit-reader.js');
+  const sets = [];
   try {
-    const DR = require('./renderer/stash/digit-reader.js');
-    _rpTemplates = DR.templatesFromJSON(require('./renderer/stash/reprice-digits.json'));
-  } catch { _rpTemplates = null; }   // template set not cut yet
+    const bank = require('./renderer/stash/reprice-digit-sets.json');
+    for (const s of (bank.sets || [])) {
+      sets.push({ blockH: s.blockH, templates: DR.templatesFromJSON({ templates: s.glyphs }) });
+    }
+  } catch { /* fall through to the single legacy set */ }
+  if (!sets.length) {
+    try {
+      sets.push({ blockH: 0, templates: DR.templatesFromJSON(require('./renderer/stash/reprice-digits.json')) });
+    } catch { /* no templates cut yet */ }
+  }
+  _rpTemplates = sets.length ? sets : null;
   return _rpTemplates;
+}
+
+// Read with every set and keep the most confident answer.
+//
+// Picking a set by measured block height alone would be brittle at a size between two
+// cut scales, and reading is cheap - a handful of glyphs against ten templates. Sets that
+// disagree do not average: the weakest glyph in a parse decides its score, so a set that
+// half-fits loses to one that fits.
+function repriceReadDigits(shot, minScore) {
+  const sets = repriceTemplates();
+  if (!sets) return { value: null, text: '', scores: [], set: null };
+  let best = { value: null, text: '', scores: [], set: null }, bestScore = -1;
+  const RR = require('./renderer/stash/reprice-reader.js');
+  for (const s of sets) {
+    const r = RR.read(shot, s.templates, minScore);
+    if (r.value == null || !r.scores.length) continue;
+    const weakest = Math.min(...r.scores);
+    if (weakest > bestScore) { bestScore = weakest; best = Object.assign({}, r, { set: s.blockH }); }
+  }
+  return best;
 }
 
 let _rpIcons;
@@ -1929,11 +1967,10 @@ const reprice = repriceMod.create({
     try {
       const tpl = repriceTemplates();
       if (!tpl) { logToggle('reprice', 'no digit templates installed'); return null; }
-      const RR = require('./renderer/stash/reprice-reader.js');
-      const r = RR.read(shot, tpl, 0.55);
+      const r = repriceReadDigits(shot, 0.55);
       // One line per successful read only. This runs on every poll of every right-click,
       // so anything heavier than a string belongs in a test harness, not here.
-      if (r.value != null) logToggle('reprice', `read ${r.value} at ${(meta && meta.at) || 0}ms`);
+      if (r.value != null) logToggle('reprice', `read ${r.value} at ${(meta && meta.at) || 0}ms (set h${r.set})`);
       // ===== READDIAG-START - remove once the reader is trusted ======================
       // Keeps the exact pixels behind every read, named with what was read from them. A
       // misread cannot be reported any other way: "14 came out as 8" is not reproducible

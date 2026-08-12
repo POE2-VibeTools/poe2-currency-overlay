@@ -15,7 +15,25 @@ const RR = require(path.join(__dirname, '..', 'renderer', 'stash', 'reprice-read
 const CR = require(path.join(__dirname, '..', 'renderer', 'stash', 'currency-reader.js'));
 const DR = require(path.join(__dirname, '..', 'renderer', 'stash', 'digit-reader.js'));
 const bank = require(path.join(__dirname, '..', 'renderer', 'stash', 'currency-icons.json'));
-const digits = DR.templatesFromJSON(require(path.join(__dirname, '..', 'renderer', 'stash', 'reprice-digits.json')));
+const SETS = (() => {
+  try {
+    const bank = require(path.join(__dirname, '..', 'renderer', 'stash', 'reprice-digit-sets.json'));
+    return (bank.sets || []).map((s) => ({ blockH: s.blockH, templates: DR.templatesFromJSON({ templates: s.glyphs }) }));
+  } catch {
+    return [{ blockH: 0, templates: DR.templatesFromJSON(require(path.join(__dirname, '..', 'renderer', 'stash', 'reprice-digits.json'))) }];
+  }
+})();
+// same rule as main: every set is tried and the most confident parse wins
+function readDigits(shot) {
+  let best = { value: null, text: '', scores: [], set: null }, bestScore = -1;
+  for (const s of SETS) {
+    const r = RR.read(shot, s.templates, 0.55);
+    if (r.value == null || !r.scores.length) continue;
+    const weakest = Math.min(...r.scores);
+    if (weakest > bestScore) { bestScore = weakest; best = Object.assign({}, r, { set: s.blockH }); }
+  }
+  return best;
+}
 
 const DIR = path.join(__dirname, 'dialog-captures');
 // what each capture should produce; null means "must find nothing"
@@ -29,6 +47,10 @@ const EXPECT = {
   // game windowed at 1440x900 AND pushed off centre, so the dialog is nowhere near the
   // middle of the screen - this is what the full-frame fallback exists for
   'res1440-offcenter.png': { value: 1, currency: 'divine' },
+  // the digit-corpus captures at 1440x900, which is where reads were failing
+  'digits-1440-12345.png': { value: 12345, currency: 'divine' },
+  'digits-1440-6789.png': { value: 6789, currency: 'divine' },
+  "digits-1440-0.png": { value: 0, currency: "divine" },
   'short.png': null,
 };
 
@@ -79,7 +101,7 @@ app.whenReady().then(() => {
 
     // the digits sit ON the block, so the block IS the number's box
     const numShot = cut(im, hit.block, 3);
-    const r = RR.read({ data: numShot.data, w: numShot.w, h: numShot.h }, digits, 0.55);
+    const r = readDigits({ data: numShot.data, w: numShot.w, h: numShot.h });
     const iconShot = cut(im, hit.icon, 0);
     const m = CR.identify({ data: iconShot.data, w: iconShot.w, h: iconShot.h }, bank);
 
@@ -90,6 +112,7 @@ app.whenReady().then(() => {
       + 'block ' + String(hit.block.w).padStart(3) + 'x' + hit.block.h
       + ' at ' + String(hit.block.x).padStart(4) + ',' + String(hit.block.y).padStart(4)
       + '   read ' + String(r.value == null ? 'none' : r.value).padStart(5)
+      + ' [set h' + r.set + ']'
       + '   currency ' + (m.family || 'none').padEnd(9)
       + ' (' + m.score.toFixed(2) + ')'
       + '   ' + hit.candidates + ' candidate(s)');
