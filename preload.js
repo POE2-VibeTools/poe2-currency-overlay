@@ -52,8 +52,12 @@ contextBridge.exposeInMainWorld('api', {
   // the reprice box uses the SAME calibration window as Net Worth - one flow, one
   // confirm button. It reports back by event, not by resolving a promise.
   repriceCalibrate: () => ipcRenderer.send('stash-calibrate-start', { target: 'reprice' }),
+  // second box, over the currency icon beside the number - optional, and only needed by
+  // rules that treat currencies differently
+  repriceIconCalibrate: () => ipcRenderer.send('stash-calibrate-start', { target: 'reprice-icon' }),
   onRepriceCalibrated: (fn) => ipcRenderer.on('reprice-calibrated', (_e, p) => fn(p)),
   repriceTestRead: () => ipcRenderer.invoke('reprice-test-read'),
+  repriceTestIcon: () => ipcRenderer.invoke('reprice-test-icon'),
   onRepriceMode: (fn) => ipcRenderer.on('reprice-mode', (_e, on) => fn(!!on)),
   stashSampleCapture: () => ipcRenderer.invoke('stash-sample-capture'),
   stashSampleDrop: (i) => ipcRenderer.invoke('stash-sample-drop', i),

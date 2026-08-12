@@ -1946,6 +1946,9 @@ async function initSettings() {
     example: $('reprice-example'), calStatus: $('reprice-cal-status'),
     previewWrap: $('reprice-preview-wrap'), previewImg: $('reprice-preview'),
     testBtn: $('reprice-test'), testResult: $('reprice-test-result'),
+    iconCalStatus: $('reprice-icon-cal-status'),
+    iconPreviewWrap: $('reprice-icon-preview-wrap'), iconPreviewImg: $('reprice-icon-preview'),
+    iconTestBtn: $('reprice-icon-test'), iconTestResult: $('reprice-icon-test-result'),
   };
 
   function rpSyncVisibility() {
@@ -1980,6 +1983,16 @@ async function initSettings() {
     rpEls.calStatus.classList.toggle('rp-set', set);
     // Test read is meaningless without a region, so it only exists once there is one.
     if (rpEls.testBtn) rpEls.testBtn.classList.toggle('hidden', !set);
+    rpRenderIconCal();
+  }
+
+  function rpRenderIconCal() {
+    if (!rpEls.iconCalStatus) return;
+    const r = config.repriceIconRegion;
+    const set = !!(r && r.w > 0 && r.h > 0);
+    rpEls.iconCalStatus.textContent = set ? t('ui.settings.reprice.calibrate_done') : t('ui.settings.reprice.calibrate_none');
+    rpEls.iconCalStatus.classList.toggle('rp-set', set);
+    if (rpEls.iconTestBtn) rpEls.iconTestBtn.classList.toggle('hidden', !set);
   }
 
   const rpSave = () => window.api.setRepriceConfig({
@@ -2057,12 +2070,81 @@ async function initSettings() {
   if ($('reprice-calibrate')) $('reprice-calibrate').addEventListener('click', () => {
     window.api.repriceCalibrate();
   });
+  if ($('reprice-icon-calibrate')) $('reprice-icon-calibrate').addEventListener('click', () => {
+    window.api.repriceIconCalibrate();
+  });
   if (window.api.onRepriceCalibrated) window.api.onRepriceCalibrated((p) => {
     if (!p || !p.region) return;
+    if (p.target === 'reprice-icon') {
+      config.repriceIconRegion = p.region;
+      rpRenderIconCal();
+      rpShowIconPreview(p.preview);
+      // The confirm already ran a match, so say straight away whether the box landed on
+      // something recognisable rather than making the user press Test read to find out.
+      rpShowIconResult(p.icon);
+      return;
+    }
     config.repriceRegion = p.region;
     rpRenderCal();
     rpShowPreview(p.preview);
     if (rpTestResult) { rpTestResult.textContent = ''; rpTestResult.className = 'set-sub'; }
+  });
+
+  function rpShowIconPreview(url) {
+    const wrap = rpEls.iconPreviewWrap, img = rpEls.iconPreviewImg;
+    if (!wrap || !img) return;
+    if (!url) { wrap.classList.add('hidden'); return; }
+    img.onload = () => {
+      const scale = Math.max(1, Math.min(4, Math.round(64 / Math.max(1, img.naturalHeight))));
+      img.style.width = (img.naturalWidth * scale) + 'px';
+      img.style.height = (img.naturalHeight * scale) + 'px';
+    };
+    img.src = url;
+    wrap.classList.remove('hidden');
+  }
+
+  function rpShowIconResult(m) {
+    const el = rpEls.iconTestResult;
+    if (!el) return;
+    if (!m) { el.textContent = ''; el.className = 'set-sub'; return; }
+    if (m.error) {
+      el.className = 'set-sub bad';
+      el.textContent = m.error === 'no-icons'
+        ? t('ui.settings.reprice.icon_no_art')
+        : t('ui.settings.reprice.icon_failed');
+      return;
+    }
+    if (!m.family) {
+      el.className = 'set-sub bad';
+      el.textContent = t('ui.settings.reprice.icon_no_match');
+      return;
+    }
+    el.className = 'set-sub good';
+    // A family of one IS the currency. A family of three needs the tier word, so name the
+    // family rather than claiming a precision the icon does not have.
+    el.textContent = m.members.length > 1
+      ? t('ui.settings.reprice.icon_family', { name: m.members[0], n: m.members.length })
+      : t('ui.settings.reprice.icon_one', { name: m.members[0] });
+  }
+
+  if (rpEls.iconTestBtn) rpEls.iconTestBtn.addEventListener('click', async () => {
+    rpEls.iconTestBtn.disabled = true;
+    const el = rpEls.iconTestResult;
+    el.className = 'set-sub';
+    // Same reason as the number test: clicking here takes focus off the game.
+    for (let n = 3; n > 0; n--) {
+      el.textContent = t('ui.settings.reprice.test_countdown', { n });
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    el.textContent = t('ui.settings.reprice.test_running');
+    try {
+      const m = await window.api.repriceTestIcon();
+      if (m && m.preview) rpShowIconPreview(m.preview);
+      rpShowIconResult(m);
+    } catch {
+      el.className = 'set-sub bad';
+      el.textContent = t('ui.settings.reprice.icon_failed');
+    } finally { rpEls.iconTestBtn.disabled = false; }
   });
 
   if (rpTestBtn) rpTestBtn.addEventListener('click', async () => {

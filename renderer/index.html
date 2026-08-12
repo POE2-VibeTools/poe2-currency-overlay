@@ -248,6 +248,18 @@
                 <span id="reprice-test-result" class="set-sub"></span>
               </div>
             </div>
+            <div class="set-field">
+              <label data-i18n="ui.settings.reprice.icon_label" data-i18n-title="ui.settings.reprice.icon_tooltip" title="Optional. Drag a box around the currency icon next to the price, so rules can tell one currency from another. Leave it unset if your rule treats every currency the same.">Currency icon</label>
+              <div class="rp-cal-row">
+                <button id="reprice-icon-calibrate" class="set-login-btn" data-i18n="ui.settings.reprice.calibrate_button">Calibrate</button>
+                <span id="reprice-icon-cal-status" class="set-sub" data-i18n="ui.settings.reprice.calibrate_none">not set</span>
+                <button id="reprice-icon-test" class="set-login-btn hidden" data-i18n="ui.settings.reprice.test_button">Test read</button>
+              </div>
+              <div id="reprice-icon-preview-wrap" class="rp-preview hidden">
+                <img id="reprice-icon-preview" alt="">
+                <span id="reprice-icon-test-result" class="set-sub"></span>
+              </div>
+            </div>
           </section>
 
           <section class="set-card" id="sec-hotkeys">

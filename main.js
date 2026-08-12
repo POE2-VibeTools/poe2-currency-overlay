@@ -1763,6 +1763,19 @@ ipcMain.handle('reprice-test-read', async () => {
     if (!wasOn) { try { await reprice.closeStream(); } catch { } }
   }
 });
+
+// Same countdown-then-look flow as the number test, for the icon box. Reports the runners
+// up as well as the winner: a family that wins by a hair is a calibration problem, and
+// only the margin makes that visible.
+ipcMain.handle('reprice-test-icon', async () => {
+  if (!config.repriceIconRegion || !(config.repriceIconRegion.w > 0)) return { error: 'no-region' };
+  if (!repriceIconBank()) return { error: 'no-icons' };
+  const m = await repriceIdentifyIcon(config.repriceIconRegion).catch(() => null);
+  if (!m) return { error: 'no-frame' };
+  logToggle('reprice', 'icon test: ' + (m.family || 'no match') + ' '
+    + m.all.map((a) => a.family + ' ' + a.score.toFixed(2)).join(', '));
+  return m;
+});
 // ===== REPRICE-INDICATOR-START ==================================================
 // A small badge over the game while the mode is on. Click-through and never focusable,
 // so it cannot eat a click meant for the game or pull focus mid-trade.
@@ -1824,6 +1837,34 @@ function repriceTemplates() {
     _rpTemplates = DR.templatesFromJSON(require('./renderer/stash/reprice-digits.json'));
   } catch { _rpTemplates = null; }   // template set not cut yet
   return _rpTemplates;
+}
+
+let _rpIcons;
+function repriceIconBank() {
+  if (_rpIcons !== undefined) return _rpIcons;
+  try { _rpIcons = require('./renderer/stash/currency-icons.json'); }
+  catch { _rpIcons = null; }         // icon art not baked yet
+  return _rpIcons;
+}
+
+// Grab the icon box and say which currency family is in it. Returns null when the box is
+// not calibrated - currency is optional, and a rule that does not branch on it works fine
+// without one.
+async function repriceIdentifyIcon(rect) {
+  const region = rect || (config && config.repriceIconRegion);
+  if (!region || !(region.w > 0)) return null;
+  const bank = repriceIconBank();
+  if (!bank) return null;
+  const wasOn = reprice.isOn();
+  if (!wasOn && !(await reprice.openStream())) return null;
+  try {
+    const shot = await reprice.grab(region);
+    if (!shot) return null;
+    const CR = require('./renderer/stash/currency-reader.js');
+    const m = CR.identify(shot, bank);
+    return { family: m.family, members: m.members, score: m.score, margin: m.margin, all: m.all, preview: shot.url };
+  } catch { return null; }
+  finally { if (!wasOn) { try { await reprice.closeStream(); } catch { } } }
 }
 
 const reprice = repriceMod.create({
@@ -2227,12 +2268,21 @@ function snapFrameToBorder(f) {
   const nx = L != null ? L : f.x, ny = T != null ? T : f.y;
   return { x: nx, y: ny, w: (R != null ? R : f.x + f.w) - nx, h: (B != null ? B : f.y + f.h) - ny };
 }
-// target: 'stash' (the Net Worth panel) or 'reprice' (the price box). Same window, same
+// target: 'stash' (the Net Worth panel) or one of the reprice boxes. Same window, same
 // loupe, same Confirm button - only the seed box, the wording and where the result is
 // saved differ. Reprice had its own sheet for a while; it was a worse copy of this one.
+//
+// Reprice needs TWO boxes, not one: the number and the currency icon beside it. They are
+// separate regions rather than one wide crop because the reader treats them completely
+// differently - digits are segmented and matched as glyphs, the icon is matched whole
+// against baked art - and a single box would force both to share a threshold.
+const CALIB_TARGETS = {
+  reprice:        { key: 'repriceRegion',     seed: { x: 0.45, y: 0.55, w: 0.05, h: 0.04 } },
+  'reprice-icon': { key: 'repriceIconRegion', seed: { x: 0.42, y: 0.55, w: 0.02, h: 0.03 } },
+};
 let calibTarget = 'stash';
 ipcMain.on('stash-calibrate-start', async (_e, opts) => {
-  calibTarget = (opts && opts.target === 'reprice') ? 'reprice' : 'stash';
+  calibTarget = (opts && CALIB_TARGETS[opts.target]) ? opts.target : 'stash';
   try {
     if (calibWin && !calibWin.isDestroyed()) { calibWin.focus(); return; }
     await primeCapture(); // before the veil - see primeCapture
@@ -2249,12 +2299,12 @@ ipcMain.on('stash-calibrate-start', async (_e, opts) => {
     const dataUrl = shot.dataUrl;
     // seed the box at the previous frame, else FRAME_BOX scaled to this capture
     let seed;
-    if (calibTarget === 'reprice') {
-      // fractions -> capture px, or a small box near the middle to start from
-      const r = config.repriceRegion;
-      seed = r && r.w > 0
-        ? { x: Math.round(r.x * capW), y: Math.round(r.y * capH), w: Math.round(r.w * capW), h: Math.round(r.h * capH) }
-        : { x: Math.round(capW * 0.45), y: Math.round(capH * 0.55), w: Math.round(capW * 0.05), h: Math.round(capH * 0.04) };
+    if (CALIB_TARGETS[calibTarget]) {
+      // fractions -> capture px, or this target's starting box near the middle
+      const t = CALIB_TARGETS[calibTarget];
+      const r = config[t.key];
+      const s = r && r.w > 0 ? r : t.seed;
+      seed = { x: Math.round(s.x * capW), y: Math.round(s.y * capH), w: Math.round(s.w * capW), h: Math.round(s.h * capH) };
     } else if (config.stashCalibration) seed = calBoxToFrame(config.stashCalibration);
     else { const s = capW / 1920; seed = { x: Math.round(FRAME_BOX.x * s), y: Math.round(FRAME_BOX.y * s), w: Math.round(FRAME_BOX.w * s), h: Math.round(FRAME_BOX.h * s) }; }
     calibWin = new BrowserWindow({
@@ -2283,17 +2333,22 @@ ipcMain.on('stash-calibrate-snap', (_e, frame) => {
 ipcMain.on('stash-calibrate-confirm', async (_e, frame) => {
   try {
     if (!frame || !(frame.w > 0) || !(frame.h > 0)) return closeCalibWin();
-    if (calibTarget === 'reprice') {
+    if (CALIB_TARGETS[calibTarget]) {
       // stored as SCREEN FRACTIONS so it survives a resolution change
+      const t = CALIB_TARGETS[calibTarget];
       const disp = screen.getPrimaryDisplay();
       const capW = Math.round(disp.size.width * disp.scaleFactor);
       const capH = Math.round(disp.size.height * disp.scaleFactor);
-      config.repriceRegion = { x: frame.x / capW, y: frame.y / capH, w: frame.w / capW, h: frame.h / capH };
+      const region = { x: frame.x / capW, y: frame.y / capH, w: frame.w / capW, h: frame.h / capH };
+      config[t.key] = region;
       saveConfig();
       closeCalibWin();
-      logToggle('reprice', 'region set to ' + JSON.stringify(config.repriceRegion));
-      const url = await repricePreview(config.repriceRegion).catch(() => null);
-      if (win && !win.isDestroyed()) win.webContents.send('reprice-calibrated', { region: config.repriceRegion, preview: url });
+      logToggle('reprice', calibTarget + ' region set to ' + JSON.stringify(region));
+      const url = await repricePreview(region).catch(() => null);
+      // The icon box gets its match reported too, so a bad drag shows up as "no idea what
+      // that is" at calibration time instead of as a silently wrong price later.
+      const icon = calibTarget === 'reprice-icon' ? await repriceIdentifyIcon(region).catch(() => null) : null;
+      if (win && !win.isDestroyed()) win.webContents.send('reprice-calibrated', { target: calibTarget, region, preview: url, icon });
       return;
     }
     config.stashCalibration = frameToCalBox(frame);

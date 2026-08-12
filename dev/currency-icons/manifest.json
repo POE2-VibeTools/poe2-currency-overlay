@@ -1,0 +1,184 @@
+[
+  {
+    "key": "scrap",
+    "text": "Armourer's Scrap",
+    "file": "scrap.png",
+    "bytes": 10828,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyArmourQuality.png"
+  },
+  {
+    "key": "whetstone",
+    "text": "Blacksmith's Whetstone",
+    "file": "whetstone.png",
+    "bytes": 6855,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyWeaponQuality.png"
+  },
+  {
+    "key": "chaos",
+    "text": "Chaos Orb",
+    "file": "chaos.png",
+    "bytes": 11595,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyRerollRare.png"
+  },
+  {
+    "key": "divine",
+    "text": "Divine Orb",
+    "file": "divine.png",
+    "bytes": 10404,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyModValues.png"
+  },
+  {
+    "key": "exalted",
+    "text": "Exalted Orb",
+    "file": "exalted.png",
+    "bytes": 11562,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToRare.png"
+  },
+  {
+    "key": "gcp",
+    "text": "Gemcutter's Prism",
+    "file": "gcp.png",
+    "bytes": 7976,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyGemQuality.png"
+  },
+  {
+    "key": "bauble",
+    "text": "Glassblower's Bauble",
+    "file": "bauble.png",
+    "bytes": 8221,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyFlaskQuality.png"
+  },
+  {
+    "key": "greater-chaos-orb",
+    "text": "Greater Chaos Orb",
+    "file": "greater-chaos-orb.png",
+    "bytes": 11595,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyRerollRare.png"
+  },
+  {
+    "key": "greater-exalted-orb",
+    "text": "Greater Exalted Orb",
+    "file": "greater-exalted-orb.png",
+    "bytes": 11562,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToRare.png"
+  },
+  {
+    "key": "greater-orb-of-augmentation",
+    "text": "Greater Orb of Augmentation",
+    "file": "greater-orb-of-augmentation.png",
+    "bytes": 8483,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToMagic.png"
+  },
+  {
+    "key": "greater-orb-of-transmutation",
+    "text": "Greater Orb of Transmutation",
+    "file": "greater-orb-of-transmutation.png",
+    "bytes": 7303,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeToMagic.png"
+  },
+  {
+    "key": "greater-regal-orb",
+    "text": "Greater Regal Orb",
+    "file": "greater-regal-orb.png",
+    "bytes": 9004,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeMagicToRare.png"
+  },
+  {
+    "key": "hinekoras-lock",
+    "text": "Hinekora's Lock",
+    "file": "hinekoras-lock.png",
+    "bytes": 9951,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/HinekorasLock.png"
+  },
+  {
+    "key": "mirror",
+    "text": "Mirror of Kalandra",
+    "file": "mirror.png",
+    "bytes": 10497,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyDuplicate.png"
+  },
+  {
+    "key": "alch",
+    "text": "Orb of Alchemy",
+    "file": "alch.png",
+    "bytes": 9340,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeToRare.png"
+  },
+  {
+    "key": "annul",
+    "text": "Orb of Annulment",
+    "file": "annul.png",
+    "bytes": 11172,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/AnnullOrb.png"
+  },
+  {
+    "key": "aug",
+    "text": "Orb of Augmentation",
+    "file": "aug.png",
+    "bytes": 8483,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToMagic.png"
+  },
+  {
+    "key": "transmute",
+    "text": "Orb of Transmutation",
+    "file": "transmute.png",
+    "bytes": 7303,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeToMagic.png"
+  },
+  {
+    "key": "perfect-chaos-orb",
+    "text": "Perfect Chaos Orb",
+    "file": "perfect-chaos-orb.png",
+    "bytes": 11595,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyRerollRare.png"
+  },
+  {
+    "key": "perfect-exalted-orb",
+    "text": "Perfect Exalted Orb",
+    "file": "perfect-exalted-orb.png",
+    "bytes": 11562,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToRare.png"
+  },
+  {
+    "key": "perfect-orb-of-augmentation",
+    "text": "Perfect Orb of Augmentation",
+    "file": "perfect-orb-of-augmentation.png",
+    "bytes": 8483,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToMagic.png"
+  },
+  {
+    "key": "perfect-orb-of-transmutation",
+    "text": "Perfect Orb of Transmutation",
+    "file": "perfect-orb-of-transmutation.png",
+    "bytes": 7303,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeToMagic.png"
+  },
+  {
+    "key": "perfect-regal-orb",
+    "text": "Perfect Regal Orb",
+    "file": "perfect-regal-orb.png",
+    "bytes": 9004,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeMagicToRare.png"
+  },
+  {
+    "key": "regal",
+    "text": "Regal Orb",
+    "file": "regal.png",
+    "bytes": 9004,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeMagicToRare.png"
+  },
+  {
+    "key": "wisdom",
+    "text": "Scroll of Wisdom",
+    "file": "wisdom.png",
+    "bytes": 7656,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyIdentification.png"
+  },
+  {
+    "key": "vaal",
+    "text": "Vaal Orb",
+    "file": "vaal.png",
+    "bytes": 10576,
+    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyVaal.png"
+  }
+]

@@ -133,15 +133,19 @@
     // The same window calibrates the Net Worth stash panel and the Reprice price box.
     // Auto-snap looks for the stash panel's coloured border, which does not exist around
     // a price field, so it is hidden there rather than offered and useless.
-    if (data.target === 'reprice') {
+    if (data.target === 'reprice' || data.target === 'reprice-icon') {
       document.body.classList.add('for-reprice');
       minBox = 8;
       const snapBtn = document.getElementById('snap');
       if (snapBtn) snapBtn.style.display = 'none';
       const msg = document.querySelector('.msg');
-      if (msg) msg.innerHTML = 'Drag the box <b>around the number in the price field</b>. '
-        + 'The magnifier shows the exact pixel row and column, so put the edges just outside '
-        + 'the digits. Then Confirm.';
+      if (msg) msg.innerHTML = data.target === 'reprice-icon'
+        ? 'Drag the box <b>around the currency icon</b> beside the price - the picture only, '
+          + 'not the name next to it. It does not have to be tight, but keep other artwork out '
+          + 'of it. Then Confirm.'
+        : 'Drag the box <b>around the number in the price field</b>. '
+          + 'The magnifier shows the exact pixel row and column, so put the edges just outside '
+          + 'the digits. Then Confirm.';
       // the illustration is a stash grid with item cells - nothing to do with a price box
       const ex = document.getElementById('ex');
       if (ex) ex.style.display = 'none';
