@@ -5,22 +5,30 @@
 (function () {
   const ruleEl = document.getElementById('rule');
   const lastEl = document.getElementById('last');
-  let clearTimer = null;
 
   window.api.onRepriceState((s) => {
     if (!s) return;
     if (typeof s.rule === 'string') ruleEl.textContent = s.rule;
-    if (s.read) {
-      // A result stays up briefly, then clears - a stale number on screen is worse than
-      // no number, because it looks like it applies to the item now in front of you.
-      lastEl.textContent = s.read.base + ' → ' + s.read.result;
-      clearTimeout(clearTimer);
-      clearTimer = setTimeout(() => { lastEl.textContent = ''; }, 2500);
-    }
-    if (s.miss) {
-      lastEl.textContent = s.miss;
-      clearTimeout(clearTimer);
-      clearTimer = setTimeout(() => { lastEl.textContent = ''; }, 2000);
-    }
+    // The last result STAYS until another one replaces it.
+    //
+    // It used to clear itself after a couple of seconds, on the reasoning that a stale
+    // number reads as though it applies to whatever is in front of you now. In practice
+    // that is backwards: the number is the receipt for what went on your clipboard, and
+    // the clipboard does not expire either. Glancing up after pasting and finding the
+    // badge already blank tells you nothing about what you just pasted.
+    if (s.read) lastEl.textContent = s.read.base + ' → ' + s.read.result;
+    if (s.miss) lastEl.textContent = s.miss;
+    report();
   });
+
+  // The result no longer clears itself, so the badge has to be wide enough to hold it
+  // indefinitely rather than briefly. A fixed width was survivable when the text vanished
+  // after two seconds; permanently clipped is not.
+  function report() {
+    try {
+      const wrap = document.getElementById('wrap');
+      if (window.api.reportWidth && wrap) window.api.reportWidth(Math.ceil(wrap.scrollWidth) + 2);
+    } catch { }
+  }
+  report();
 })();

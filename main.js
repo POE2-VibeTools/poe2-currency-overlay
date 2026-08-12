@@ -1940,6 +1940,22 @@ function showRepriceBadge() {
   repriceBadge.on('closed', () => { repriceBadge = null; });
 }
 
+// The badge asks for the width its text needs; main owns the window, so main does it.
+// Re-centred on every change, because a badge that grows only to the right drifts off
+// the middle of the screen as prices get longer.
+ipcMain.on('reprice-badge-width', (_e, px) => {
+  try {
+    if (!repriceBadge || repriceBadge.isDestroyed()) return;
+    const want = Math.max(200, Math.min(900, Math.round(Number(px) || 0)));
+    const b = repriceBadge.getBounds();
+    if (Math.abs(b.width - want) < 2) return;
+    const wa = screen.getPrimaryDisplay().workArea;
+    repriceBadge.setBounds({
+      x: Math.round(wa.x + (wa.width - want) / 2), y: b.y, width: want, height: b.height,
+    });
+  } catch { }
+});
+
 function hideRepriceBadge() {
   try { if (repriceBadge && !repriceBadge.isDestroyed()) repriceBadge.close(); } catch { }
   repriceBadge = null;

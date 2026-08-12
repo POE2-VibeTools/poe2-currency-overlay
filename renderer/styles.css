@@ -215,6 +215,12 @@ html, body {
 .set-card { background: var(--s-card); border: 1px solid var(--bd-09); border-radius: 8px; padding: 12px 14px; }
 .set-card-lab { font-size: 9px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--tx-faint); margin-bottom: 10px; }
 .set-half { display: flex; gap: 12px; align-items: flex-start; }
+/* Settings shows one card at a time, but this WRAPPER is not a card - so with Price Check
+   and Help both hidden it stayed in the layout as an empty flex child, still consuming one
+   of .set-scroll's 12px gaps. Every section below it - Net Worth, Reprice, Hotkeys - began
+   12px lower than the ones above, which is exactly the misalignment that was reported.
+   Take the wrapper out of the flow when it holds nothing visible. */
+#settings .set-half:not(:has(> .set-card.sec-on)) { display: none; }
 .set-half > .set-card { flex: 1; min-width: 0; }
 
 .set-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
