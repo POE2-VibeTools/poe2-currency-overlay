@@ -21,7 +21,7 @@ const path = require('path');
 
 const SRC = path.join(__dirname, 'currency-icons');
 const OUT = path.join(__dirname, '..', 'renderer', 'stash', 'currency-icons.json');
-const N = 24;             // comparison box, in pixels
+const N = 32;             // comparison box, in pixels
 const ALPHA_ON = 96;      // below this the source art is treated as background
 
 function decode(file) {
@@ -50,8 +50,12 @@ function alphaBox(im) {
 }
 
 // Area-average downsample of the trimmed region into an N x N RGB + coverage grid.
-// Averaging rather than nearest-neighbour matters: these are 60-90px orbs going to 24px,
+// Averaging rather than nearest-neighbour matters: these are 40-60px orbs going to 32px,
 // and point sampling would keep specular noise instead of the shape.
+//
+// 32 rather than 24: at 24 the thin detail in Cryptic Key washed out, it scored barely
+// above the floor against its own art, and twice came back as Scroll of Wisdom - the one
+// failure mode this whole design is supposed to prevent.
 function signature(im, box) {
   const bw = box.x1 - box.x0 + 1, bh = box.y1 - box.y0 + 1;
   const rgb = new Float64Array(N * N * 3);

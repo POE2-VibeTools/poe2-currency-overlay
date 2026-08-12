@@ -1,34 +1,43 @@
 'use strict';
-// Pull the source art for every currency a player can price an item in, straight from
-// the CDN the price feed already uses. Writes to dev/currency-icons/ - raw downloads are
-// dev input, not shipped; dev/build-currency-templates.js turns them into the small
-// baked signature file the app actually loads.
+// Pull the source art for every currency a player can price an item in.
+//
+// Icons come from the LIVE poe2scout API, the same place the app's own currency list and
+// price checker get theirs. The bundled cx-catalog.json also carries an icon field, but it
+// is a stale snapshot: a third of its URLs 404 now. If the app can show an icon on screen,
+// this script can fetch it - anything missing here is a bug in this script, not a gap in
+// the data.
+//
+// Writes to dev/currency-icons/. Raw downloads are dev input, not shipped;
+// dev/build-currency-templates.js turns them into the baked file the app loads.
 //
 // Shards are excluded on purpose: they cannot be selected in the Set Item Price dropdown.
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const CATALOG = path.join(__dirname, '..', 'cx-catalog.json');
+const API_BASE = 'https://api.poe2scout.com';
+const UA = 'poe2-price-overlay (+https://github.com/POE2-VibeTools/poe2-currency-overlay)';
 const OUT = path.join(__dirname, 'currency-icons');
 
-function currencies() {
-  const cat = JSON.parse(fs.readFileSync(CATALOG, 'utf8'));
-  return Object.entries(cat)
-    .filter(([, v]) => /^currency$/i.test(v.category || ''))
-    .filter(([, v]) => !/\bshard\b/i.test(v.text || ''))
-    .filter(([, v]) => v.icon)
-    .map(([key, v]) => ({ key, text: v.text, icon: v.icon }))
-    .sort((a, b) => a.text.localeCompare(b.text));
+function getJSON(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } }, (res) => {
+      if (res.statusCode !== 200) { res.resume(); return reject(new Error('HTTP ' + res.statusCode + ' ' + url)); }
+      let s = '';
+      res.setEncoding('utf8');
+      res.on('data', (d) => { s += d; });
+      res.on('end', () => { try { resolve(JSON.parse(s)); } catch (e) { reject(e); } });
+    }).on('error', reject);
+  });
 }
 
-function get(url, redirects = 0) {
+function getBuf(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     if (redirects > 4) return reject(new Error('too many redirects'));
-    https.get(url, { headers: { 'user-agent': 'poe2-overlay-dev' } }, (res) => {
+    https.get(url, { headers: { 'User-Agent': UA } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume();
-        return resolve(get(new URL(res.headers.location, url).href, redirects + 1));
+        return resolve(getBuf(new URL(res.headers.location, url).href, redirects + 1));
       }
       if (res.statusCode !== 200) { res.resume(); return reject(new Error('HTTP ' + res.statusCode)); }
       const chunks = [];
@@ -38,12 +47,32 @@ function get(url, redirects = 0) {
   });
 }
 
+// Same endpoint and same current-softcore preference the app uses. The icon set does not
+// vary by league, but the category endpoint needs a real league name in the path.
+async function league() {
+  const ls = await getJSON(API_BASE + '/poe2/Leagues');
+  const arr = Array.isArray(ls) ? ls : (ls.Leagues || ls.leagues || []);
+  const current = arr.filter((l) => l.IsCurrent);
+  const softcore = current.find((l) => !/^HC /i.test(l.Value) && !/hardcore/i.test(l.Value));
+  const pick = softcore || current[0] || arr[0];
+  if (!pick || !pick.Value) throw new Error('could not read a league name from /poe2/Leagues');
+  return pick.Value;
+}
+
 (async () => {
-  const list = currencies();
+  const lg = await league();
+  console.log('league: ' + lg + '\n');
+  const data = await getJSON(API_BASE + '/poe2/Leagues/' + encodeURIComponent(lg)
+    + '/Currencies/ByCategory?category=currency&perPage=250&dataPoints=7');
+
+  const list = (data.Items || [])
+    .map((i) => ({ key: i.ApiId, text: i.Text, icon: i.IconUrl }))
+    .filter((c) => c.icon && !/\bshard\b/i.test(c.text || ''))
+    .sort((a, b) => a.text.localeCompare(b.text));
+
   fs.mkdirSync(OUT, { recursive: true });
   console.log(list.length + ' currencies to fetch\n');
 
-  // The catalog points several entries at the same art file. Fetch each URL once.
   const cache = new Map();
   const manifest = [];
   let ok = 0, failed = 0;
@@ -51,7 +80,7 @@ function get(url, redirects = 0) {
   for (const c of list) {
     const file = c.key + '.png';
     try {
-      if (!cache.has(c.icon)) cache.set(c.icon, await get(c.icon));
+      if (!cache.has(c.icon)) cache.set(c.icon, await getBuf(c.icon));
       const buf = cache.get(c.icon);
       fs.writeFileSync(path.join(OUT, file), buf);
       manifest.push({ key: c.key, text: c.text, file, bytes: buf.length, url: c.icon });
@@ -65,8 +94,6 @@ function get(url, redirects = 0) {
 
   fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
-  // Two currencies sharing one art file cannot be told apart by icon. Say so loudly here
-  // rather than letting the matcher pick one of them at random later.
   const byUrl = new Map();
   for (const m of manifest) {
     if (!byUrl.has(m.url)) byUrl.set(m.url, []);
@@ -75,8 +102,9 @@ function get(url, redirects = 0) {
   const dupes = [...byUrl.values()].filter((v) => v.length > 1);
 
   console.log('\n' + ok + ' fetched, ' + failed + ' failed -> ' + OUT);
+  console.log(byUrl.size + ' distinct images');
   if (dupes.length) {
-    console.log('\nSHARED ART - these cannot be distinguished by icon alone:');
+    console.log('\nSHARED ART - these need the tier word to tell apart:');
     for (const d of dupes) console.log('  ' + d.join('  ==  '));
   }
-})();
+})().catch((e) => { console.error(e.message); process.exit(1); });

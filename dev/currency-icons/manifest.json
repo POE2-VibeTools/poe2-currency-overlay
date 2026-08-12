@@ -1,184 +1,240 @@
 [
   {
+    "key": "etcher",
+    "text": "Arcanist's Etcher",
+    "file": "etcher.png",
+    "bytes": 5645,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25NYWdpY1F1YWxpdHkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/516e8f1131/CurrencyWeaponMagicQuality.png"
+  },
+  {
     "key": "scrap",
     "text": "Armourer's Scrap",
     "file": "scrap.png",
-    "bytes": 10828,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyArmourQuality.png"
+    "bytes": 9820,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBcm1vdXJRdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/d5868f596d/CurrencyArmourQuality.png"
+  },
+  {
+    "key": "artificers",
+    "text": "Artificer's Orb",
+    "file": "artificers.png",
+    "bytes": 10138,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/5131fd4774/CurrencyAddEquipmentSocket.png"
   },
   {
     "key": "whetstone",
     "text": "Blacksmith's Whetstone",
     "file": "whetstone.png",
-    "bytes": 6855,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyWeaponQuality.png"
+    "bytes": 7751,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/18715ea7be/CurrencyWeaponQuality.png"
   },
   {
     "key": "chaos",
     "text": "Chaos Orb",
     "file": "chaos.png",
-    "bytes": 11595,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyRerollRare.png"
+    "bytes": 10590,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png"
+  },
+  {
+    "key": "cryptic-key",
+    "text": "Cryptic Key",
+    "file": "cryptic-key.png",
+    "bytes": 5601,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU3Ryb25nYm94U2tlbGV0b25LZXkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ae08d02326/StrongboxSkeletonKey.png"
   },
   {
     "key": "divine",
     "text": "Divine Orb",
     "file": "divine.png",
-    "bytes": 10404,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyModValues.png"
+    "bytes": 8950,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png"
   },
   {
     "key": "exalted",
     "text": "Exalted Orb",
     "file": "exalted.png",
-    "bytes": 11562,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToRare.png"
+    "bytes": 10624,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png"
+  },
+  {
+    "key": "fracturing-orb",
+    "text": "Fracturing Orb",
+    "file": "fracturing-orb.png",
+    "bytes": 9521,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRnJhY3R1cmluZ09yYiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/8b85ed1dc2/FracturingOrb.png"
   },
   {
     "key": "gcp",
     "text": "Gemcutter's Prism",
     "file": "gcp.png",
-    "bytes": 7976,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyGemQuality.png"
+    "bytes": 9389,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lHZW1RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f4bace18d7/CurrencyGemQuality.png"
   },
   {
     "key": "bauble",
     "text": "Glassblower's Bauble",
     "file": "bauble.png",
-    "bytes": 8221,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyFlaskQuality.png"
+    "bytes": 11696,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lGbGFza1F1YWxpdHkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/1cec279e01/CurrencyFlaskQuality.png"
   },
   {
     "key": "greater-chaos-orb",
     "text": "Greater Chaos Orb",
     "file": "greater-chaos-orb.png",
-    "bytes": 11595,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyRerollRare.png"
+    "bytes": 10590,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png"
   },
   {
     "key": "greater-exalted-orb",
     "text": "Greater Exalted Orb",
     "file": "greater-exalted-orb.png",
-    "bytes": 11562,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToRare.png"
+    "bytes": 10624,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png"
+  },
+  {
+    "key": "greater-jewellers-orb",
+    "text": "Greater Jeweller's Orb",
+    "file": "greater-jewellers-orb.png",
+    "bytes": 9599,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDIiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/7dd6ee75be/CurrencyRerollSocketNumbers02.png"
   },
   {
     "key": "greater-orb-of-augmentation",
     "text": "Greater Orb of Augmentation",
     "file": "greater-orb-of-augmentation.png",
-    "bytes": 8483,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToMagic.png"
+    "bytes": 10269,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb01hZ2ljIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c8ad0ddc84/CurrencyAddModToMagic.png"
   },
   {
     "key": "greater-orb-of-transmutation",
     "text": "Greater Orb of Transmutation",
     "file": "greater-orb-of-transmutation.png",
-    "bytes": 7303,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeToMagic.png"
+    "bytes": 10273,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpYyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2f8e1ff9f8/CurrencyUpgradeToMagic.png"
   },
   {
     "key": "greater-regal-orb",
     "text": "Greater Regal Orb",
     "file": "greater-regal-orb.png",
-    "bytes": 9004,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeMagicToRare.png"
+    "bytes": 10518,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png"
   },
   {
     "key": "hinekoras-lock",
     "text": "Hinekora's Lock",
     "file": "hinekoras-lock.png",
-    "bytes": 9951,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/HinekorasLock.png"
+    "bytes": 10728,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvSGluZWtvcmFzTG9jayIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/ab2163ae06/HinekorasLock.png"
+  },
+  {
+    "key": "lesser-jewellers-orb",
+    "text": "Lesser Jeweller's Orb",
+    "file": "lesser-jewellers-orb.png",
+    "bytes": 7520,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/b0b9a43ed8/CurrencyRerollSocketNumbers01.png"
   },
   {
     "key": "mirror",
     "text": "Mirror of Kalandra",
     "file": "mirror.png",
-    "bytes": 10497,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyDuplicate.png"
+    "bytes": 9979,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lEdXBsaWNhdGUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/26bc31680e/CurrencyDuplicate.png"
   },
   {
     "key": "alch",
     "text": "Orb of Alchemy",
     "file": "alch.png",
-    "bytes": 9340,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeToRare.png"
+    "bytes": 9922,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9SYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/9b80b44821/CurrencyUpgradeToRare.png"
   },
   {
     "key": "annul",
     "text": "Orb of Annulment",
     "file": "annul.png",
-    "bytes": 11172,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/AnnullOrb.png"
+    "bytes": 6307,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQW5udWxsT3JiIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/2daba8ccca/AnnullOrb.png"
   },
   {
     "key": "aug",
     "text": "Orb of Augmentation",
     "file": "aug.png",
-    "bytes": 8483,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToMagic.png"
+    "bytes": 10269,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb01hZ2ljIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c8ad0ddc84/CurrencyAddModToMagic.png"
+  },
+  {
+    "key": "chance",
+    "text": "Orb of Chance",
+    "file": "chance.png",
+    "bytes": 10637,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9VbmlxdWUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/93c6cc8d5b/CurrencyUpgradeToUnique.png"
   },
   {
     "key": "transmute",
     "text": "Orb of Transmutation",
     "file": "transmute.png",
-    "bytes": 7303,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeToMagic.png"
+    "bytes": 10273,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpYyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2f8e1ff9f8/CurrencyUpgradeToMagic.png"
   },
   {
     "key": "perfect-chaos-orb",
     "text": "Perfect Chaos Orb",
     "file": "perfect-chaos-orb.png",
-    "bytes": 11595,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyRerollRare.png"
+    "bytes": 10590,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png"
   },
   {
     "key": "perfect-exalted-orb",
     "text": "Perfect Exalted Orb",
     "file": "perfect-exalted-orb.png",
-    "bytes": 11562,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToRare.png"
+    "bytes": 10624,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png"
+  },
+  {
+    "key": "perfect-jewellers-orb",
+    "text": "Perfect Jeweller's Orb",
+    "file": "perfect-jewellers-orb.png",
+    "bytes": 11271,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ac6398e6a0/CurrencyRerollSocketNumbers03.png"
   },
   {
     "key": "perfect-orb-of-augmentation",
     "text": "Perfect Orb of Augmentation",
     "file": "perfect-orb-of-augmentation.png",
-    "bytes": 8483,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyAddModToMagic.png"
+    "bytes": 10269,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb01hZ2ljIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c8ad0ddc84/CurrencyAddModToMagic.png"
   },
   {
     "key": "perfect-orb-of-transmutation",
     "text": "Perfect Orb of Transmutation",
     "file": "perfect-orb-of-transmutation.png",
-    "bytes": 7303,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeToMagic.png"
+    "bytes": 10273,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpYyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2f8e1ff9f8/CurrencyUpgradeToMagic.png"
   },
   {
     "key": "perfect-regal-orb",
     "text": "Perfect Regal Orb",
     "file": "perfect-regal-orb.png",
-    "bytes": 9004,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeMagicToRare.png"
+    "bytes": 10518,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png"
   },
   {
     "key": "regal",
     "text": "Regal Orb",
     "file": "regal.png",
-    "bytes": 9004,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyUpgradeMagicToRare.png"
+    "bytes": 10518,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png"
   },
   {
     "key": "wisdom",
     "text": "Scroll of Wisdom",
     "file": "wisdom.png",
-    "bytes": 7656,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyIdentification.png"
+    "bytes": 7505,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lJZGVudGlmaWNhdGlvbiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/884f7bc58b/CurrencyIdentification.png"
   },
   {
     "key": "vaal",
     "text": "Vaal Orb",
     "file": "vaal.png",
-    "bytes": 10576,
-    "url": "https://web.poecdn.com/image/Art/2DItems/Currency/CurrencyVaal.png"
+    "bytes": 10461,
+    "url": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png"
   }
 ]
