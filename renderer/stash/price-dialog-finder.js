@@ -97,6 +97,73 @@
     return out;
   }
 
+  // Find the icon by looking for it, rather than by stepping a fixed distance.
+  //
+  // The distance from the block to the icon was fitted as a ratio of the block's height,
+  // twice, and missed at a block height between the ones it was fitted at - clipping the
+  // orb, which then matched the wrong currency. The layout is evidently not a clean
+  // multiple of that one number.
+  //
+  // What the row actually looks like, scanning right from the block: the field's border
+  // (a column or two), a gap, the icon (a solid run about 0.75 block-heights wide), a gap,
+  // then the currency name. So walk the columns, skip anything too narrow to be artwork,
+  // and take the first run wide enough to be the icon - stopping before the text, which is
+  // what the width ceiling is for.
+  function locateIcon(rgba, w, h, block) {
+    const H = block.h;
+    const cy = block.y + H / 2;
+    const y0 = Math.max(0, Math.round(cy - H * 0.75));
+    const y1 = Math.min(h - 1, Math.round(cy + H * 0.75));
+    const xa = Math.min(w - 1, Math.round(block.x + block.w + H * 0.15));
+    const xb = Math.min(w - 1, Math.round(block.x + H * 5));
+    if (xb <= xa || y1 <= y0) return null;
+
+    const lit = [];
+    for (let x = xa; x <= xb; x++) {
+      let n = 0;
+      for (let y = y0; y <= y1; y++) {
+        const p = (y * w + x) * 4;
+        if (0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2] > 60) n++;
+      }
+      // A column counts as artwork only if a real fraction of it is lit. At two pixels the
+      // faint speckle either side of the icon joined everything into one run far too wide
+      // to be a glyph, so the scan fell through to whatever came next.
+      lit.push(n >= Math.max(3, Math.round(H * 0.22)) ? 1 : 0);
+    }
+
+    const minRun = Math.max(4, Math.round(H * 0.45));
+    const maxRun = Math.max(minRun + 2, Math.round(H * 1.35));
+    let i = 0;
+    while (i < lit.length) {
+      if (!lit[i]) { i++; continue; }
+      let j = i;
+      while (j + 1 < lit.length && lit[j + 1]) j++;
+      const run = j - i + 1;
+      if (run >= minRun && run <= maxRun) {
+        const bx0 = xa + i, bx1 = xa + j;
+        // SQUARE, from the horizontal run only.
+        //
+        // Measuring the vertical extent the same way looked obvious and was wrong: within
+        // the icon's columns there is also the dropdown's top and bottom edge, so the box
+        // came out 24 tall around a 14px orb. Stretching that to a square template wrecked
+        // the match. The artwork is square and centred on the row, so its width is the
+        // honest measure of its size.
+        const pad = 1;
+        const size = (bx1 - bx0 + 1) + pad * 2;
+        const cxm = (bx0 + bx1) / 2;
+        const x = Math.max(0, Math.round(cxm - size / 2));
+        const y = Math.max(0, Math.round(cy - size / 2));
+        return {
+          x, y,
+          w: Math.min(w - x, size),
+          h: Math.min(h - y, size),
+        };
+      }
+      i = j + 1;
+    }
+    return null;
+  }
+
   /**
    * Locate the highlighted quantity on a full-screen frame.
    * @param {Uint8ClampedArray} rgba  full frame
@@ -174,9 +241,20 @@
       w: sw,
       h: sw,
     };
-    // Same box under the old name, for callers that still read hit.icon.
-    const icon = { x: strip.x, y: strip.y, w: strip.w, h: strip.h };
-    return { block, icon, strip, candidates: hits.length };
+    // Offer BOTH the fitted box and the located one, and let the matcher decide.
+    //
+    // Neither wins everywhere. The fitted box - a ratio of the block height - reads every
+    // stored capture, and missed a live block height that fell between the ones it was
+    // fitted at. Scanning for the artwork handles that one and reads the windowed captures
+    // better, but does worse at 1080p fullscreen, where the run it finds is a little off.
+    //
+    // Picking one on the evidence available would just be choosing which case to break.
+    // Scoring both against the templates costs one more comparison and the answer that
+    // actually matches the artwork wins.
+    const found = locateIcon(sub, rw, rh, { x: block.x - rx, y: block.y - ry, w: block.w, h: block.h });
+    const icon = strip;
+    const iconAlt = found ? { x: found.x + rx, y: found.y + ry, w: found.w, h: found.h } : null;
+    return { block, icon, iconAlt, strip: icon, located: !!found, candidates: hits.length };
   }
 
   return { find, HL, BLOCK_H, REF_H, ICON };

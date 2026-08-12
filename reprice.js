@@ -145,10 +145,13 @@ function create(deps) {
             return { w, h, data: Array.from(d.data), url: cc.toDataURL('image/png') };
           };
           const num = cut(hit.block, 3);
-          // the STRIP, not the old single box - the matcher slides a window along it
-          const icon = cut(hit.strip || hit.icon, 0);
+          // Two candidate framings for the icon - a fitted box and one scanned out of the
+          // pixels. Neither is right everywhere, so both travel and the matcher keeps
+          // whichever actually matches the artwork.
+          const icon = cut(hit.icon, 0);
+          const iconAlt = hit.iconAlt ? cut(hit.iconAlt, 0) : null;
           if (!num) return null;
-          return { num, icon, streamW: W, streamH: H,
+          return { num, icon, iconAlt, streamW: W, streamH: H,
             block: { x: hit.block.x + sx, y: hit.block.y + sy, w: hit.block.w, h: hit.block.h },
             candidates: hit.candidates };
         };
@@ -227,7 +230,7 @@ function create(deps) {
       // "unknown" and sends down the else branch rather than guessing.
       if (deps.readCurrency) {
         const ic = iconShot || (cfg().repriceIconRegion ? await grab(cfg().repriceIconRegion) : null);
-        if (ic) ctx.currency = await deps.readCurrency(ic);
+        if (ic) ctx.currency = await deps.readCurrency(ic, auto ? auto.iconAlt : null);
       }
       const out = RepriceRules.apply(base, RepriceRules.fromConfig(cfg()), ctx);
       if (out == null) { say(`read ${base} but the rule produced nothing`); return; }

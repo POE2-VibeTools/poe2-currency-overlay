@@ -110,8 +110,12 @@ app.whenReady().then(() => {
     // the digits sit ON the block, so the block IS the number's box
     const numShot = cut(im, hit.block, 3);
     const r = readDigits({ data: numShot.data, w: numShot.w, h: numShot.h });
-    const iconShot = cut(im, hit.strip || hit.icon, 0);
-    const m = CR.identify({ data: iconShot.data, w: iconShot.w, h: iconShot.h }, bank);
+    // both candidate framings, best score wins - same as main
+    let m = CR.identify(cut(im, hit.icon, 0), bank);
+    if (hit.iconAlt) {
+      const alt = CR.identify(cut(im, hit.iconAlt, 0), bank);
+      if (alt.score > m.score) m = alt;
+    }
 
     const okNum = r.value === want.value;
     const okCur = m.family === want.currency;

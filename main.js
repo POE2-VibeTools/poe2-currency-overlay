@@ -2120,12 +2120,18 @@ const reprice = repriceMod.create({
   // apart needs the word beside the icon, which is not read. Base tier is assumed: it is
   // what essentially every listing uses, and the cost of being wrong is bounded - currency
   // only chooses which rule branch runs, never the number, which is read directly.
-  readCurrency: async (shot) => {
+  readCurrency: async (shot, alt) => {
     try {
       const bank = repriceIconBank();
       if (!bank) return null;
       const CR = require('./renderer/stash/currency-reader.js');
-      const m = CR.identify(shot, bank);
+      // Two framings arrive because neither is right at every screen size; the one that
+      // actually matches the artwork wins rather than being chosen in advance.
+      let m = CR.identify(shot, bank);
+      if (alt) {
+        const m2 = CR.identify(alt, bank);
+        if (m2.score > m.score) { m = m2; shot = alt; }
+      }
       // ===== ICONDIAG - dev builds only, see READDIAG ================================
       // The Test read button had diagnostics and the live path did not, so a currency
       // that failed here left nothing behind and the rule silently took its else branch.
