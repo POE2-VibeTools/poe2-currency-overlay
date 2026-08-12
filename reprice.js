@@ -60,8 +60,14 @@ function create(deps) {
   let finderSrc = null;
   function loadFinderSource() {
     if (finderSrc != null) return finderSrc;
-    try { finderSrc = fs.readFileSync(path.join(__dirname, 'renderer', 'stash', 'price-dialog-finder.js'), 'utf8'); }
-    catch { finderSrc = ''; }
+    // The row finder FIRST: the dialog finder is built on it, and in the page there is no
+    // require() to pull it in - it looks for window.PriceRowFinder.
+    const files = ['price-row-finder.js', 'price-dialog-finder.js'];
+    try {
+      finderSrc = files
+        .map((f) => fs.readFileSync(path.join(__dirname, 'renderer', 'stash', f), 'utf8'))
+        .join(String.fromCharCode(10) + ';' + String.fromCharCode(10));
+    } catch { finderSrc = ''; }
     return finderSrc;
   }
 
@@ -151,7 +157,10 @@ function create(deps) {
             x: Math.round(r.x * W) - sx, y: Math.round(r.y * H) - sy,
             w: Math.round(r.w * W), h: Math.round(r.h * H),
           }));
-          const hit = window.PriceDialogFinder.find(px.data, sw, sh, { search: 1, screenH: H, exclude: ex });
+          // The finder locates the field by its border inside the game window's own band,
+          // so it needs the window in the coordinates of this crop.
+          const win = { x: gr.x - sx, y: gr.y - sy, w: gr.w, h: gr.h };
+          const hit = window.PriceDialogFinder.find(px.data, sw, sh, { win, screenH: H, exclude: ex });
           if (!hit) return null;
           const cut = (r, pad) => {
             const x = Math.max(0, r.x - pad), y = Math.max(0, r.y - pad);

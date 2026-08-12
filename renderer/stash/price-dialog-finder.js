@@ -252,136 +252,89 @@
    * @param {object} [opts]  { search: 0..1 fraction of the frame around centre to look in }
    * @returns {{block:{x,y,w,h}, icon:{x,y,w,h}, candidates:number}|null}
    */
+  // Find the price field, then everything else from it.
+  //
+  // The order used to be backwards: hunt the selection highlight's colour across a large
+  // region, then try to prove the thing found was a price field. In a game built out of
+  // brown that produced false positive after false positive, each one patched with another
+  // qualifier.
+  //
+  // Now the BOX comes first - a complete rectangle in one exact border colour, nearest to
+  // where the dialog puts it. Everything else is inside it or a fixed step from it, and
+  // colour matching is safe once it is confined to a verified box.
   function find(rgba, w, h, opts) {
     const o = opts || {};
-    // Look in the middle first, then at everything. The dialog is centred on the GAME
-    // WINDOW, not the screen - in a window pushed to one side it is nowhere near the
-    // middle - but the centre is where it is for most people, it is a quarter of the
-    // pixels, and it excludes most of the brown scenery that shares the colour. Paying
-    // for the full frame only when the cheap look finds nothing gets both.
-    if (!o.search) {
-      return scan(rgba, w, h, 0.5, 0.6, o) || scan(rgba, w, h, 1, 1, o);
-    }
-    return scan(rgba, w, h, o.search, o.search, o);
+    const rowFinder = (typeof require === 'function')
+      ? require('./price-row-finder.js')
+      : (typeof self !== 'undefined' ? self.PriceRowFinder : null);
+    if (!rowFinder) return null;
+
+    const found = rowFinder.find(rgba, w, h, o.win);
+    if (!found) return null;
+    const box = found.quantity;
+
+    // The highlight, looked for ONLY inside the box. This says the field is selected, and
+    // gives the digits' extent; the surrounding screen cannot interfere because the search
+    // never leaves the box.
+    const block = highlightIn(rgba, w, h, box);
+
+    // The icon sits a short, fixed step right of the box - scanned for rather than stepped
+    // to, because the step is small and the box edge is exact.
+    const icon = locateIcon(rgba, w, h, block || box, box);
+
+    // No highlight means the field is not selected, which means the dialog is not ready -
+    // it is highlighted the instant it opens. Reading an unselected field would report a
+    // number nobody is about to change.
+    if (!block) return null;
+
+    return {
+      field: box,
+      block,
+      selected: true,
+      icon: icon || fallbackIcon(box),
+      iconAlt: icon ? fallbackIcon(box) : null,
+      verified: true,
+      candidates: 1,
+    };
   }
 
-  function scan(rgba, w, h, fxIn, fyIn, o) {
-    const fx = fxIn, fy = fyIn;
-    const rx = Math.round(w * (1 - fx) / 2), ry = Math.round(h * (1 - fy) / 2);
-    const rw = Math.round(w * fx), rh = Math.round(h * fy);
-
-    const sub = new Uint8ClampedArray(rw * rh * 4);
-    for (let y = 0; y < rh; y++) {
-      const src = ((y + ry) * w + rx) * 4;
-      sub.set(rgba.subarray(src, src + rw * 4), y * rw * 4);
+  // Largest run of highlight-coloured pixels inside the box.
+  function highlightIn(rgba, w, h, box) {
+    const x0 = Math.max(0, box.x + 1), x1 = Math.min(w - 1, box.x + box.w - 2);
+    const y0 = Math.max(0, box.y + 1), y1 = Math.min(h - 1, box.y + box.h - 2);
+    let bx0 = x1, bx1 = x0, by0 = y1, by1 = y0, n = 0;
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const p = (y * w + x) * 4;
+        if (Math.abs(rgba[p] - HL.r) <= TOL && Math.abs(rgba[p + 1] - HL.g) <= TOL
+          && Math.abs(rgba[p + 2] - HL.b) <= TOL) {
+          n++;
+          if (x < bx0) bx0 = x; if (x > bx1) bx1 = x;
+          if (y < by0) by0 = y; if (y > by1) by1 = y;
+        }
+      }
     }
+    if (n < 20 || bx1 < bx0 || by1 < by0) return null;
+    return { x: bx0, y: by0, w: bx1 - bx0 + 1, h: by1 - by0 + 1 };
+  }
 
-    // Scale against the SCREEN height, not the frame handed in. The caller may already
-    // have cropped to the middle of the display to save work, and sizing a 25px block
-    // against a 60%-tall crop would look for a block 40% too small.
-    const scale = (o.screenH || h) / REF_H;
-    const want = BLOCK_H * scale;
-    const rad = Math.max(1, Math.round(2 * scale));
-    const closed = dilate(mask(sub, rw, rh), rw, rh, rad);
-
-    // Rectangles to ignore, in full-frame pixels. The app's own reprice badge is on
-    // screen, always on top, and amber - so the capture contains it, and once it started
-    // holding the last result permanently it also contained DIGITS. Its block is wider
-    // than a real price highlight, and widest wins, so the reader began reading its own
-    // output back to itself.
-    const skip = Array.isArray(o.exclude) ? o.exclude : [];
-    const excluded = (b) => {
-      const cx2 = b.x + rx + b.w / 2, cy2 = b.y + ry + b.h / 2;
-      return skip.some((r) => cx2 >= r.x && cx2 <= r.x + r.w && cy2 >= r.y && cy2 <= r.y + r.h);
+  // Where the icon is, measured from the box's right edge across every capture:
+  //
+  //   starts   0.50 - 0.55 box-heights past it
+  //   width    0.38 - 0.43 box-heights
+  //
+  // A ratio is trustworthy here in a way it never was before, because it is taken from the
+  // box's exact edge rather than from the highlight's height - a small integer that got
+  // multiplied by three and turned one pixel of error into three.
+  function fallbackIcon(box) {
+    const H = box.h;
+    const size = Math.round(H * 0.58);          // a little wider than the orb, for margin
+    const cx = box.x + box.w + H * 0.72;        // centre of the measured run
+    return {
+      x: Math.round(cx - size / 2),
+      y: Math.round(box.y + box.h / 2 - size / 2),
+      w: size, h: size,
     };
-
-    const hits = blobs(closed, rw, rh).filter((b) =>
-      b.area >= b.w * b.h * SOLID
-      && b.h >= want * (1 - H_TOL) && b.h <= want * (1 + H_TOL)
-      && b.w >= Math.round(4 * scale) && b.w <= Math.round(240 * scale)
-      && !excluded(b));
-    if (!hits.length) return null;
-
-    // Rank by how close the height is to a real selection block, and only then by width.
-    //
-    // Widest-wins was wrong, and single-digit prices are where it showed. A price of 7 has
-    // a block about ten pixels across, so ANY wider impostor beat it - and a solid patch of
-    // brown scenery 41 wide by 25 tall duly did, on a screen where the real block is 21.
-    // Height is what identifies this thing; width is just however long the number is.
-    hits.sort((a, b) => {
-      const da = Math.abs(a.h - want), db = Math.abs(b.h - want);
-      if (da !== db) return da - db;
-      return b.w - a.w;
-    });
-    // Take the first candidate that is actually inside a price field.
-    //
-    // This is the check the finder never had. Ranking only ever reordered guesses; nothing
-    // asked whether the thing found was a price field at all, so a solid patch of ground
-    // the right colour and roughly the right height sailed through and was read as a
-    // number. A field has a bordered box around it with a consistent aspect. Scenery does
-    // not, and no amount of ranking substitutes for asking.
-    let b = null, boxLocal = null;
-    for (const cand of hits.slice(0, 6)) {
-      const probe = { x: cand.x + rad, y: cand.y + rad, w: Math.max(1, cand.w - rad * 2), h: Math.max(1, cand.h - rad * 2) };
-      const bx = fieldBox(sub, rw, rh, probe);
-      if (bx) { b = cand; boxLocal = bx; break; }
-    }
-    // Nothing verified: there is no price field here. Say so.
-    //
-    // This used to fall back to the best-ranked candidate, on the reasoning that a dialog
-    // drawn some unfamiliar way should still be readable. In practice the fallback fired
-    // constantly for the opposite reason: reads are polled, most frames have no dialog on
-    // them at all, and every one of those frames handed the reader a patch of scenery. It
-    // read noise as 111111 often enough to land on the clipboard.
-    //
-    // The polling loop will simply look again next frame, and a real dialog verifies -
-    // eleven out of eleven on every capture we have.
-    if (!b) return null;
-    // undo the dilation's outward growth, and put it back in full-frame coordinates
-    const block = { x: b.x + rx + rad, y: b.y + ry + rad, w: Math.max(1, b.w - rad * 2), h: Math.max(1, b.h - rad * 2) };
-    // A STRIP the icon is somewhere inside, not a box the icon is assumed to fill.
-    //
-    // A single box positioned by a fixed ratio was tuned at two block heights and missed
-    // at a third: at h20 it clipped the orb's right edge and left dead space on the left,
-    // and the clipped shape matched Mirror of Kalandra at 0.42 with Divine third. Wrong,
-    // and confident. Handing the matcher a strip and letting it find the icon inside is
-    // the same answer the digits needed - search, do not assume.
-    // MEASURED, not guessed. dev/measure-icon-offset.js reads the icon's actual extent
-    // off every capture: it runs from 2.68 to 3.37 block-heights right of the block's left
-    // edge, and the currency NAME starts at about 3.68. So the usable window is narrow, and
-    // the two previous attempts failed at its edges - a box sized 1.1 clipped the orb at a
-    // block height it had not been tuned at, and a wide sliding strip ran into the text.
-    const H = block.h;
-    // Confirmed twice over: measurement puts the icon at 2.68-3.37 block-heights wide
-    // 0.74, and sweeping every capture independently lands on the same place. A box only
-    // a little wider than the icon beats a generous one here, because the artwork it is
-    // compared against is trimmed to the orb - extra background is not neutral, it is
-    // noise. Weakest match across 11 captures went 0.44 -> 0.55 on this change alone.
-    const cx = 3.00, size = 0.82;   // centre and width, in block-heights
-    const sw = Math.round(size * H);
-    const strip = {
-      x: Math.max(0, Math.round(block.x + cx * H - sw / 2)),
-      y: Math.max(0, Math.round(block.y + H / 2 - sw / 2)),
-      w: sw,
-      h: sw,
-    };
-    // Offer BOTH the fitted box and the located one, and let the matcher decide.
-    //
-    // Neither wins everywhere. The fitted box - a ratio of the block height - reads every
-    // stored capture, and missed a live block height that fell between the ones it was
-    // fitted at. Scanning for the artwork handles that one and reads the windowed captures
-    // better, but does worse at 1080p fullscreen, where the run it finds is a little off.
-    //
-    // Picking one on the evidence available would just be choosing which case to break.
-    // Scoring both against the templates costs one more comparison and the answer that
-    // actually matches the artwork wins.
-    const local = { x: block.x - rx, y: block.y - ry, w: block.w, h: block.h };
-    const box = boxLocal || fieldBox(sub, rw, rh, local);
-    const found = locateIcon(sub, rw, rh, local, box);
-    const icon = strip;
-    const iconAlt = found ? { x: found.x + rx, y: found.y + ry, w: found.w, h: found.h } : null;
-    const field = box ? { x: box.x + rx, y: box.y + ry, w: box.w, h: box.h } : null;
-    return { block, icon, iconAlt, field, verified: !!boxLocal, strip: icon, located: !!found, candidates: hits.length };
   }
 
   return { find, HL, BLOCK_H, REF_H, ICON };
