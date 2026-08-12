@@ -97,6 +97,61 @@
     return out;
   }
 
+  // The BOX the highlight sits in, found by scanning outward from it for the field's
+  // border.
+  //
+  // This is the piece that was missing all along, and it does two jobs at once.
+  //
+  // It VERIFIES. A price field is a bordered box containing a highlight; a lump of brown
+  // scenery is not. Colour alone could never tell those apart, which is why the old finder
+  // kept accumulating qualifiers and still read 1081 off the ground on an item priced 7.
+  //
+  // And it ANCHORS. Every attempt to place the currency icon by multiplying the highlight's
+  // height failed, because that height is a small integer - 19, 20, 21 - and the icon is
+  // three of them away, so a pixel of measurement error became three at the target. The
+  // box's right edge is an actual edge, found not derived, and the icon is measured from
+  // there.
+  //
+  // Across every capture the box comes out at aspect 1.47-1.54 and the next border a
+  // consistent 0.61 box-heights beyond it, at both screen scales.
+  const BOX_ASPECT_LO = 1.15, BOX_ASPECT_HI = 2.05;
+
+  function fieldBox(rgba, w, h, block) {
+    const lum = (x, y) => {
+      if (x < 0 || y < 0 || x >= w || y >= h) return 0;
+      const p = (y * w + x) * 4;
+      return 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2];
+    };
+    const cy = Math.round(block.y + block.h / 2);
+    const half = Math.round(block.h * 0.4);
+
+    // A border is a CONTINUOUS bright line, so test a stretch of it rather than one pixel.
+    const colIsBorder = (x) => {
+      if (x < 0 || x >= w) return false;
+      let n = 0;
+      for (let y = cy - half; y <= cy + half; y++) if (lum(x, y) > 85) n++;
+      return n >= (half * 2 + 1) * 0.75;
+    };
+    const rowIsBorder = (y) => {
+      if (y < 0 || y >= h) return false;
+      let n = 0;
+      for (let x = block.x; x <= block.x + block.w; x++) if (lum(x, y) > 85) n++;
+      return n >= block.w * 0.8;
+    };
+
+    let left = null, right = null, top = null, bottom = null;
+    for (let d = 2; d < block.h * 4; d++) if (colIsBorder(block.x - d)) { left = block.x - d; break; }
+    for (let d = 2; d < block.h * 6; d++) if (colIsBorder(block.x + block.w + d)) { right = block.x + block.w + d; break; }
+    for (let d = 2; d < block.h * 2; d++) if (rowIsBorder(block.y - d)) { top = block.y - d; break; }
+    for (let d = 2; d < block.h * 2; d++) if (rowIsBorder(block.y + block.h + d)) { bottom = block.y + block.h + d; break; }
+    if (left == null || right == null || top == null || bottom == null) return null;
+
+    const box = { x: left, y: top, w: right - left + 1, h: bottom - top + 1 };
+    const aspect = box.w / box.h;
+    if (aspect < BOX_ASPECT_LO || aspect > BOX_ASPECT_HI) return null;
+    return box;
+  }
+
   // Find the icon by looking for it, rather than by stepping a fixed distance.
   //
   // The distance from the block to the icon was fitted as a ratio of the block's height,
@@ -109,13 +164,17 @@
   // then the currency name. So walk the columns, skip anything too narrow to be artwork,
   // and take the first run wide enough to be the icon - stopping before the text, which is
   // what the width ceiling is for.
-  function locateIcon(rgba, w, h, block) {
-    const H = block.h;
-    const cy = block.y + H / 2;
-    const y0 = Math.max(0, Math.round(cy - H * 0.75));
-    const y1 = Math.min(h - 1, Math.round(cy + H * 0.75));
-    const xa = Math.min(w - 1, Math.round(block.x + block.w + H * 0.15));
-    const xb = Math.min(w - 1, Math.round(block.x + H * 5));
+  function locateIcon(rgba, w, h, block, box) {
+    // Scan from the FIELD BOX's right edge when we have it. The highlight's own right edge
+    // moves with the number - five pixels for "1", thirty-four for "12345" - so starting
+    // there meant starting somewhere different on every item.
+    const H = box ? box.h : block.h;
+    const cy = box ? box.y + box.h / 2 : block.y + block.h / 2;
+    const from = box ? box.x + box.w : block.x + block.w;
+    const y0 = Math.max(0, Math.round(cy - H * 0.6));
+    const y1 = Math.min(h - 1, Math.round(cy + H * 0.6));
+    const xa = Math.min(w - 1, Math.round(from + H * 0.15));
+    const xb = Math.min(w - 1, Math.round(from + H * 4));
     if (xb <= xa || y1 <= y0) return null;
 
     const lit = [];
@@ -232,7 +291,23 @@
       if (da !== db) return da - db;
       return b.w - a.w;
     });
-    const b = hits[0];
+    // Take the first candidate that is actually inside a price field.
+    //
+    // This is the check the finder never had. Ranking only ever reordered guesses; nothing
+    // asked whether the thing found was a price field at all, so a solid patch of ground
+    // the right colour and roughly the right height sailed through and was read as a
+    // number. A field has a bordered box around it with a consistent aspect. Scenery does
+    // not, and no amount of ranking substitutes for asking.
+    let b = null, boxLocal = null;
+    for (const cand of hits.slice(0, 6)) {
+      const probe = { x: cand.x + rad, y: cand.y + rad, w: Math.max(1, cand.w - rad * 2), h: Math.max(1, cand.h - rad * 2) };
+      const bx = fieldBox(sub, rw, rh, probe);
+      if (bx) { b = cand; boxLocal = bx; break; }
+    }
+    // Nothing verified. Fall back to the best-ranked candidate rather than refusing
+    // outright - a dialog drawn in some way this has not seen should still be readable,
+    // and the digit reader is the second opinion.
+    if (!b) b = hits[0];
     // undo the dilation's outward growth, and put it back in full-frame coordinates
     const block = { x: b.x + rx + rad, y: b.y + ry + rad, w: Math.max(1, b.w - rad * 2), h: Math.max(1, b.h - rad * 2) };
     // A STRIP the icon is somewhere inside, not a box the icon is assumed to fill.
@@ -271,10 +346,13 @@
     // Picking one on the evidence available would just be choosing which case to break.
     // Scoring both against the templates costs one more comparison and the answer that
     // actually matches the artwork wins.
-    const found = locateIcon(sub, rw, rh, { x: block.x - rx, y: block.y - ry, w: block.w, h: block.h });
+    const local = { x: block.x - rx, y: block.y - ry, w: block.w, h: block.h };
+    const box = boxLocal || fieldBox(sub, rw, rh, local);
+    const found = locateIcon(sub, rw, rh, local, box);
     const icon = strip;
     const iconAlt = found ? { x: found.x + rx, y: found.y + ry, w: found.w, h: found.h } : null;
-    return { block, icon, iconAlt, strip: icon, located: !!found, candidates: hits.length };
+    const field = box ? { x: box.x + rx, y: box.y + ry, w: box.w, h: box.h } : null;
+    return { block, icon, iconAlt, field, verified: !!boxLocal, strip: icon, located: !!found, candidates: hits.length };
   }
 
   return { find, HL, BLOCK_H, REF_H, ICON };
