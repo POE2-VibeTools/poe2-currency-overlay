@@ -117,14 +117,25 @@ function create(deps) {
         // This runs HERE, next to the canvas, rather than shipping pixels to main: the
         // search region is most of the screen, and handing that over as a plain array
         // costs more than the entire read budget. What crosses the boundary is a few KB.
-        window.__rpAutoGrab = async function (exclude) {
+        window.__rpAutoGrab = async function (exclude, gameRect) {
           if (!window.__rpVideo || !__rpVideo.videoWidth) return null;
           if (!window.PriceDialogFinder) return null;
           const W = __rpVideo.videoWidth, H = __rpVideo.videoHeight;
-          // the dialog is always centred, so only the middle is worth scanning
+          // Search the middle of the GAME WINDOW, not the middle of the screen.
+          //
+          // The dialog is centred on the window. Searching the screen's middle only found
+          // it when the window happened to be centred, and widening to the whole screen to
+          // cover the rest is what let scenery be mistaken for the price field. With the
+          // window's own rectangle the search stays small and is right either way.
           const fx = 0.5, fy = 0.6;
-          const sx = Math.round(W * (1 - fx) / 2), sy = Math.round(H * (1 - fy) / 2);
-          const sw = Math.round(W * fx), sh = Math.round(H * fy);
+          const g = gameRect && gameRect.w > 0
+            ? { x: gameRect.x * W, y: gameRect.y * H, w: gameRect.w * W, h: gameRect.h * H }
+            : { x: 0, y: 0, w: W, h: H };
+          const sx = Math.max(0, Math.round(g.x + g.w * (1 - fx) / 2));
+          const sy = Math.max(0, Math.round(g.y + g.h * (1 - fy) / 2));
+          const sw = Math.min(W - sx, Math.round(g.w * fx));
+          const sh = Math.min(H - sy, Math.round(g.h * fy));
+          if (sw < 40 || sh < 40) return null;
           const c = document.createElement('canvas'); c.width = sw; c.height = sh;
           const g = c.getContext('2d', { willReadFrequently: true });
           await window.__rpNextFrame();
@@ -189,8 +200,12 @@ function create(deps) {
     // search or the reader finds its own last result and reads that instead.
     let ex = [];
     try { ex = (deps.excludeRects && deps.excludeRects()) || []; } catch { }
-    try { return await js('window.__rpAutoGrab ? window.__rpAutoGrab(' + JSON.stringify(ex) + ') : null'); }
-    catch { return null; }
+    let gr = null;
+    try { gr = (deps.gameRect && deps.gameRect()) || null; } catch { }
+    try {
+      return await js('window.__rpAutoGrab ? window.__rpAutoGrab('
+        + JSON.stringify(ex) + ',' + JSON.stringify(gr) + ') : null');
+    } catch { return null; }
   }
 
   async function grab(rect) {

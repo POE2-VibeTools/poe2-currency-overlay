@@ -2140,6 +2140,21 @@ const reprice = repriceMod.create({
   // units the capture regions use, so it does not matter that the stream may not be the
   // display's pixel size. Only the badge qualifies today: the main window is behind the
   // game while repricing, but the badge is deliberately always on top.
+  // The game window's rectangle as SCREEN FRACTIONS, so the search can be the middle of
+  // the WINDOW rather than the middle of the display. Null when the window cannot be found
+  // (not running, or a platform without the native lookup), and the caller falls back to
+  // the display.
+  gameRect: () => {
+    try {
+      const fn = require('./focus-native.js').gameRect;
+      const r = fn && fn();
+      if (!r) return null;
+      const d = screen.getPrimaryDisplay();
+      const W = d.size.width, H = d.size.height;
+      if (!(W > 0 && H > 0)) return null;
+      return { x: (r.x - d.bounds.x) / W, y: (r.y - d.bounds.y) / H, w: r.w / W, h: r.h / H };
+    } catch { return null; }
+  },
   excludeRects: () => {
     try {
       if (!repriceBadge || repriceBadge.isDestroyed() || !repriceBadge.isVisible()) return [];

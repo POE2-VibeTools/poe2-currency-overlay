@@ -49,6 +49,7 @@ function bind() {
       OpenProcess: kernel32.func('void * __stdcall OpenProcess(uint32_t access, int inherit, uint32_t pid)'),
       QueryFullProcessImageNameW: kernel32.func('int __stdcall QueryFullProcessImageNameW(void *h, uint32_t flags, _Out_ uint16_t *buf, _Inout_ uint32_t *size)'),
       CloseHandle: kernel32.func('int __stdcall CloseHandle(void *h)'),
+      GetWindowRect: user32.func('int __stdcall GetWindowRect(void *hwnd, _Out_ int *rect)'),
     };
   } catch (err) {
     api = false;
@@ -190,4 +191,26 @@ function foregroundIsGame() {
   }
 }
 
-module.exports = { warm, focus, findGame, listWindows, foregroundIsGame };
+// Where the game window is on screen, in desktop pixels.
+//
+// Reprice needs it because the price dialog is centred on the GAME WINDOW, not on the
+// display. Searching the middle of the SCREEN finds it only when the window happens to be
+// centred, and widening the search to the whole screen to cover the rest is what let a
+// patch of brown scenery be mistaken for the price field. Knowing the window means the
+// search can be small AND correct at the same time.
+function gameRect() {
+  const a = bind();
+  if (!a) return null;
+  const g = findGame();
+  if (!g || !g.hwnd) return null;
+  try {
+    const r = [0, 0, 0, 0];
+    if (!a.GetWindowRect(g.hwnd, r)) return null;
+    const [left, top, right, bottom] = r;
+    const w = right - left, h = bottom - top;
+    if (!(w > 200 && h > 200)) return null;   // minimised or nonsense
+    return { x: left, y: top, w, h };
+  } catch { return null; }
+}
+
+module.exports = { warm, focus, findGame, listWindows, foregroundIsGame, gameRect };

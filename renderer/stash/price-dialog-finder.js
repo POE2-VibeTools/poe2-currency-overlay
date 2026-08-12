@@ -221,9 +221,17 @@
       && !excluded(b));
     if (!hits.length) return null;
 
-    // Widest wins: the block's width follows the number, and the impostors that survive
-    // height and solidity are narrow slivers of UI trim.
-    hits.sort((a, b) => b.w - a.w);
+    // Rank by how close the height is to a real selection block, and only then by width.
+    //
+    // Widest-wins was wrong, and single-digit prices are where it showed. A price of 7 has
+    // a block about ten pixels across, so ANY wider impostor beat it - and a solid patch of
+    // brown scenery 41 wide by 25 tall duly did, on a screen where the real block is 21.
+    // Height is what identifies this thing; width is just however long the number is.
+    hits.sort((a, b) => {
+      const da = Math.abs(a.h - want), db = Math.abs(b.h - want);
+      if (da !== db) return da - db;
+      return b.w - a.w;
+    });
     const b = hits[0];
     // undo the dilation's outward growth, and put it back in full-frame coordinates
     const block = { x: b.x + rx + rad, y: b.y + ry + rad, w: Math.max(1, b.w - rad * 2), h: Math.max(1, b.h - rad * 2) };
