@@ -193,7 +193,15 @@
       scores.push(score);
     }
     if (!/^\d{1,7}$/.test(text)) return { value: null, text, scores };
-    return { value: parseInt(text, 10), text, scores };
+    // WHERE the digits were found, in crop pixels. The price dialog is centred and sizes
+    // itself to its contents, so a longer currency name widens it and slides the number
+    // sideways. Reading from a wider band than the calibrated box and reporting the hit
+    // position is what lets the caller work out that shift - and apply the same shift to
+    // the currency icon, which moved with it.
+    const x0 = Math.min(...comps.map((c) => c.x));
+    const last = comps[comps.length - 1];
+    const box = { x0, x1: last.x + last.mask.w - 1, y0: Math.min(...comps.map((c) => c.y)) };
+    return { value: parseInt(text, 10), text, scores, box };
   }
 
   return { read, glyphs, classify, valueChannel, resizeMask, MIN_PX };
