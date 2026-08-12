@@ -19,7 +19,10 @@
   // The exact border colour. Tolerance is for capture noise and the compositor, not for
   // variation - every sample of it reads the same.
   const BORDER = { r: 182, g: 169, b: 138 };
-  const TOL = 46;
+  // Tight. The border is drawn flat - every sample of it reads 182,169,138 exactly - so
+  // this is for capture noise and nothing else. At 46 it accepted r 136-228, g 123-215,
+  // b 92-184, which is most of a dirt floor, and the floor duly matched.
+  const TOL = 16;
 
   // Where the row lives, as a fraction of the game window: measured at x 0.28-0.41 and
   // y 0.57-0.80, then widened, because a long currency name pushes the field left and a
