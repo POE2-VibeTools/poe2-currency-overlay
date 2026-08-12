@@ -1984,12 +1984,22 @@ async function initSettings() {
     }
   }
 
+  // Set the key as well as the text. The i18n pass re-translates every [data-i18n]
+  // element from its key, so writing only textContent got silently reverted: the label
+  // read "not set" on every start even though the region was saved and read fine, and
+  // only looked right after a calibration, which happens to run after that pass.
+  function rpCalLabel(el, set) {
+    if (!el) return;
+    el.dataset.i18n = set ? 'ui.settings.reprice.calibrate_done' : 'ui.settings.reprice.calibrate_none';
+    el.textContent = t(el.dataset.i18n);
+    el.classList.toggle('rp-set', set);
+  }
+
   function rpRenderCal() {
     if (!rpEls.calStatus) return;
     const r = config.repriceRegion;
     const set = !!(r && r.w > 0 && r.h > 0);
-    rpEls.calStatus.textContent = set ? t('ui.settings.reprice.calibrate_done') : t('ui.settings.reprice.calibrate_none');
-    rpEls.calStatus.classList.toggle('rp-set', set);
+    rpCalLabel(rpEls.calStatus, set);
     // Test read is meaningless without a region, so it only exists once there is one.
     if (rpEls.testBtn) rpEls.testBtn.classList.toggle('hidden', !set);
     rpRenderIconCal();
@@ -1999,8 +2009,7 @@ async function initSettings() {
     if (!rpEls.iconCalStatus) return;
     const r = config.repriceIconRegion;
     const set = !!(r && r.w > 0 && r.h > 0);
-    rpEls.iconCalStatus.textContent = set ? t('ui.settings.reprice.calibrate_done') : t('ui.settings.reprice.calibrate_none');
-    rpEls.iconCalStatus.classList.toggle('rp-set', set);
+    rpCalLabel(rpEls.iconCalStatus, set);
     if (rpEls.iconTestBtn) rpEls.iconTestBtn.classList.toggle('hidden', !set);
   }
 
