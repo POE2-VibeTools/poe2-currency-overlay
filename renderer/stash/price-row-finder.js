@@ -42,10 +42,46 @@
   // panel that happens to have a border-coloured outline.
   const DARK_INSIDE = 165;
 
+  // What sits BEHIND the box. The dialog is a flat panel, and the ring just outside the
+  // field measures rgb(44,38,30) with a standard deviation of about 6 on every capture at
+  // every resolution - the same brown, barely textured.
+  //
+  // This is the other half of the fingerprint: a bright rectangle is one thing, a bright
+  // rectangle sitting on a specific flat brown is another. Terrain has the colour
+  // sometimes; it does not have the flatness, because terrain is texture.
+  const SURROUND = { r: 44, g: 38, b: 30 };
+  const SURROUND_TOL = 26;      // how far the mean may drift
+  const SURROUND_SD = 24;       // measured ~6; this only rejects things that are textured
+
   function isBorder(rgba, p) {
     return Math.abs(rgba[p] - BORDER.r) <= TOL
       && Math.abs(rgba[p + 1] - BORDER.g) <= TOL
       && Math.abs(rgba[p + 2] - BORDER.b) <= TOL;
+  }
+
+  // Is the box sitting on the dialog's panel? Sampled as a ring a few pixels outside it,
+  // which is panel on all four sides for a real field.
+  function onPanel(rgba, w, h, b) {
+    let n = 0;
+    let sr = 0, sg = 0, sb = 0, qr = 0, qg = 0, qb = 0;
+    const take = (x, y) => {
+      if (x < 0 || y < 0 || x >= w || y >= h) return;
+      const p = (y * w + x) * 4;
+      const r = rgba[p], g = rgba[p + 1], bl = rgba[p + 2];
+      sr += r; sg += g; sb += bl;
+      qr += r * r; qg += g * g; qb += bl * bl;
+      n++;
+    };
+    for (let d = 3; d <= 7; d++) {
+      for (let x = b.x - d; x <= b.x + b.w + d; x += 2) { take(x, b.y - d); take(x, b.y + b.h + d); }
+    }
+    if (n < 40) return false;
+    const mr = sr / n, mg = sg / n, mb = sb / n;
+    if (Math.abs(mr - SURROUND.r) > SURROUND_TOL
+      || Math.abs(mg - SURROUND.g) > SURROUND_TOL
+      || Math.abs(mb - SURROUND.b) > SURROUND_TOL) return false;
+    const sd = (q, m) => Math.sqrt(Math.max(0, q / n - m * m));
+    return sd(qr, mr) <= SURROUND_SD && sd(qg, mg) <= SURROUND_SD && sd(qb, mb) <= SURROUND_SD;
   }
 
   /**
@@ -120,6 +156,9 @@
             for (let xx = top.x0 + 3; xx < top.x1 - 2; xx += 2) { s += L[yy * bw + xx]; n++; }
           }
           if (!n || s / n > DARK_INSIDE) continue;
+
+          // ...and it is sitting on the dialog's flat brown panel, not on scenery
+          if (!onPanel(rgba, w, h, { x: top.x0 + bx0, y: y + by0, w: boxW, h: boxH })) continue;
 
           // Nearest to where the dialog puts it wins - never biggest. Size ranking is what
           // made every previous version pick the merchant panel.
