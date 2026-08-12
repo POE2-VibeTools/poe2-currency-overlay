@@ -18,7 +18,10 @@ const bank = require(path.join(__dirname, '..', 'renderer', 'stash', 'currency-i
 const SETS = (() => {
   try {
     const bank = require(path.join(__dirname, '..', 'renderer', 'stash', 'reprice-digit-sets.json'));
-    return (bank.sets || []).map((s) => ({ blockH: s.blockH, templates: DR.templatesFromJSON({ templates: s.glyphs }) }));
+    const only = process.env.ONLY_SET ? Number(process.env.ONLY_SET) : null;
+    return (bank.sets || [])
+      .filter((s) => only == null || s.blockH === only)
+      .map((s) => ({ blockH: s.blockH, templates: DR.templatesFromJSON({ templates: s.glyphs }) }));
   } catch {
     return [{ blockH: 0, templates: DR.templatesFromJSON(require(path.join(__dirname, '..', 'renderer', 'stash', 'reprice-digits.json'))) }];
   }
