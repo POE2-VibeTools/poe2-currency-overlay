@@ -1045,6 +1045,7 @@ window.I18N_CATALOGS.qa = {
   "ui.settings.reprice.threshold_lead": "[[Íf thé príćé íš át léášt ·········]]",
   "ui.settings.reprice.when_always": "[[Óthérwíšé ····]]",
   "ui.settings.reprice.when_currency": "[[Íf thé ćúrréñćý íš ·······]]",
+  "ui.settings.reprice.when_only": "[[Álwáýš ···]]",
   "ui.settings.reprice.when_price": "[[Íf thé príćé íš át léášt ·········]]",
   "ui.settings.show_desecrate_tab_label": "[[Šhów Déšéćráté táb ·······]]",
   "ui.settings.show_desecrate_tab_sub": "[[híddéñ, ít štíll ópéñš víá rédéšéćráté? áñd hídéš whéñ ýóú léávé ·······················]]",

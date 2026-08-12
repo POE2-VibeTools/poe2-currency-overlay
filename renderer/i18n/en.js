@@ -1045,6 +1045,7 @@ window.I18N_CATALOGS.en = {
   "ui.settings.reprice.threshold_lead": "If the price is at least",
   "ui.settings.reprice.when_always": "Otherwise",
   "ui.settings.reprice.when_currency": "If the currency is",
+  "ui.settings.reprice.when_only": "Always",
   "ui.settings.reprice.when_price": "If the price is at least",
   "ui.settings.show_desecrate_tab_label": "Show Desecrate tab",
   "ui.settings.show_desecrate_tab_sub": "hidden, it still opens via redesecrate? and hides when you leave",

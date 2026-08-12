@@ -2002,23 +2002,32 @@ async function initSettings() {
       const when = document.createElement('div');
       when.className = 'rp-adjust rp-branch-when';
       const wType = document.createElement('select');
-      // The catch-all cannot be turned into a condition: something has to be guaranteed to
-      // run, and it has to be the last thing in the list.
+      // The catch-all offers the conditions too, and picking one RESTRUCTURES the list
+      // rather than refusing. Otherwise the only way to make your single rule conditional
+      // is to know that "+ Add condition" inserts above it - which is asking the user to
+      // understand the shape of the list instead of just saying what they want.
+      //
+      // Only the last row may become the catch-all: a condition after it could never run.
       if (last) {
-        wType.appendChild(rpOpt('always', t('ui.settings.reprice.when_always')));
-        wType.disabled = true;
-      } else {
-        wType.appendChild(rpOpt('currency', t('ui.settings.reprice.when_currency')));
-        wType.appendChild(rpOpt('price>=', t('ui.settings.reprice.when_price')));
+        wType.appendChild(rpOpt('always', t(sole ? 'ui.settings.reprice.when_only' : 'ui.settings.reprice.when_always')));
       }
+      wType.appendChild(rpOpt('currency', t('ui.settings.reprice.when_currency')));
+      wType.appendChild(rpOpt('price>=', t('ui.settings.reprice.when_price')));
       wType.value = (br.when && br.when.type) || 'always';
       wType.addEventListener('change', () => {
-        br.when = wType.value === 'price>='
-          ? { type: 'price>=', at: 20 }
-          : { type: 'currency', is: (rpCurrencyList[0] && rpCurrencyList[0].family) || 'divine' };
+        const wasCatchAll = !br.when || br.when.type === 'always';
+        if (wType.value === 'always') br.when = { type: 'always' };
+        else if (wType.value === 'price>=') br.when = { type: 'price>=', at: 20 };
+        else br.when = { type: 'currency', is: (rpCurrencyList[0] && rpCurrencyList[0].family) || 'divine' };
+        // The catch-all just became a condition, so the list has no floor. Put one back,
+        // carrying the SAME action, so nothing about what the app currently does changes -
+        // the user has narrowed a rule, not silently dropped everything else.
+        if (wasCatchAll && br.when.type !== 'always') {
+          list.push({ when: { type: 'always' }, action: JSON.parse(JSON.stringify(br.action || {})) });
+        }
         rpChanged();
       });
-      if (!sole) when.appendChild(wType);
+      when.appendChild(wType);
 
       if (!last && br.when && br.when.type === 'currency') {
         const sel = document.createElement('select');
