@@ -264,13 +264,17 @@ function create(deps) {
       let shot = null, iconShot = null;
       const auto = await autoGrab();
       if (auto) { shot = auto.num; iconShot = auto.icon; usedAuto = true; }
-      // Calibration is the FALLBACK, not the primary. Net Worth lost its calibration to
-      // auto-detection once and had to have it put back when other resolutions failed;
-      // the same mistake is not worth making twice, so the boxes stay.
-      else if (region && region.w > 0) {
-        shot = await grab(region);
-        iconShot = null;
-      }
+      // NO calibrated read here.
+      //
+      // Falling back per-poll is what made the first click never work. The dialog is not
+      // drawn for the first few looks, auto-detect correctly finds nothing, and the saved
+      // box was then read immediately - pointing at whatever scenery happens to be behind
+      // it. That read "1" often enough to look like a successful attempt, so the loop
+      // returned and the click was spent before the dialog existed. The second click
+      // worked because by then it was already open.
+      //
+      // Calibration stays, but as a LAST RESORT once looking has genuinely failed - see
+      // after the loop.
       if (!shot) continue;
 
       // The measured block height travels with the read so main can tell whether the
@@ -298,6 +302,30 @@ function create(deps) {
       try { if (deps.onRead) deps.onRead(info); } catch { }
       return;
     }
+    // Nothing was ever found by looking. NOW try the calibrated box, once - this is the
+    // path that keeps the feature alive on a setup the finder cannot handle, which is why
+    // the boxes were never removed.
+    if (region && region.w > 0 && deps.readPrice) {
+      const shot = await grab(region);
+      const base = shot ? await deps.readPrice(shot, { at: Date.now() - t0, auto: false, blockH: 0 }) : null;
+      if (base != null) {
+        const ctx = {};
+        if (deps.readCurrency && cfg().repriceIconRegion) {
+          const ic = await grab(cfg().repriceIconRegion);
+          if (ic) ctx.currency = await deps.readCurrency(ic, null);
+        }
+        const out = RepriceRules.apply(base, RepriceRules.fromConfig(cfg()), ctx);
+        if (out != null && out !== base) {
+          clipboard.writeText(String(out));
+          say(`read ${base} -> ${out} (calibrated fallback)`);
+          const info = { base, result: out, currency: ctx.currency || null };
+          if (onChange) onChange(info);
+          try { if (deps.onRead) deps.onRead(info); } catch { }
+          return;
+        }
+      }
+    }
+
     const spent = Date.now() - t0;
     say(`no number found (${looks} looks over ${spent}ms`
       + (region && region.w > 0 ? '' : ', no calibrated fallback') + ')');
