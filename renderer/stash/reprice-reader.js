@@ -287,6 +287,35 @@
     return uni > 0 ? inter / uni : 0;
   }
 
+  // IoU allowing the glyph to be a pixel out of register with the template.
+  //
+  // These strokes are one to two pixels wide, so a single pixel of offset makes them miss
+  // each other entirely and the score collapses. A real "4" captured 8px wide against a
+  // 7px template - the same shape, shifted one column by the resample - scored 0.33 and
+  // was rejected, which is what turned "240" into 11111. Nudging by a pixel and keeping
+  // the best costs nine comparisons on a mask of a hundred-odd pixels.
+  function iouAligned(a, b, w, h) {
+    let best = 0;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        let inter = 0, uni = 0;
+        for (let y = 0; y < h; y++) {
+          const sy = y + dy;
+          for (let x = 0; x < w; x++) {
+            const sx = x + dx;
+            const p = (sx >= 0 && sx < w && sy >= 0 && sy < h) ? a[sy * w + sx] : 0;
+            const q = b[y * w + x];
+            if (p & q) inter++;
+            if (p | q) uni++;
+          }
+        }
+        const s = uni > 0 ? inter / uni : 0;
+        if (s > best) best = s;
+      }
+    }
+    return best;
+  }
+
   // Best template for one glyph mask. Aspect ratio is checked first: a "1" and an "8"
   // resampled to the same box can score deceptively well otherwise.
   function classify(mask, templates) {
@@ -295,7 +324,7 @@
       const t = templates[ch];
       const ar = (mask.w / mask.h) / (t.w / t.h);
       if (ar < 0.6 || ar > 1.66) continue;
-      const s = iouFlat(resizeMask(mask, t.w, t.h), t.data);
+      const s = iouAligned(resizeMask(mask, t.w, t.h), t.data, t.w, t.h);
       if (s > bestScore) { bestScore = s; bestCh = ch; }
     }
     return { ch: bestCh, score: bestScore };
