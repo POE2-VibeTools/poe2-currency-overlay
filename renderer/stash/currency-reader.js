@@ -19,10 +19,18 @@
 
   // A match below this is reported as "no idea" rather than as a guess. Pricing against
   // the wrong currency is worse than not knowing the currency.
-  const MIN_SCORE = 0.55;
-  // ...and it has to beat the runner-up by this much. Two orbs scoring 0.71 and 0.70 is
-  // not an identification, however high the numbers look.
-  const MIN_MARGIN = 0.04;
+  //
+  // Calibrated against REAL captures, not against the art matched with itself. The game
+  // draws these at around 28px over a lit background; a correct icon lands near 0.5, not
+  // near the 0.9 the synthetic test produces. A floor set from synthetic scores rejected
+  // every genuine read.
+  const MIN_SCORE = 0.35;
+  // Separation is what actually identifies an icon, so it carries more weight than the
+  // absolute score: the runner-up must be beaten both by a flat amount and by a clear
+  // fraction. Two orbs at 0.71 and 0.70 are not an identification however high they look,
+  // and 0.50 against 0.34 is one however modest.
+  const MIN_MARGIN = 0.06;
+  const MIN_RATIO = 1.15;
 
   // Area-average a sub-rectangle of an RGBA buffer into an n x n RGB grid. Must match the
   // baker's downsample, or the two sides are not comparable.
@@ -87,24 +95,73 @@
     return out / 3;
   }
 
-  // Where in the crop the icon might be. A hand-dragged box will not frame the orb the way
-  // the alpha trim framed the source art, so try a few insets and keep whichever agrees
-  // best. Cheap: 24x24 against 26 templates.
-  function crops(w, h) {
+  // Find the icon inside the crop and return its bounding box.
+  //
+  // The templates are alpha-TRIMMED: the art is cut down to the pixels it actually paints,
+  // then stretched to fill the comparison box. So the capture has to be trimmed the same
+  // way or the two are not describing the same thing. A hand-dragged box typically leaves
+  // the icon filling about half its width, and comparing that against a template that
+  // fills the whole box lines the icon's face up against the template's background - which
+  // scores like noise, indistinguishable from a wrong icon.
+  //
+  // There is no alpha here, so the icon is separated from the dropdown behind it by
+  // brightness: sample the border for the background level, then keep whatever is
+  // clearly above it.
+  function trim(rgba, w, h) {
+    const lum = new Float32Array(w * h);
+    for (let i = 0, p = 0; p < w * h; i += 4, p++) {
+      lum[p] = 0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2];
+    }
+    // background = median of the one-pixel border, which a sane box is all background
+    const edge = [];
+    for (let x = 0; x < w; x++) { edge.push(lum[x]); edge.push(lum[(h - 1) * w + x]); }
+    for (let y = 0; y < h; y++) { edge.push(lum[y * w]); edge.push(lum[y * w + w - 1]); }
+    edge.sort((a, b) => a - b);
+    const bg = edge[edge.length >> 1];
+
+    // Spread of the whole crop decides how far above the background counts as "the icon".
+    // A fixed offset would swallow a dim icon or clip a bright one.
+    let max = 0;
+    for (let p = 0; p < lum.length; p++) if (lum[p] > max) max = lum[p];
+    const cut = bg + Math.max(10, (max - bg) * 0.22);
+
+    let x0 = w, y0 = h, x1 = -1, y1 = -1, on = 0;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (lum[y * w + x] >= cut) {
+          on++;
+          if (x < x0) x0 = x; if (x > x1) x1 = x;
+          if (y < y0) y0 = y; if (y > y1) y1 = y;
+        }
+      }
+    }
+    // Too little found, or so much that the "background" was not background - fall back to
+    // the whole crop rather than trusting a nonsense box.
+    if (on < 12 || x1 < 0 || (x1 - x0 + 1) < w * 0.15 || (y1 - y0 + 1) < h * 0.15) return null;
+    return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  }
+
+  // Candidate framings, best guess first. The trimmed box is what should work; the insets
+  // stay as a fallback for a crop where the brightness split does not separate cleanly.
+  function crops(rgba, w, h) {
     const out = [];
-    // Up to a third in from each edge. A box dragged generously round the icon can leave
-    // it filling barely half the crop, and a search that stopped at 18% could not reach
-    // it - every such case scored just under the bar and reported no match.
-    for (const inset of [0, 0.06, 0.12, 0.18, 0.24, 0.30]) {
+    const t = trim(rgba, w, h);
+    if (t) {
+      out.push(t);
+      // a pixel or two of slack each way, since the trim edge is a threshold not a fact
+      for (const d of [1, 2]) {
+        out.push({
+          x: Math.max(0, t.x - d), y: Math.max(0, t.y - d),
+          w: Math.min(w - Math.max(0, t.x - d), t.w + d * 2),
+          h: Math.min(h - Math.max(0, t.y - d), t.h + d * 2),
+        });
+      }
+    }
+    for (const inset of [0, 0.12, 0.24]) {
       const dx = Math.round(w * inset), dy = Math.round(h * inset);
       const cw = w - dx * 2, ch = h - dy * 2;
       if (cw < 6 || ch < 6) continue;
-      // centred, plus a nudge each way - the box is usually off by a pixel or two
-      for (const [ox, oy] of [[0, 0], [-dx, 0], [dx, 0], [0, -dy], [0, dy]]) {
-        const x = Math.max(0, Math.min(w - cw, dx + ox));
-        const y = Math.max(0, Math.min(h - ch, dy + oy));
-        out.push({ x, y, w: cw, h: ch });
-      }
+      out.push({ x: dx, y: dy, w: cw, h: ch });
     }
     return out;
   }
@@ -121,7 +178,7 @@
     const n = bank.n || 24;
 
     const best = new Map(); // family -> best score across all crops
-    for (const box of crops(shot.w, shot.h)) {
+    for (const box of crops(rgba, shot.w, shot.h)) {
       const sig = signature(rgba, shot.w, shot.h, box, n);
       for (const ic of bank.icons) {
         const s = ncc(sig, ic.rgb, ic.cov);
@@ -135,7 +192,8 @@
     const top = ranked[0], second = ranked[1];
     const margin = second ? top.score - second.score : 1;
     const all = ranked.slice(0, 5).map((r) => ({ family: r.icon.family, name: r.icon.members[0], score: r.score }));
-    if (top.score < MIN_SCORE || margin < MIN_MARGIN) {
+    const clear = !second || (margin >= MIN_MARGIN && top.score >= second.score * MIN_RATIO);
+    if (top.score < MIN_SCORE || !clear) {
       return { family: null, members: [], score: top.score, margin, all };
     }
     return { family: top.icon.family, members: top.icon.members, score: top.score, margin, all };

@@ -89,7 +89,12 @@ function create(deps) {
           await window.__rpNextFrame();
           g.drawImage(__rpVideo, x, y, w, h, 0, 0, w, h);
           const px = g.getImageData(0, 0, w, h);
-          return { w, h, data: Array.from(px.data), url: c.toDataURL('image/png') };
+          // streamW/H travel with every grab so a region that reads the wrong part of the
+          // screen can be told apart from a region that is simply wrong. Calibration
+          // stores fractions of the DISPLAY; this reads fractions of the STREAM. If the
+          // two disagree - different monitor, different aspect - the same saved numbers
+          // point somewhere else, and nothing in the crop itself would show that.
+          return { w, h, data: Array.from(px.data), url: c.toDataURL('image/png'), streamW: W, streamH: H };
         };
         return __rpVideo.videoWidth + 'x' + __rpVideo.videoHeight;
       })()`);

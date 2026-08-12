@@ -1782,8 +1782,27 @@ ipcMain.handle('reprice-test-icon', async () => {
   if (!repriceIconBank()) return { error: 'no-icons' };
   const m = await repriceIdentifyIcon(config.repriceIconRegion).catch(() => null);
   if (!m) return { error: 'no-frame' };
-  logToggle('reprice', 'icon test: ' + (m.family || 'no match') + ' '
-    + m.all.map((a) => a.family + ' ' + a.score.toFixed(2)).join(', '));
+  // ===== ICONDIAG-START - remove once the icon reader is trusted ==================
+  // Keeps the exact crop that produced a verdict, so a miss can be tuned offline
+  // instead of costing the user another round of open-the-dialog-and-click.
+  try {
+    const dir = path.join(app.getPath('userData'), 'icon-diag');
+    fs.mkdirSync(dir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    if (m.preview) {
+      fs.writeFileSync(path.join(dir, stamp + '.png'),
+        Buffer.from(String(m.preview).split(',')[1], 'base64'));
+    }
+    console.log('[icon-diag] ' + stamp + '  verdict=' + (m.family || 'NO MATCH')
+      + ' score=' + m.score.toFixed(3) + ' margin=' + m.margin.toFixed(3));
+    const d = screen.getPrimaryDisplay();
+    console.log('[icon-diag] stream=' + m.streamW + 'x' + m.streamH
+      + '  display=' + d.size.width + 'x' + d.size.height + ' @' + d.scaleFactor
+      + '  displays=' + screen.getAllDisplays().length
+      + '  region=' + JSON.stringify(config.repriceIconRegion));
+    console.log('[icon-diag] top: ' + m.all.map((a) => a.family + ' ' + a.score.toFixed(3)).join(' | '));
+  } catch (e) { console.log('[icon-diag] dump failed: ' + (e && e.message)); }
+  // ===== ICONDIAG-END =============================================================
   return m;
 });
 // ===== REPRICE-INDICATOR-START ==================================================
@@ -1872,7 +1891,8 @@ async function repriceIdentifyIcon(rect) {
     if (!shot) return null;
     const CR = require('./renderer/stash/currency-reader.js');
     const m = CR.identify(shot, bank);
-    return { family: m.family, members: m.members, score: m.score, margin: m.margin, all: m.all, preview: shot.url };
+    return { family: m.family, members: m.members, score: m.score, margin: m.margin, all: m.all,
+      preview: shot.url, streamW: shot.streamW, streamH: shot.streamH };
   } catch { return null; }
   finally { if (!wasOn) { try { await reprice.closeStream(); } catch { } } }
 }
