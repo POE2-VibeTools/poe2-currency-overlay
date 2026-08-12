@@ -1948,6 +1948,9 @@ async function initSettings() {
     iconCalStatus: $('reprice-icon-cal-status'),
     iconPreviewWrap: $('reprice-icon-preview-wrap'), iconPreviewImg: $('reprice-icon-preview'),
     iconTestBtn: $('reprice-icon-test'), iconTestResult: $('reprice-icon-test-result'),
+    sampleField: $('reprice-sample-field'), sampleRows: $('reprice-sample-rows'),
+    sampleSend: $('reprice-sample-send'), sampleClear: $('reprice-sample-clear'),
+    sampleStatus: $('reprice-sample-status'),
   };
 
   // Currencies the icon matcher can name, fetched once and shared by every branch row.
@@ -2247,7 +2250,97 @@ async function initSettings() {
     if (rpCurrencyList.length) rpRenderBranches();
   }
 
+  // ---------- samples from an untested screen size ----------
+  //
+  // Only ever visible when the reader has actually met a size it has no templates for, so
+  // nobody is asked to contribute to a problem they do not have. Each crop needs the real
+  // number typed in: an unlabelled crop cannot be turned into a template, and a guessed
+  // label would be worse than no sample.
+  let rpSampleList = [];
+
+  function rpRenderSamples() {
+    const host = rpEls.sampleRows;
+    if (!host || !rpEls.sampleField) return;
+    rpEls.sampleField.classList.toggle('hidden', !rpSampleList.length);
+    host.innerHTML = '';
+    for (const s of rpSampleList) {
+      const row = document.createElement('div');
+      row.className = 'rp-sample';
+      const img = document.createElement('img');
+      img.src = s.preview;
+      img.alt = '';
+      img.onload = () => {
+        const scale = Math.max(1, Math.min(4, Math.round(40 / Math.max(1, img.naturalHeight))));
+        img.style.width = (img.naturalWidth * scale) + 'px';
+        img.style.height = (img.naturalHeight * scale) + 'px';
+      };
+      const lab = document.createElement('span');
+      lab.className = 'set-sub';
+      lab.textContent = s.read == null
+        ? t('ui.settings.reprice.sample_read_none')
+        : t('ui.settings.reprice.sample_read_as', { value: s.read });
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.inputMode = 'numeric';
+      inp.maxLength = 7;
+      inp.className = 'rp-sample-truth';
+      inp.placeholder = t('ui.settings.reprice.sample_truth_ph');
+      inp.dataset.i = String(s.i);
+      row.appendChild(img); row.appendChild(lab); row.appendChild(inp);
+      host.appendChild(row);
+    }
+  }
+
+  async function rpLoadSamples() {
+    if (!window.api.repriceSamples) return;
+    try { rpSampleList = await window.api.repriceSamples(); } catch { return; }
+    rpRenderSamples();
+  }
+
+  if (window.api.onRepriceSampleReady) window.api.onRepriceSampleReady((list) => {
+    rpSampleList = list || [];
+    rpRenderSamples();
+  });
+
+  if (rpEls.sampleSend) rpEls.sampleSend.addEventListener('click', async () => {
+    const truths = {};
+    let n = 0;
+    for (const el of document.querySelectorAll('.rp-sample-truth')) {
+      const v = (el.value || '').trim();
+      if (/^\d{1,7}$/.test(v)) { truths[el.dataset.i] = v; n++; }
+    }
+    if (!n) {
+      rpEls.sampleStatus.className = 'set-sub bad';
+      rpEls.sampleStatus.textContent = t('ui.settings.reprice.sample_need_truth');
+      return;
+    }
+    rpEls.sampleSend.disabled = true;
+    rpEls.sampleStatus.className = 'set-sub';
+    rpEls.sampleStatus.textContent = t('ui.settings.reprice.sample_sending');
+    try {
+      const r = await window.api.repriceSamplesSend({ truths });
+      if (r && r.ok) {
+        rpEls.sampleStatus.className = 'set-sub good';
+        rpEls.sampleStatus.textContent = t('ui.settings.reprice.sample_sent', { n: r.sent });
+      } else {
+        rpEls.sampleStatus.className = 'set-sub bad';
+        rpEls.sampleStatus.textContent = t('ui.settings.reprice.sample_failed');
+      }
+    } catch {
+      rpEls.sampleStatus.className = 'set-sub bad';
+      rpEls.sampleStatus.textContent = t('ui.settings.reprice.sample_failed');
+    } finally { rpEls.sampleSend.disabled = false; }
+  });
+
+  if (rpEls.sampleClear) rpEls.sampleClear.addEventListener('click', async () => {
+    try { await window.api.repriceSamplesClear(); } catch {}
+    rpSampleList = [];
+    rpRenderSamples();
+    if (rpEls.sampleStatus) rpEls.sampleStatus.textContent = '';
+  });
+
   rpInit();
+  rpLoadSamples();
 
   const rpPreviewWrap = rpEls.previewWrap, rpPreviewImg = rpEls.previewImg;
   const rpTestBtn = rpEls.testBtn, rpTestResult = rpEls.testResult;

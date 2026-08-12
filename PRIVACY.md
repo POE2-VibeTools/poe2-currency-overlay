@@ -37,6 +37,7 @@ Two things, both of which you choose to send:
 
    A bug report also has an **"Include system information"** tick box, which describes your machine rather than the app: your screen resolution and scale, the overlay window's size, your operating system, the language the app is set to, and which tab you were on. The form has a link that shows you the exact text before you send, and unticking the box sends none of it.
 2. **Stash panel captures**, only if you use "Send my stash tabs", exactly as described above.
+3. **Price field crops**, only if you press Send in Settings > Reprice. If reprice meets a screen size the app has no digit templates for, it keeps the small crop of the price box - the number and the coloured block behind it, a few hundred bytes - and offers to send it so that size can be supported. Sent with it: the number you type in to say what the price really was, what the app read instead, your screen resolution and scale, the app version and your operating system. No item name, no account name, and nothing from anywhere else on your screen. The crops are shown to you before you send, nothing goes without the button press, and Discard throws them away.
 
 That is all. Neither includes your account, your session, or anything personal beyond what you type.
 

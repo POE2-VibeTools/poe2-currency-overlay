@@ -61,6 +61,12 @@ contextBridge.exposeInMainWorld('api', {
   // the currencies the icon matcher can actually name, for the "if the currency is..."
   // picker - offering one it cannot detect would be a rule that never fires
   repriceCurrencies: () => ipcRenderer.invoke('reprice-currencies'),
+  // crops taken at a screen size we have no digit templates for, offered for submission
+  // so the corpus can cover it - see REPRICE-SAMPLES in main
+  repriceSamples: () => ipcRenderer.invoke('reprice-samples'),
+  repriceSamplesSend: (payload) => ipcRenderer.invoke('reprice-samples-send', payload),
+  repriceSamplesClear: () => ipcRenderer.invoke('reprice-samples-clear'),
+  onRepriceSampleReady: (fn) => ipcRenderer.on('reprice-sample-ready', (_e, p) => fn(p)),
   onRepriceMode: (fn) => ipcRenderer.on('reprice-mode', (_e, on) => fn(!!on)),
   stashSampleCapture: () => ipcRenderer.invoke('stash-sample-capture'),
   stashSampleDrop: (i) => ipcRenderer.invoke('stash-sample-drop', i),

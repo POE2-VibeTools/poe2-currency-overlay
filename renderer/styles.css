@@ -1785,6 +1785,13 @@ footer {
   color: var(--tx-dim); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 6px; }
 .rp-branch-del:hover { color: var(--red-hi); }
 #reprice-ruleset-name { width: 130px; flex: 0 0 auto; }
+/* One collected crop: the pixels, what the reader made of them, and a box for what it
+   really said. Shown at a size a human can read, not at 1:1. */
+.rp-samples { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.rp-sample { display: flex; align-items: center; gap: 10px; }
+.rp-sample img { image-rendering: pixelated; border: 1px solid var(--bd-16); background: var(--field-bg); }
+.rp-sample .set-sub { flex: 1 1 auto; }
+.rp-sample-truth { width: 92px; flex: 0 0 auto; text-align: right; }
 .rp-examples { margin-top: 6px; }
 .rp-examples .set-sub { display: block; }
 /* What the reader actually sees. Being told the region is "set" proves nothing - a

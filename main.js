@@ -1810,6 +1810,86 @@ ipcMain.handle('reprice-test-icon', async () => {
   // ===== ICONDIAG-END =============================================================
   return m;
 });
+// ===== REPRICE-SAMPLES-START ====================================================
+// Crops the reader could not confidently place at a known scale, held in memory until
+// the user chooses to send them.
+//
+// This is how the Net Worth reader's corpus grew and it is the only way this one can:
+// there are more resolutions than anyone can sit down and capture, and the people who
+// hit an uncovered one are the only ones who can supply it. Nothing leaves the machine
+// without a button press and a typed answer - a crop with no ground truth is not worth
+// collecting, because it cannot be turned into a template.
+//
+// A price-field crop is a few hundred bytes of digits on a coloured block. No item name,
+// no account, no window title.
+const REPRICE_SAMPLE_MAX = 6;
+let repriceSamples = [];   // { png:Buffer, blockH:number, read:number|null, at:number }
+
+function rememberRepriceSample(shot, blockH, value) {
+  try {
+    if (!shot || !shot.url || !(blockH > 0)) return;
+    // one per distinct size is plenty - a second crop at a scale already held teaches
+    // nothing, and the queue should not grow while someone reprices all evening
+    if (repriceSamples.some((s) => s.blockH === blockH)) return;
+    if (repriceSamples.length >= REPRICE_SAMPLE_MAX) return;
+    repriceSamples.push({
+      png: Buffer.from(String(shot.url).split(',')[1], 'base64'),
+      blockH, read: value == null ? null : value, at: Date.now(),
+    });
+    if (win && !win.isDestroyed()) win.webContents.send('reprice-sample-ready', repriceSampleList());
+  } catch { /* collecting a sample must never break a reprice */ }
+}
+
+function repriceSampleList() {
+  return repriceSamples.map((s, i) => ({
+    i, blockH: s.blockH, read: s.read, bytes: s.png.length,
+    preview: 'data:image/png;base64,' + s.png.toString('base64'),
+  }));
+}
+
+ipcMain.handle('reprice-samples', () => repriceSampleList());
+ipcMain.handle('reprice-samples-clear', () => { repriceSamples = []; return { ok: true }; });
+
+// truths[i] is what the user says the price actually was. A crop without one is dropped:
+// an unlabelled template cannot be baked, and guessing the label would poison the corpus
+// far worse than having no sample at all.
+ipcMain.handle('reprice-samples-send', async (_e, payload) => {
+  const truths = (payload && payload.truths) || {};
+  const note = String((payload && payload.note) || '').slice(0, 300);
+  const labelled = repriceSamples
+    .map((s, i) => ({ s, truth: String(truths[i] == null ? '' : truths[i]).trim() }))
+    .filter((x) => /^\d{1,7}$/.test(x.truth));
+  if (!labelled.length) return { ok: false, error: 'no-truth' };
+
+  let sent = 0;
+  for (const { s, truth } of labelled) {
+    try {
+      const fd = new FormData();
+      fd.append('kind', 'reprice');
+      fd.append('image', new Blob([s.png], { type: 'image/png' }), 'price.png');
+      fd.append('meta', JSON.stringify({
+        kind: 'reprice', truth, read: s.read, blockH: s.blockH,
+        knownScales: (repriceTemplates() || []).map((t) => t.blockH),
+        display: (() => {
+          const d = screen.getPrimaryDisplay();
+          return { w: d.size.width, h: d.size.height, scale: d.scaleFactor };
+        })(),
+        app: app.getVersion(), platform: process.platform, note,
+      }));
+      const r = await fetch(SAMPLE_ENDPOINT, { method: 'POST', body: fd });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return { ok: false, error: j.error || `upload failed (${r.status})`, sent };
+      sent++;
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e), sent };
+    }
+  }
+  repriceSamples = [];
+  if (win && !win.isDestroyed()) win.webContents.send('reprice-sample-ready', []);
+  return { ok: true, sent };
+});
+// ===== REPRICE-SAMPLES-END ======================================================
+
 // ===== REPRICE-INDICATOR-START ==================================================
 // A small badge over the game while the mode is on. Click-through and never focusable,
 // so it cannot eat a click meant for the game or pull focus mid-trade.
@@ -2006,6 +2086,9 @@ const reprice = repriceMod.create({
       const tpl = repriceTemplates();
       if (!tpl) { logToggle('reprice', 'no digit templates installed'); return null; }
       const r = repriceReadDigits(shot, 0.55, meta && meta.blockH);
+      // A size we have no templates for is exactly the crop worth collecting, whether or
+      // not it read - a wrong answer is as useful a sample as no answer.
+      if (r.offScale) rememberRepriceSample(shot, meta && meta.blockH, r.value);
       // One line per successful read only. This runs on every poll of every right-click,
       // so anything heavier than a string belongs in a test harness, not here.
       if (r.value != null) logToggle('reprice', `read ${r.value} at ${(meta && meta.at) || 0}ms (set h${r.set})`);

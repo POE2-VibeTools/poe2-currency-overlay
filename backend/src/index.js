@@ -215,8 +215,13 @@ async function stashSample(request, env) {
   if (buf.byteLength > SAMPLE_MAX_BYTES) return noCacheJson({ error: 'too large' }, 413);
   if (!PNG_MAGIC.every((b, i) => buf[i] === b)) return noCacheJson({ error: 'png only' }, 415);
 
+  // Two corpora share this route and this bucket, kept apart by a prefix: stash panel
+  // captures for the Net Worth reader, and price-field crops for the reprice reader. An
+  // allowlist rather than free text, because the value becomes part of an object key.
+  const kindRaw = String(form.get('kind') || 'stash');
+  const kind = ['stash', 'reprice'].includes(kindRaw) ? kindRaw : 'stash';
   const id = crypto.randomUUID();
-  const key = `${new Date().toISOString().slice(0, 10)}/${id}`;
+  const key = `${kind}/${new Date().toISOString().slice(0, 10)}/${id}`;
   await env.STASH_SAMPLES.put(`${key}.png`, buf, { httpMetadata: { contentType: 'image/png' } });
   // diagnostics ride alongside as a sibling object rather than R2 custom metadata,
   // which is size-limited and awkward to read back in bulk
