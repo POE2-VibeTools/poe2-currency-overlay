@@ -23,6 +23,12 @@ const EXPECT = {
   'short-highlighted.png': { value: 23, currency: 'divine' },
   'tall-highlighted.png': { value: 60, currency: 'divine' },
   'single-digit.png': { value: 1, currency: 'divine' },
+  // game windowed at 1600x1200 on a 1920x1080 desktop - a different game resolution AND
+  // a dialog that is no longer centred on the screen
+  'res1600-tall-single.png': { value: 1, currency: 'divine' },
+  // game windowed at 1440x900 AND pushed off centre, so the dialog is nowhere near the
+  // middle of the screen - this is what the full-frame fallback exists for
+  'res1440-offcenter.png': { value: 1, currency: 'divine' },
   'short.png': null,
 };
 

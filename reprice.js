@@ -13,6 +13,7 @@
 // single frames off it (~18-35ms). The 2s cost of opening the stream is paid once, when
 // the mode is switched on.
 const { clipboard } = require('electron');
+const fs = require('fs');
 const path = require('path');
 
 const RepriceRules = require('./renderer/reprice-rules.js');
@@ -52,9 +53,23 @@ function create(deps) {
     return win.webContents.executeJavaScript(code, true);
   }
 
+  // The finder is a plain UMD file, so injecting its source defines
+  // window.PriceDialogFinder in the page. Shipped as source rather than duplicated here
+  // so the version the app runs is the version dev/test-dialog-finder.js is tested
+  // against - two copies of a pixel heuristic would drift apart silently.
+  let finderSrc = null;
+  function loadFinderSource() {
+    if (finderSrc != null) return finderSrc;
+    try { finderSrc = fs.readFileSync(path.join(__dirname, 'renderer', 'stash', 'price-dialog-finder.js'), 'utf8'); }
+    catch { finderSrc = ''; }
+    return finderSrc;
+  }
+
   async function openStream() {
     if (streamReady) return true;
     try {
+      const src = loadFinderSource();
+      if (src) await js(src + '\n;0').catch(() => {});
       const r = await js(`(async () => {
         if (window.__rpStream && window.__rpStream.active && window.__rpVideo && __rpVideo.videoWidth > 0) return 'reused';
         window.__rpStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 60 }, audio: false });
@@ -96,6 +111,46 @@ function create(deps) {
           // point somewhere else, and nothing in the crop itself would show that.
           return { w, h, data: Array.from(px.data), url: c.toDataURL('image/png'), streamW: W, streamH: H };
         };
+
+        // Locate the dialog on the frame and return only the two small crops.
+        //
+        // This runs HERE, next to the canvas, rather than shipping pixels to main: the
+        // search region is most of the screen, and handing that over as a plain array
+        // costs more than the entire read budget. What crosses the boundary is a few KB.
+        window.__rpAutoGrab = async function () {
+          if (!window.__rpVideo || !__rpVideo.videoWidth) return null;
+          if (!window.PriceDialogFinder) return null;
+          const W = __rpVideo.videoWidth, H = __rpVideo.videoHeight;
+          // the dialog is always centred, so only the middle is worth scanning
+          const fx = 0.5, fy = 0.6;
+          const sx = Math.round(W * (1 - fx) / 2), sy = Math.round(H * (1 - fy) / 2);
+          const sw = Math.round(W * fx), sh = Math.round(H * fy);
+          const c = document.createElement('canvas'); c.width = sw; c.height = sh;
+          const g = c.getContext('2d', { willReadFrequently: true });
+          await window.__rpNextFrame();
+          g.drawImage(__rpVideo, sx, sy, sw, sh, 0, 0, sw, sh);
+          const px = g.getImageData(0, 0, sw, sh);
+          // search:1 - this frame IS the search region already; screenH keeps the block
+          // size scaled against the real display rather than this crop
+          const hit = window.PriceDialogFinder.find(px.data, sw, sh, { search: 1, screenH: H });
+          if (!hit) return null;
+          const cut = (r, pad) => {
+            const x = Math.max(0, r.x - pad), y = Math.max(0, r.y - pad);
+            const w = Math.min(sw - x, r.w + pad * 2), h = Math.min(sh - y, r.h + pad * 2);
+            if (w < 2 || h < 2) return null;
+            const cc = document.createElement('canvas'); cc.width = w; cc.height = h;
+            const gg = cc.getContext('2d', { willReadFrequently: true });
+            gg.putImageData(px, -x, -y);
+            const d = gg.getImageData(0, 0, w, h);
+            return { w, h, data: Array.from(d.data), url: cc.toDataURL('image/png') };
+          };
+          const num = cut(hit.block, 3);
+          const icon = cut(hit.icon, 0);
+          if (!num) return null;
+          return { num, icon, streamW: W, streamH: H,
+            block: { x: hit.block.x + sx, y: hit.block.y + sy, w: hit.block.w, h: hit.block.h },
+            candidates: hit.candidates };
+        };
         return __rpVideo.videoWidth + 'x' + __rpVideo.videoHeight;
       })()`);
       streamReady = true;
@@ -118,6 +173,13 @@ function create(deps) {
     } catch { /* the window may already be gone; the stream dies with it */ }
   }
 
+  // Returns { num, icon, block, ... } or null when no highlighted price field is on
+  // screen - which is the honest answer when the dialog is not open yet.
+  async function autoGrab() {
+    try { return await js('window.__rpAutoGrab ? window.__rpAutoGrab() : null'); }
+    catch { return null; }
+  }
+
   async function grab(rect) {
     if (!streamReady) return null;
     try { return await js(`window.__rpGrab && __rpGrab(${JSON.stringify(rect)})`); }
@@ -127,26 +189,40 @@ function create(deps) {
   // ---- one reprice ---------------------------------------------------------
   async function attempt() {
     const region = cfg().repriceRegion;
-    if (!region || !(region.w > 0)) { say('no calibrated region'); return; }
 
     const t0 = Date.now();
     let looks = 0;
+    let usedAuto = false;
     while (Date.now() - t0 < GIVE_UP_AFTER_MS) {
       await new Promise((r) => setTimeout(r, POLL_EVERY_MS));
       const wait = Date.now() - t0;
       looks++;
-      const shot = await grab(region);
+
+      // Locate the dialog on the frame. The dialog is centred and sizes to its contents,
+      // so the number is somewhere different for every item - a saved box is right for
+      // the item it was drawn on and wrong for the next one.
+      let shot = null, iconShot = null;
+      const auto = await autoGrab();
+      if (auto) { shot = auto.num; iconShot = auto.icon; usedAuto = true; }
+      // Calibration is the FALLBACK, not the primary. Net Worth lost its calibration to
+      // auto-detection once and had to have it put back when other resolutions failed;
+      // the same mistake is not worth making twice, so the boxes stay.
+      else if (region && region.w > 0) {
+        shot = await grab(region);
+        iconShot = null;
+      }
       if (!shot) continue;
-      const base = deps.readPrice ? await deps.readPrice(shot, { at: wait }) : null;
+
+      const base = deps.readPrice ? await deps.readPrice(shot, { at: wait, auto: usedAuto }) : null;
       if (base == null) continue;
 
       const ctx = {};
-      // Optional. A rule that does not branch on currency never needs this box, and an
+      // Optional. A rule that does not branch on currency never needs it, and an
       // unidentified icon leaves ctx.currency undefined, which the rule engine treats as
       // "unknown" and sends down the else branch rather than guessing.
-      if (deps.readCurrency && cfg().repriceIconRegion) {
-        const icon = await grab(cfg().repriceIconRegion);
-        if (icon) ctx.currency = await deps.readCurrency(icon);
+      if (deps.readCurrency) {
+        const ic = iconShot || (cfg().repriceIconRegion ? await grab(cfg().repriceIconRegion) : null);
+        if (ic) ctx.currency = await deps.readCurrency(ic);
       }
       const out = RepriceRules.apply(base, RepriceRules.fromConfig(cfg()), ctx);
       if (out == null) { say(`read ${base} but the rule produced nothing`); return; }
@@ -158,7 +234,8 @@ function create(deps) {
       try { if (deps.onRead) deps.onRead(info); } catch { }
       return;
     }
-    say(`no number found in the price box (${looks} looks over ${Date.now() - t0}ms)`);
+    say(`no number found (${looks} looks over ${Date.now() - t0}ms`
+      + (region && region.w > 0 ? '' : ', no calibrated fallback') + ')');
     try { if (deps.onRead) deps.onRead(null); } catch { }
   }
 

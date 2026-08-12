@@ -40,8 +40,13 @@
   // every icon crop several pixels short - which read as a confident 0.26 against the
   // wrong artwork on every capture.
   //
-  // Reference: returned block x753 y666 h21, icon centred at (815, 676).
-  const ICON = { cx: 2.95, size: 1.5 };
+  // Swept against every real capture at once - 1080p fullscreen, a 1600x1200 window and a
+  // 1440x900 window pushed off centre - by dev/tune-icon-geometry.js. cx 2.95 passes all
+  // five at sizes 1.0 through 1.2, so 1.1 sits in the middle of a stable plateau rather
+  // than on an edge. A bigger box starts clipping the dropdown's frame, whose bright trim
+  // then defeats the trim step that isolates the artwork; tuning against one capture alone
+  // produced 1.5, which was correct at 1080p and wrong in a window.
+  const ICON = { cx: 2.95, size: 1.1 };
 
   function mask(rgba, w, h) {
     const on = new Uint8Array(w * h);
@@ -101,9 +106,19 @@
    */
   function find(rgba, w, h, opts) {
     const o = opts || {};
-    // The dialog is always centred, so only the middle of the screen is worth scanning.
-    // Cheaper, and it removes most of the brown scenery that shares the colour.
-    const fx = o.search || 0.5, fy = o.search || 0.6;
+    // Look in the middle first, then at everything. The dialog is centred on the GAME
+    // WINDOW, not the screen - in a window pushed to one side it is nowhere near the
+    // middle - but the centre is where it is for most people, it is a quarter of the
+    // pixels, and it excludes most of the brown scenery that shares the colour. Paying
+    // for the full frame only when the cheap look finds nothing gets both.
+    if (!o.search) {
+      return scan(rgba, w, h, 0.5, 0.6, o) || scan(rgba, w, h, 1, 1, o);
+    }
+    return scan(rgba, w, h, o.search, o.search, o);
+  }
+
+  function scan(rgba, w, h, fxIn, fyIn, o) {
+    const fx = fxIn, fy = fyIn;
     const rx = Math.round(w * (1 - fx) / 2), ry = Math.round(h * (1 - fy) / 2);
     const rw = Math.round(w * fx), rh = Math.round(h * fy);
 
@@ -113,7 +128,10 @@
       sub.set(rgba.subarray(src, src + rw * 4), y * rw * 4);
     }
 
-    const scale = h / REF_H;
+    // Scale against the SCREEN height, not the frame handed in. The caller may already
+    // have cropped to the middle of the display to save work, and sizing a 25px block
+    // against a 60%-tall crop would look for a block 40% too small.
+    const scale = (o.screenH || h) / REF_H;
     const want = BLOCK_H * scale;
     const rad = Math.max(1, Math.round(2 * scale));
     const closed = dilate(mask(sub, rw, rh), rw, rh, rad);
