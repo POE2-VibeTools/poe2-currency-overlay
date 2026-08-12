@@ -115,6 +115,13 @@
   // Across every capture the box comes out at aspect 1.47-1.54 and the next border a
   // consistent 0.61 box-heights beyond it, at both screen scales.
   const BOX_ASPECT_LO = 1.15, BOX_ASPECT_HI = 2.05;
+  // The highlight is a known fraction of the field it sits in - measured 0.656 to 0.679
+  // across every capture, at both screen scales. Scenery has no such relationship, and
+  // aspect alone was not enough: scanning outward through busy ground always finds SOME
+  // pair of bright lines, and often enough they land in the aspect range by luck.
+  const FILL_LO = 0.56, FILL_HI = 0.80;
+  // And the field is a near-black box. Ground lit by daylight is not.
+  const DARK_LUMA = 45, DARK_FRAC = 0.25;
 
   function fieldBox(rgba, w, h, block) {
     const lum = (x, y) => {
@@ -149,6 +156,21 @@
     const box = { x: left, y: top, w: right - left + 1, h: bottom - top + 1 };
     const aspect = box.w / box.h;
     if (aspect < BOX_ASPECT_LO || aspect > BOX_ASPECT_HI) return null;
+
+    // the highlight has to be the right size for the box it claims to be inside
+    const fill = block.h / box.h;
+    if (fill < FILL_LO || fill > FILL_HI) return null;
+
+    // and the box has to be mostly empty and dark, the way an input field is
+    let dark = 0, n = 0;
+    for (let y = box.y + 2; y < box.y + box.h - 2; y += 2) {
+      for (let x = box.x + 2; x < box.x + box.w - 2; x += 2) {
+        if (lum(x, y) < DARK_LUMA) dark++;
+        n++;
+      }
+    }
+    if (!n || dark / n < DARK_FRAC) return null;
+
     return box;
   }
 
