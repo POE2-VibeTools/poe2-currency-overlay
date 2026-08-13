@@ -1526,12 +1526,29 @@ async function primeCapture() {
   } catch { /* the capture itself reports failure */ }
 }
 
+// The display the GAME is on, which is not necessarily the primary one.
+//
+// Capture was pinned to the primary display to stop desktopCapturer's unordered source
+// list picking a different monitor on each launch. That fixed the flapping and quietly
+// introduced a worse limitation: with the game on a second monitor, capture was looking at
+// the wrong screen entirely and nothing could ever be found.
+//
+// Pinning is still right - it just has to pin to the game, not to monitor 1.
+function repriceDisplay() {
+  try {
+    const fn = require('./focus-native.js').gameRect;
+    const r = fn && fn();
+    if (r && r.w > 0) return screen.getDisplayMatching({ x: r.x, y: r.y, width: r.w, height: r.h });
+  } catch { }
+  return screen.getPrimaryDisplay();
+}
+
 async function grabScreen(cw, ch, withDataUrl) {
   if (process.platform === 'win32') {
     const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: cw, height: ch } });
     // Same primary-display pin as the reprice stream. Both paths have to be looking at
     // the same screen or a region measured by one means nothing to the other.
-    const primaryId = String(screen.getPrimaryDisplay().id);
+    const primaryId = String(repriceDisplay().id);
     const src = sources.find((s) => s.display_id === primaryId)
       || sources.find((s) => s.id.startsWith('screen'))
       || sources[0];
@@ -2149,7 +2166,7 @@ const reprice = repriceMod.create({
       const fn = require('./focus-native.js').gameRect;
       const r = fn && fn();
       if (!r) return null;
-      const d = screen.getPrimaryDisplay();
+      const d = repriceDisplay();
       const W = d.size.width, H = d.size.height;
       if (!(W > 0 && H > 0)) return null;
       return { x: (r.x - d.bounds.x) / W, y: (r.y - d.bounds.y) / H, w: r.w / W, h: r.h / H };
@@ -2159,7 +2176,7 @@ const reprice = repriceMod.create({
     try {
       if (!repriceBadge || repriceBadge.isDestroyed() || !repriceBadge.isVisible()) return [];
       const b = repriceBadge.getBounds();
-      const d = screen.getPrimaryDisplay();
+      const d = repriceDisplay();
       const W = d.size.width, H = d.size.height;
       if (!(W > 0 && H > 0)) return [];
       // a few pixels of margin, because the badge has a shadow and a border
@@ -2645,7 +2662,7 @@ ipcMain.on('stash-calibrate-start', async (_e, opts) => {
   try {
     if (calibWin && !calibWin.isDestroyed()) { calibWin.focus(); return; }
     await primeCapture(); // before the veil - see primeCapture
-    const disp = screen.getPrimaryDisplay();
+    const disp = repriceDisplay();
     const capW = Math.round(disp.size.width * disp.scaleFactor);
     const capH = Math.round(disp.size.height * disp.scaleFactor);
     // grab the desktop without the overlay in it
@@ -3248,7 +3265,7 @@ if (!gotLock) {
             // when the two disagreed every saved region pointed at the wrong part of the
             // screen - consistently wrong, restored by recalibrating, broken again by the
             // next restart, and with nothing the user did to cause it.
-            const primaryId = String(screen.getPrimaryDisplay().id);
+            const primaryId = String(repriceDisplay().id);
             const src = sources.find((x) => x.display_id === primaryId)
               || sources.find((x) => x.id.startsWith('screen'))
               || sources[0];
