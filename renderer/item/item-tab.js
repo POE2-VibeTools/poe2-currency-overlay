@@ -2437,6 +2437,26 @@
       console.error('item parse threw:', err);
     }
     if (!res.ok) {
+      // The parser only knows items in its bundled database, so a currency it has never
+      // heard of comes back "item.unknown" - which is how Yaomac's and Kamasa's Orbs of
+      // Sacrifice landed as a parse error despite the app already knowing their price.
+      //
+      // Nothing about a stackable currency needs that parser: it has no mods, no rolls
+      // and nothing to search for. The name is enough, and our own currency catalogue has
+      // these. So look it up there and take the exchange path the tab already has.
+      const viaCurrency = currencyFromRawText(text);
+      if (viaCurrency) {
+        state.item = viaCurrency;
+        state.itemOriginal = JSON.parse(JSON.stringify(viaCurrency));
+        state.openFolds = new Set();
+        state.view = 'item';
+        state.results = null;
+        state.stale = false;
+        state.notice = null;
+        render();
+        doCurrencyPrice();
+        return true;
+      }
       state.notice = t('itemtab.notice.parse_failed', { error: res.error });
       render();
       if (window.logAction) window.logAction('item-parse-error', String(res.error).slice(0, 200));
@@ -2458,6 +2478,36 @@
     render();
     autoSearch(); // auto-search on paste/hotkey: one keystroke -> priced comps
     return true;
+  }
+
+  // A stackable currency the parser does not know, recognised from the clipboard text
+  // alone. Returns a model the existing currency path understands, or null.
+  //
+  // Deliberately strict about WHICH items this catches: only text that declares itself
+  // currency, and only names our own catalogue lists. It is a route for items the parser
+  // has not caught up with, not a way to guess at anything that failed to parse.
+  function currencyFromRawText(text) {
+    try {
+      const lines = String(text || '').split(/\r?\n/).map((l) => l.trim());
+      const isCurrency = lines.some((l) => /^Rarity:\s*Currency$/i.test(l))
+        || lines.some((l) => /^Item Class:\s*Stackable Currency$/i.test(l));
+      if (!isCurrency) return null;
+      // the name is the line after Rarity
+      const ri = lines.findIndex((l) => /^Rarity:/i.test(l));
+      const name = ri >= 0 ? lines[ri + 1] : '';
+      if (!name) return null;
+      const tag = CX_BY_NAME.get(name.toLowerCase());
+      if (!tag) return null;
+      return {
+        name,
+        baseType: name,
+        currencyTag: tag,
+        currencyName: name,
+        currencyIcon: CX_ICON_BY_ID.get(tag) || null,
+        rawText: text,
+        mods: [],
+      };
+    } catch { return null; }
   }
 
   // re-derive the current item from its raw text under the live q20/rune
@@ -2505,6 +2555,7 @@
   // nothing. Their EE2 name maps to a CX apiId here, which routes them to the
   // exchange-value view (priced via the currency-exchange feed instead).
   let CX_BY_NAME = new Map(); // lowercase display name -> CX apiId
+  const CX_ICON_BY_ID = new Map(); // CX apiId -> icon url, for the currency card
   const PARSER_LANGS = ['en', 'ru', 'pt', 'de', 'fr', 'es'];
   // Every item PoE2 copies starts with a localised "Item Class: " header, so the item
   // text states which language the CLIENT is in. That is the only thing the parser can
@@ -2545,7 +2596,10 @@
           .then((cat) => {
             if (cat && !cat.error) {
               for (const [id, info] of Object.entries(cat)) {
-                if (info && info.text) CX_BY_NAME.set(info.text.toLowerCase(), id);
+                if (info && info.text) {
+                  CX_BY_NAME.set(info.text.toLowerCase(), id);
+                  if (info.icon) CX_ICON_BY_ID.set(id, info.icon);
+                }
               }
             }
           })
