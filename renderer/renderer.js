@@ -2986,8 +2986,18 @@ function eventToAccelerator(e) {
 
 // ---------- activity log (attached to bug reports for debugging) ----------
 const ACTIVITY_LOG = [];
-function logAction(msg) {
+// A second argument is DETAIL, and it is the part worth having.
+//
+// This took one argument while two call sites passed the error text as a second - so a
+// parse failure logged the words "item-parse-error" and silently discarded the reason. A
+// bug report came in reading "item-parse-error (x8)" and nothing else, which is not enough
+// to act on, and that is a defect here rather than something the reporter left out.
+//
+// Detail does NOT take part in the repeat-collapsing: eight failures with eight different
+// reasons are eight facts, while eight identical ones still collapse.
+function logAction(msg, detail) {
   try {
+    if (detail != null && detail !== '') msg = msg + ': ' + String(detail).slice(0, 200);
     const t = new Date().toISOString().slice(11, 19);
     // Collapse consecutive repeats. A report came in with 25 lines of "overlay shown"
     // and "temp-peek mouse-off hide" and not one line about the thing being reported -
