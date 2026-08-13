@@ -1103,4 +1103,5 @@ window.I18N_CATALOGS.fr = {
   "ui.settings.reprice.sample_failed": "l'envoi a échoué",
   "item.listings.open_on_site": "Ouvrir sur le site d'échange",
   "item.listings.open_on_site_tooltip": "Ouvrir exactement cette recherche dans votre navigateur",
+  "ui.settings.reprice.or_lead": "ou",
 };

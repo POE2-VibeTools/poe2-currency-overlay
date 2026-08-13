@@ -1103,4 +1103,5 @@ window.I18N_CATALOGS.de = {
   "ui.settings.reprice.sample_failed": "das Senden hat nicht geklappt",
   "item.listings.open_on_site": "Auf der Handelsseite öffnen",
   "item.listings.open_on_site_tooltip": "Genau diese Suche im Browser öffnen",
+  "ui.settings.reprice.or_lead": "oder",
 };

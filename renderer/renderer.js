@@ -2090,6 +2090,14 @@ async function initSettings() {
         const rule = act.rules[k] || (act.rules[k] = { op: 'subtract', value: 10, mode: 'flat' });
         const rr = document.createElement('div');
         rr.className = 'rp-adjust rp-branch-rule';
+        // The two rules in a pairing are ALTERNATIVES - one of them applies, not both.
+        // Stacked with nothing between them they read as two things that each happen.
+        if (k > 0) {
+          const orLead = document.createElement('span');
+          orLead.className = 'rp-lead rp-or';
+          orLead.textContent = t('ui.settings.reprice.or_lead');
+          rr.appendChild(orLead);
+        }
         const op = document.createElement('select');
         op.appendChild(rpOpt('subtract', t('ui.settings.reprice.op_subtract')));
         op.appendChild(rpOpt('add', t('ui.settings.reprice.op_add')));

@@ -1117,4 +1117,5 @@ window.I18N_CATALOGS.ru = {
   "ui.settings.reprice.sample_failed": "отправить не удалось",
   "item.listings.open_on_site": "Открыть на сайте торговли",
   "item.listings.open_on_site_tooltip": "Открыть этот же поиск в браузере",
+  "ui.settings.reprice.or_lead": "или",
 };

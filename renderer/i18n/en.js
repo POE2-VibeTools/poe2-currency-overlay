@@ -1030,6 +1030,7 @@ window.I18N_CATALOGS.en = {
   "ui.settings.reprice.mode_percent": "percent",
   "ui.settings.reprice.op_add": "Add",
   "ui.settings.reprice.op_subtract": "Subtract",
+  "ui.settings.reprice.or_lead": "or",
   "ui.settings.reprice.remove_branch": "Remove this condition",
   "ui.settings.reprice.round_down": "round down",
   "ui.settings.reprice.round_nearest": "round to nearest",

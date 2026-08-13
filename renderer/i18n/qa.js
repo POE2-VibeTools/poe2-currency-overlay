@@ -1030,6 +1030,7 @@ window.I18N_CATALOGS.qa = {
   "ui.settings.reprice.mode_percent": "[[pérćéñt ···]]",
   "ui.settings.reprice.op_add": "[[Ádd]]",
   "ui.settings.reprice.op_subtract": "[[Šúbtráćt ···]]",
+  "ui.settings.reprice.or_lead": "[[ór]]",
   "ui.settings.reprice.remove_branch": "[[Rémóvé thíš ćóñdítíóñ ········]]",
   "ui.settings.reprice.round_down": "[[róúñd dówñ ····]]",
   "ui.settings.reprice.round_nearest": "[[róúñd tó ñéáréšt ······]]",

@@ -1103,4 +1103,5 @@ window.I18N_CATALOGS.pt = {
   "ui.settings.reprice.sample_failed": "não foi possível enviar",
   "item.listings.open_on_site": "Abrir no site de trocas",
   "item.listings.open_on_site_tooltip": "Abrir exatamente esta pesquisa no seu navegador",
+  "ui.settings.reprice.or_lead": "ou",
 };
