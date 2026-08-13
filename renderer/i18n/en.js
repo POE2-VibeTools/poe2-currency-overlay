@@ -425,6 +425,8 @@ window.I18N_CATALOGS.en = {
   "item.listings.listed_age": "listed {age}",
   "item.listings.load_more_results": "Load more results ({remaining} left)",
   "item.listings.no_results": "No listings matched. Lower some minimums or turn mods off, then hit Search again.",
+  "item.listings.open_on_site": "Open on trade site",
+  "item.listings.open_on_site_tooltip": "Open this exact search in your browser",
   "item.listings.quality_prefix": "q",
   "item.listings.row_pin_tooltip": "Click to pin the detail card",
   "item.listings.section_enchants": "Enchants",

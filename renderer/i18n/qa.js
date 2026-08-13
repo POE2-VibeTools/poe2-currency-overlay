@@ -425,6 +425,8 @@ window.I18N_CATALOGS.qa = {
   "item.listings.listed_age": "[[líštéd {age} ···]]",
   "item.listings.load_more_results": "[[Lóád móré réšúltš ({remaining} léft) ·········]]",
   "item.listings.no_results": "[[Ñó líštíñgš mátćhéd. Lówér šómé míñímúmš ór túrñ módš óff, théñ hít Šéárćh ágáíñ. ·····························]]",
+  "item.listings.open_on_site": "[[Ópéñ óñ trádé šíté ·······]]",
+  "item.listings.open_on_site_tooltip": "[[Ópéñ thíš éxáćt šéárćh íñ ýóúr brówšér ··············]]",
   "item.listings.quality_prefix": "[[q]]",
   "item.listings.row_pin_tooltip": "[[Ćlíćk tó píñ thé détáíl ćárd ··········]]",
   "item.listings.section_enchants": "[[Éñćháñtš ···]]",

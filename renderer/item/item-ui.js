@@ -688,6 +688,21 @@
       }
       const ctx = state.searchCtx;
       const paging = ctx ? { more: ctx.loaded < ctx.ids.length, remaining: ctx.ids.length - ctx.loaded } : null;
+      // The same search, on the trade site. The API hands back the query id it stored, and
+      // that id IS the site's URL - so this opens exactly these results rather than
+      // rebuilding the search and hoping it comes out the same.
+      if (ctx && ctx.queryId && state.league) {
+        const row = el('div', 'res-open-row');
+        const link = el('div', 'res-open-link', t('item.listings.open_on_site'));
+        link.title = t('item.listings.open_on_site_tooltip');
+        link.onclick = () => {
+          const url = 'https://www.pathofexile.com/trade2/search/poe2/'
+            + encodeURIComponent(state.league) + '/' + encodeURIComponent(ctx.queryId);
+          if (window.api && window.api.openExternal) window.api.openExternal(url);
+        };
+        row.appendChild(link);
+        wrap.appendChild(row);
+      }
       wrap.appendChild(resultsPanel(state.results, h, state.searching, state.stale, paging));
     } else if (state.searching && !state.waitUntil) wrap.appendChild(el('div', 'res-group-title', t('item.search.searching_label')));
     return wrap;

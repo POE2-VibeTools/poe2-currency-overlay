@@ -840,3 +840,10 @@
 /* item level on a result row - dim, it is context not a headline */
 .listing .li-ilvl { font-size: 9.5px; color: var(--tx-faint); font-variant-numeric: tabular-nums;
   white-space: nowrap; flex-shrink: 0; }
+
+/* Link out to the same search on the trade site. Sits above the listings rather than in
+   the header: it belongs to the RESULTS, and it should not compete with the item. */
+.res-open-row { display: flex; justify-content: flex-end; margin: 2px 0 6px; }
+.res-open-link { font-size: 11px; color: var(--tx-dim); cursor: pointer; text-decoration: underline;
+  text-underline-offset: 2px; }
+.res-open-link:hover { color: var(--am); }
