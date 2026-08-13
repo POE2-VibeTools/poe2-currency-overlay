@@ -1526,6 +1526,26 @@ async function primeCapture() {
   } catch { /* the capture itself reports failure */ }
 }
 
+// The game window in Electron's coordinates.
+//
+// focus-native calls GetWindowRect, which returns PHYSICAL pixels. Electron's screen API
+// works in logical DIP units. On a monitor at 100% those are the same number, which is
+// why this was invisible until the game moved to a 150% display - there the window came
+// back as 2582x1390 against a screen Electron calls 1707x960, and the search band was
+// computed at half again its proper size, off the edge of the frame.
+function gameRectDip() {
+  try {
+    const fn = require('./focus-native.js').gameRect;
+    const r = fn && fn();
+    if (!r || !(r.w > 0)) return null;
+    if (typeof screen.screenToDipRect === 'function') {
+      const d = screen.screenToDipRect(null, { x: r.x, y: r.y, width: r.w, height: r.h });
+      if (d && d.width > 0) return { x: d.x, y: d.y, w: d.width, h: d.height };
+    }
+    return r;
+  } catch { return null; }
+}
+
 // The display the GAME is on, which is not necessarily the primary one.
 //
 // Capture was pinned to the primary display to stop desktopCapturer's unordered source
@@ -1536,9 +1556,8 @@ async function primeCapture() {
 // Pinning is still right - it just has to pin to the game, not to monitor 1.
 function repriceDisplay() {
   try {
-    const fn = require('./focus-native.js').gameRect;
-    const r = fn && fn();
-    if (r && r.w > 0) return screen.getDisplayMatching({ x: r.x, y: r.y, width: r.w, height: r.h });
+    const r = gameRectDip();
+    if (r) return screen.getDisplayMatching({ x: r.x, y: r.y, width: r.w, height: r.h });
   } catch { }
   return screen.getPrimaryDisplay();
 }
@@ -1936,7 +1955,9 @@ function repriceRuleSummary() {
 
 function showRepriceBadge() {
   if (repriceBadge && !repriceBadge.isDestroyed()) return;
-  const wa = screen.getPrimaryDisplay().workArea;
+  // over the GAME's monitor, not monitor 1 - a badge on the other screen is a badge
+  // nobody looking at the game can see
+  const wa = repriceDisplay().workArea;
   const W = 300, H = 30;
   repriceBadge = new BrowserWindow({
     width: W, height: H,
@@ -1966,7 +1987,7 @@ ipcMain.on('reprice-badge-width', (_e, px) => {
     const want = Math.max(200, Math.min(900, Math.round(Number(px) || 0)));
     const b = repriceBadge.getBounds();
     if (Math.abs(b.width - want) < 2) return;
-    const wa = screen.getPrimaryDisplay().workArea;
+    const wa = repriceDisplay().workArea;
     repriceBadge.setBounds({
       x: Math.round(wa.x + (wa.width - want) / 2), y: b.y, width: want, height: b.height,
     });
@@ -2163,8 +2184,7 @@ const reprice = repriceMod.create({
   // the display.
   gameRect: () => {
     try {
-      const fn = require('./focus-native.js').gameRect;
-      const r = fn && fn();
+      const r = gameRectDip();
       if (!r) return null;
       const d = repriceDisplay();
       const W = d.size.width, H = d.size.height;
