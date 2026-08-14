@@ -1309,5 +1309,16 @@
     if (p) { if (p._cleanup) p._cleanup(); p.remove(); }
   }
 
-  window.ItemUI = { render, showMenu, showPicker, closePicker };
+  // Leaving the tab unpins. There is no use case for a pinned detail card floating over
+  // a DIFFERENT tab - and the half-alive pin it left behind (card hidden, pin state
+  // set) took two clicks to release after coming back.
+  function unpinPeek() {
+    peekPinned = null;
+    clearTimeout(peekShowTimer);
+    clearTimeout(peekHideTimer);
+    document.querySelectorAll('.listing.li-pinned').forEach((n) => n.classList.remove('li-pinned'));
+    try { window.api.itemPeekHide(); } catch { }
+  }
+
+  window.ItemUI = { render, showMenu, showPicker, closePicker, unpinPeek };
 })();

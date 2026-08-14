@@ -2833,6 +2833,11 @@
   function setTab(which) {
     if (which === true) which = 'items'; // legacy boolean callers
     if (which === false) which = 'currency';
+    // Leaving a tab releases anything pinned on it, app-wide: the item peek card and
+    // the currency tooltip. A pin that outlives its tab is never wanted and leaves
+    // half-alive state behind (the two-clicks-to-unpin report).
+    try { if (window.ItemUI && window.ItemUI.unpinPeek) window.ItemUI.unpinPeek(); } catch { }
+    try { if (window.unpinCurrencyTip) window.unpinCurrencyTip(); } catch { }
     state.active = which === 'items';
     // Tell main which tab is live so the trade-exchange poll only runs on Currency
     // (see main.js liveTick) - polling a tab the user isn't viewing burned the API budget.

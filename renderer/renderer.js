@@ -208,6 +208,8 @@ function unpinTip() {
   tip.classList.remove('pinned');
   tip.classList.add('hidden');
 }
+// tab switches release pins app-wide - called from setTab in item-tab.js
+window.unpinCurrencyTip = unpinTip;
 
 let tipHideTimer = null;
 let tipShowTimer = null;
