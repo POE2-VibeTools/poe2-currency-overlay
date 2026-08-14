@@ -10,6 +10,7 @@ window.RELEASE_NOTES = [
     date: '2026-08-14',
     notes: [
       "fixed some settings issues",
+      "Fixed more Multi-language issues",
     ],
   },
   {
