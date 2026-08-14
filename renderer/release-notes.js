@@ -6,6 +6,13 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.7.3',
+    date: '2026-08-14',
+    notes: [
+      "fixed some settings issues",
+    ],
+  },
+  {
     version: '2.7.2',
     date: '2026-08-14',
     notes: [
