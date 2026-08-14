@@ -139,6 +139,29 @@ function create(deps) {
         // This runs HERE, next to the canvas, rather than shipping pixels to main: the
         // search region is most of the screen, and handing that over as a plain array
         // costs more than the entire read budget. What crosses the boundary is a few KB.
+        // DEV ONLY - the search region itself, as a PNG, plus the numbers that framed it.
+        // When the finder reports nothing on a frame where the dialog is plainly open, the
+        // only way to tell "wrong pixels" from "wrong rectangle" is to look at exactly
+        // what it searched.
+        window.__rpDebugCrop = async function (gameRect) {
+          if (!window.__rpVideo || !__rpVideo.videoWidth) return null;
+          const W = __rpVideo.videoWidth, H = __rpVideo.videoHeight;
+          const fx = 0.5, fy = 0.6;
+          const gr = gameRect && gameRect.w > 0
+            ? { x: gameRect.x * W, y: gameRect.y * H, w: gameRect.w * W, h: gameRect.h * H }
+            : { x: 0, y: 0, w: W, h: H };
+          const sx = Math.max(0, Math.round(gr.x + gr.w * (1 - fx) / 2));
+          const sy = Math.max(0, Math.round(gr.y + gr.h * (1 - fy) / 2));
+          const sw = Math.min(W - sx, Math.round(gr.w * fx));
+          const sh = Math.min(H - sy, Math.round(gr.h * fy));
+          if (sw < 4 || sh < 4) return { streamW: W, streamH: H, sx, sy, sw, sh, url: null };
+          const c = document.createElement('canvas'); c.width = sw; c.height = sh;
+          const g = c.getContext('2d', { willReadFrequently: true });
+          await window.__rpNextFrame();
+          g.drawImage(__rpVideo, sx, sy, sw, sh, 0, 0, sw, sh);
+          return { streamW: W, streamH: H, sx, sy, sw, sh, url: c.toDataURL('image/png') };
+        };
+
         window.__rpAutoGrab = async function (exclude, gameRect) {
           if (!window.__rpVideo || !__rpVideo.videoWidth) return null;
           if (!window.PriceDialogFinder) return null;
@@ -227,6 +250,10 @@ function create(deps) {
 
   // Returns { num, icon, block, ... } or null when no highlighted price field is on
   // screen - which is the honest answer when the dialog is not open yet.
+  // the last game rectangle handed to the finder, kept so a failed attempt can be dumped
+  // with the exact numbers it searched under
+  let lastGameRect = null;
+
   async function autoGrab() {
     // The badge is part of the screen the capture sees, so it has to be taken out of the
     // search or the reader finds its own last result and reads that instead.
@@ -234,6 +261,7 @@ function create(deps) {
     try { ex = (deps.excludeRects && deps.excludeRects()) || []; } catch { }
     let gr = null;
     try { gr = (deps.gameRect && deps.gameRect()) || null; } catch { }
+    lastGameRect = gr;
     try {
       return await js('window.__rpAutoGrab ? window.__rpAutoGrab('
         + JSON.stringify(ex) + ',' + JSON.stringify(gr) + ') : null');
@@ -338,6 +366,32 @@ function create(deps) {
         }
       }
     }
+
+    // ===== AUTOMISS - dev builds only, remove with READDIAG =========================
+    // A give-up means ~75 polls of the finder all said nothing. Keep what it was
+    // actually searching - the crop and the game rectangle that framed it - because
+    // "worked offline, failed live" can only be settled by seeing the live inputs.
+    try {
+      const { app } = require('electron');
+      if (!app.isPackaged) {
+        const dbg = await js('window.__rpDebugCrop ? __rpDebugCrop('
+          + JSON.stringify(lastGameRect) + ') : null');
+        if (dbg) {
+          const dir = path.join(app.getPath('userData'), 'read-diag');
+          fs.mkdirSync(dir, { recursive: true });
+          const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+          if (dbg.url) {
+            fs.writeFileSync(path.join(dir, stamp + '_auto-miss.png'),
+              Buffer.from(String(dbg.url).split(',')[1], 'base64'));
+          }
+          fs.writeFileSync(path.join(dir, stamp + '_auto-miss.json'), JSON.stringify({
+            gameRect: lastGameRect, sx: dbg.sx, sy: dbg.sy, sw: dbg.sw, sh: dbg.sh,
+            streamW: dbg.streamW, streamH: dbg.streamH,
+          }, null, 2));
+        }
+      }
+    } catch { /* diagnostics must never break a reprice */ }
+    // ===== AUTOMISS-END =============================================================
 
     const spent = Date.now() - t0;
     say(`no number found (${looks} looks over ${spent}ms`
