@@ -6,6 +6,14 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.7.5',
+    date: '2026-08-14',
+    notes: [
+      "Windows: the resize icon was covering the corner and blocking resize. Removed. That icon was only ever needed for Linux.",
+      "Linux: the resize icon actually resizes now.",
+    ],
+  },
+  {
     version: '2.7.4',
     date: '2026-08-14',
     notes: [
