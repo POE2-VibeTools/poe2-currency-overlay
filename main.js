@@ -3376,8 +3376,14 @@ const EXTERNAL_HOST_ALLOW = ['ko-fi.com', 'docs.google.com', 'forms.gle', 'poe2-
 ipcMain.on('open-external', (_e, url) => {
   try {
     const u = new URL(String(url));
-    if (u.protocol === 'https:' && EXTERNAL_HOST_ALLOW.includes(u.hostname)) {
+    // pathofexile.com and its language subdomains (ru., de., br., ...) - the trade-site
+    // link builds these. Its absence here is why "Open on trade site" shipped doing
+    // NOTHING: the URL was silently dropped right here, and nothing logged it.
+    const poe = u.hostname === 'pathofexile.com' || u.hostname.endsWith('.pathofexile.com');
+    if (u.protocol === 'https:' && (poe || EXTERNAL_HOST_ALLOW.includes(u.hostname))) {
       shell.openExternal(u.href);
+    } else {
+      logToggle('open-external', 'refused host ' + u.hostname);
     }
   } catch {}
 });

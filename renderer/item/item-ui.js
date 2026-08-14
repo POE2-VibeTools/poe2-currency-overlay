@@ -701,6 +701,7 @@
             (window.I18N && window.I18N.lang && window.I18N.lang()) || 'en'] || 'www';
           const url = 'https://' + sub + '.pathofexile.com/trade2/search/poe2/'
             + encodeURIComponent(state.league) + '/' + encodeURIComponent(ctx.queryId);
+          if (window.logAction) window.logAction('open on trade site: ' + url);
           if (window.api && window.api.openExternal) window.api.openExternal(url);
         };
         row.appendChild(link);
