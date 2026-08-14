@@ -19,10 +19,12 @@
   // The exact border colour. Tolerance is for capture noise and the compositor, not for
   // variation - every sample of it reads the same.
   const BORDER = { r: 182, g: 169, b: 138 };
-  // Tight. The border is drawn flat - every sample of it reads 182,169,138 exactly - so
-  // this is for capture noise and nothing else. At 46 it accepted r 136-228, g 123-215,
-  // b 92-184, which is most of a dirt floor, and the floor duly matched.
-  const TOL = 16;
+  // Tight-ish. The border is drawn flat - every sample of it reads 182,169,138 exactly -
+  // but the LIVE frames arrive through a getDisplayMedia video stream, whose chroma
+  // subsampling washes the colour: measured along a real border in a live frame, blue
+  // drifts up to 18. At 46 the old finder accepted most of a dirt floor; 20 covers the
+  // measured video drift and nothing else, and the rectangle gates carry the rest.
+  const TOL = 20;
 
   // Where the row lives, as a fraction of the game window: measured at x 0.28-0.41 and
   // y 0.57-0.80, then widened, because a long currency name pushes the field left and a
@@ -110,13 +112,22 @@
       }
     }
 
-    // horizontal runs of border colour, long enough to be a box's top or bottom
+    // Horizontal runs of border colour, long enough to be a box's top or bottom.
+    //
+    // A pixel counts for row y if it is border on y OR an adjacent row - the same grace
+    // the verticals get, and for the same reason. At 150% scaling the border is 1.5
+    // physical pixels and wanders between two rows, and in a live video frame the chroma
+    // smear pushes parts of it over the line: a 60px edge that is plainly there ends up as
+    // fragments on any one exact row, and the whole display read as "no dialog" while
+    // clean screenshot captures of the same scene passed.
     const rows = [];
     for (let y = 0; y < bh; y++) {
       let start = -1;
       const list = [];
       for (let x = 0; x <= bw; x++) {
-        const on = x < bw && M[y * bw + x];
+        const on = x < bw && (M[y * bw + x]
+          || (y > 0 && M[(y - 1) * bw + x])
+          || (y < bh - 1 && M[(y + 1) * bw + x]));
         if (on && start < 0) start = x;
         else if (!on && start >= 0) {
           const len = x - start;
@@ -138,7 +149,25 @@
           const match = rows[y + dy].find((r) => Math.abs(r.x0 - top.x0) <= 2 && Math.abs(r.x1 - top.x1) <= 2);
           if (!match) continue;
 
-          const boxW = top.x1 - top.x0 + 1, boxH = dy + 1;
+          // The runs above were found with a row of grace, so the run's own y may be one
+          // off the border's real row. Snap each edge to whichever adjacent row holds the
+          // most raw border pixels - the box must come out at the same coordinates
+          // whether the frame is a clean screenshot or a smeared video frame, because the
+          // icon is measured from its edges.
+          const snap = (yy) => {
+            let bestY = yy, bestN = -1;
+            for (let c = yy - 1; c <= yy + 1; c++) {
+              if (c < 0 || c >= bh) continue;
+              let cnt = 0;
+              for (let x = top.x0; x <= top.x1; x++) cnt += M[c * bw + x];
+              if (cnt > bestN) { bestN = cnt; bestY = c; }
+            }
+            return bestY;
+          };
+          const ty = snap(y), by = snap(y + dy);
+          if (by - ty + 1 < MIN_H) continue;
+
+          const boxW = top.x1 - top.x0 + 1, boxH = by - ty + 1;
           const aspect = boxW / boxH;
           if (aspect < ASPECT_LO || aspect > ASPECT_HI) continue;
 
@@ -151,7 +180,7 @@
           const col = (xx, yy) => (xx > 0 && xx < bw - 1)
             && (M[yy * bw + xx] || M[yy * bw + xx - 1] || M[yy * bw + xx + 1]);
           let lc = 0, rc = 0;
-          for (let yy = y; yy <= y + dy; yy++) {
+          for (let yy = ty; yy <= by; yy++) {
             if (col(top.x0, yy)) lc++;
             if (col(top.x1, yy)) rc++;
           }
@@ -167,19 +196,19 @@
 
           // and it is an input box: dark inside
           let s = 0, n = 0;
-          for (let yy = y + 3; yy < y + dy - 2; yy += 2) {
+          for (let yy = ty + 3; yy < by - 2; yy += 2) {
             for (let xx = top.x0 + 3; xx < top.x1 - 2; xx += 2) { s += L[yy * bw + xx]; n++; }
           }
           if (!n || s / n > DARK_INSIDE) continue;
 
           // ...and it is sitting on the dialog's flat brown panel, not on scenery
-          if (!onPanel(rgba, w, h, { x: top.x0 + bx0, y: y + by0, w: boxW, h: boxH })) continue;
+          if (!onPanel(rgba, w, h, { x: top.x0 + bx0, y: ty + by0, w: boxW, h: boxH })) continue;
 
           // Nearest to where the dialog puts it wins - never biggest. Size ranking is what
           // made every previous version pick the merchant panel.
-          const d = Math.hypot((top.x0 + boxW / 2) - cx, y - cy);
+          const d = Math.hypot((top.x0 + boxW / 2) - cx, ty - cy);
           if (!best || d < best.d) {
-            best = { d, box: { x: top.x0 + bx0, y: y + by0, w: boxW, h: boxH } };
+            best = { d, box: { x: top.x0 + bx0, y: ty + by0, w: boxW, h: boxH } };
           }
         }
       }
