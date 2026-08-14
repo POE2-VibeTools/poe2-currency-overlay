@@ -1052,6 +1052,8 @@ window.I18N_CATALOGS.es = {
   "ui.settings.reprice.then_lead": "entonces",
   "ui.settings.reprice.else_lead": "si no",
   "ui.settings.reprice.example_line": "{base} pasa a {result}",
+  "ui.settings.reprice.shots_offer": "¿Reprice no funciona con tu tamaño de pantalla?",
+  "ui.settings.reprice.shots_open": "Enviar capturas",
   "ui.settings.reprice.shots_label": "Envía tu tamaño de pantalla",
   "ui.settings.reprice.shots_tooltip": "La lectura se ajusta por tamaño de pantalla. Si la tuya lee mal o no lee, estas tres capturas son exactamente lo que hace falta para añadirla: cada dígito 0-9, escrito y resaltado, en tu resolución.",
   "ui.settings.reprice.shots_sub": "tres capturas le enseñan al lector un nuevo tamaño de pantalla",

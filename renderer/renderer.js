@@ -2472,24 +2472,46 @@ async function initSettings() {
   // ---------- guided screen-size submission ----------
   //
   // Three shots with a KNOWN number typed and highlighted - 12345, 6789, 0 - are what
-  // baking a digit set for a new screen size needs: every digit exactly once. Each slot
-  // shows an example to copy; the user captures, compares against the example
-  // themselves, and nothing is sent until all three are confirmed.
+  // baking a digit set for a new screen size needs: every digit exactly once.
+  //
+  // Settings holds one quiet line and a button, the same shape as Net Worth's
+  // submission; everything else - the example images, the captures, the confirms -
+  // lives in a modal that only the people who need it ever open.
   const RP_SHOT_SLOTS = ['12345', '6789', '0'];
   const rpShots = {};   // slot -> { dataUrl, confirmed }
-  const rpShotsHost = $('reprice-shots');
-  const rpShotsSend = $('reprice-shots-send');
-  const rpShotsStatus = $('reprice-shots-status');
+  let rpShotsBack = null;   // the open modal's backdrop, or null
 
-  function rpShotsSay(kind, key, vars) {
-    if (!rpShotsStatus) return;
-    rpShotsStatus.className = 'set-sub' + (kind ? ' ' + kind : '');
-    rpShotsStatus.textContent = key ? t(key, vars) : '';
+  function rpShotsClose() {
+    if (rpShotsBack) { rpShotsBack.remove(); rpShotsBack = null; }
   }
 
-  function rpRenderShots() {
-    if (!rpShotsHost) return;
-    rpShotsHost.innerHTML = '';
+  function rpRenderShotsModal() {
+    if (!rpShotsBack) return;
+    const box = rpShotsBack.firstChild;
+    box.innerHTML = '';
+
+    const title = document.createElement('div');
+    title.className = 'nw-modal-title';
+    title.textContent = t('ui.settings.reprice.shots_label');
+    box.appendChild(title);
+    const sub = document.createElement('div');
+    sub.className = 'nw-modal-sub';
+    sub.textContent = t('ui.settings.reprice.shots_how');
+    box.appendChild(sub);
+
+    const x = document.createElement('button');
+    x.className = 'rp-shot-close';
+    x.textContent = '✕';
+    x.onclick = rpShotsClose;
+    box.appendChild(x);
+
+    const say = (kind, key, vars) => {
+      const el = box.querySelector('.rp-shot-status');
+      if (!el) return;
+      el.className = 'set-sub rp-shot-status' + (kind ? ' ' + kind : '');
+      el.textContent = key ? t(key, vars) : '';
+    };
+
     for (const slot of RP_SHOT_SLOTS) {
       const st = rpShots[slot];
       const card = document.createElement('div');
@@ -2529,7 +2551,7 @@ async function initSettings() {
           const yes = document.createElement('button');
           yes.className = 'set-login-btn';
           yes.textContent = t('ui.settings.reprice.shots_match_yes');
-          yes.onclick = () => { st.confirmed = true; rpRenderShots(); };
+          yes.onclick = () => { st.confirmed = true; rpRenderShotsModal(); };
           row.appendChild(yes);
         }
         const re = document.createElement('button');
@@ -2538,7 +2560,7 @@ async function initSettings() {
         re.onclick = async () => {
           delete rpShots[slot];
           try { await window.api.repriceShotDrop(slot); } catch { }
-          rpRenderShots();
+          rpRenderShotsModal();
         };
         row.appendChild(re);
         mine.appendChild(row);
@@ -2548,49 +2570,68 @@ async function initSettings() {
         cap.textContent = t('ui.settings.reprice.shots_capture');
         cap.onclick = async () => {
           cap.disabled = true;
-          rpShotsSay('', 'ui.settings.reprice.shots_capturing');
+          say('', 'ui.settings.reprice.shots_capturing');
           try {
             const r = await window.api.repriceShotCapture(slot);
             if (r && r.ok) {
               rpShots[slot] = { dataUrl: r.dataUrl, confirmed: false };
-              rpShotsSay('', null);
+              rpRenderShotsModal();
             } else {
               const err = r && r.error;
-              rpShotsSay('bad', err === 'game-window-not-found' ? 'ui.settings.reprice.shots_err_nowin'
+              rpRenderShotsModal();
+              say('bad', err === 'game-window-not-found' ? 'ui.settings.reprice.shots_err_nowin'
                 : err === 'game-window-black' ? 'ui.settings.reprice.shots_err_black'
                   : 'ui.settings.reprice.shots_failed');
             }
-          } catch { rpShotsSay('bad', 'ui.settings.reprice.shots_failed'); }
-          rpRenderShots();
+          } catch { rpRenderShotsModal(); say('bad', 'ui.settings.reprice.shots_failed'); }
         };
         mine.appendChild(cap);
       }
       card.appendChild(mine);
-      rpShotsHost.appendChild(card);
+      box.appendChild(card);
     }
-    if (rpShotsSend) rpShotsSend.disabled = !RP_SHOT_SLOTS.every((s) => rpShots[s] && rpShots[s].confirmed);
+
+    const foot = document.createElement('div');
+    foot.className = 'rp-cal-row';
+    const send = document.createElement('button');
+    send.className = 'set-login-btn';
+    send.textContent = t('ui.settings.reprice.shots_send');
+    send.disabled = !RP_SHOT_SLOTS.every((s) => rpShots[s] && rpShots[s].confirmed);
+    send.onclick = async () => {
+      send.disabled = true;
+      say('', 'ui.settings.reprice.shots_sending');
+      try {
+        const r = await window.api.repriceShotSend({ slots: RP_SHOT_SLOTS.slice() });
+        if (r && r.ok) {
+          for (const s of RP_SHOT_SLOTS) delete rpShots[s];
+          rpRenderShotsModal();
+          say('good', 'ui.settings.reprice.shots_thanks');
+        } else {
+          say('bad', 'ui.settings.reprice.shots_failed');
+          send.disabled = false;
+        }
+      } catch {
+        say('bad', 'ui.settings.reprice.shots_failed');
+        send.disabled = false;
+      }
+    };
+    foot.appendChild(send);
+    foot.appendChild(Object.assign(document.createElement('span'), { className: 'set-sub rp-shot-status' }));
+    box.appendChild(foot);
   }
 
-  if (rpShotsSend) rpShotsSend.addEventListener('click', async () => {
-    rpShotsSend.disabled = true;
-    rpShotsSay('', 'ui.settings.reprice.shots_sending');
-    try {
-      const r = await window.api.repriceShotSend({ slots: RP_SHOT_SLOTS.slice() });
-      if (r && r.ok) {
-        for (const s of RP_SHOT_SLOTS) delete rpShots[s];
-        rpRenderShots();
-        rpShotsSay('good', 'ui.settings.reprice.shots_thanks');
-      } else {
-        rpShotsSay('bad', 'ui.settings.reprice.shots_failed');
-        rpShotsSend.disabled = false;
-      }
-    } catch {
-      rpShotsSay('bad', 'ui.settings.reprice.shots_failed');
-      rpShotsSend.disabled = false;
-    }
+  const rpShotsOpenBtn = $('reprice-shots-open');
+  if (rpShotsOpenBtn) rpShotsOpenBtn.addEventListener('click', () => {
+    if (rpShotsBack) return;
+    rpShotsBack = document.createElement('div');
+    rpShotsBack.className = 'nw-modal-back';
+    rpShotsBack.addEventListener('click', (e) => { if (e.target === rpShotsBack) rpShotsClose(); });
+    const box = document.createElement('div');
+    box.className = 'nw-modal rp-shot-modal';
+    rpShotsBack.appendChild(box);
+    document.body.appendChild(rpShotsBack);
+    rpRenderShotsModal();
   });
-
-  rpRenderShots();
 
   rpInit();
   rpLoadSamples();

@@ -1066,6 +1066,8 @@ window.I18N_CATALOGS.en = {
   "ui.settings.reprice.shots_label": "Submit your screen size",
   "ui.settings.reprice.shots_match_q": "Matches the example?",
   "ui.settings.reprice.shots_match_yes": "Yes",
+  "ui.settings.reprice.shots_offer": "Reprice doesn't work at your screen size?",
+  "ui.settings.reprice.shots_open": "Submit screenshots",
   "ui.settings.reprice.shots_retake": "Retake",
   "ui.settings.reprice.shots_send": "Send",
   "ui.settings.reprice.shots_sending": "sending ...",

@@ -1066,6 +1066,8 @@ window.I18N_CATALOGS.ru = {
   "ui.settings.reprice.then_lead": "то",
   "ui.settings.reprice.else_lead": "иначе",
   "ui.settings.reprice.example_line": "{base} станет {result}",
+  "ui.settings.reprice.shots_offer": "Reprice не работает на вашем размере экрана?",
+  "ui.settings.reprice.shots_open": "Отправить снимки",
   "ui.settings.reprice.shots_label": "Отправьте свой размер экрана",
   "ui.settings.reprice.shots_tooltip": "Чтение настраивается под размер экрана. Если ваш читается плохо или совсем не читается, эти три снимка - ровно то, что нужно, чтобы его добавить: каждая цифра 0-9, набранная и выделенная, в вашем разрешении.",
   "ui.settings.reprice.shots_sub": "три снимка учат считыватель новому размеру экрана",

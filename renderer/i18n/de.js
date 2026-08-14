@@ -1052,6 +1052,8 @@ window.I18N_CATALOGS.de = {
   "ui.settings.reprice.then_lead": "dann",
   "ui.settings.reprice.else_lead": "sonst",
   "ui.settings.reprice.example_line": "{base} wird zu {result}",
+  "ui.settings.reprice.shots_offer": "Reprice funktioniert bei deiner Bildschirmgröße nicht?",
+  "ui.settings.reprice.shots_open": "Screenshots einsenden",
   "ui.settings.reprice.shots_label": "Deine Bildschirmgröße einreichen",
   "ui.settings.reprice.shots_tooltip": "Das Lesen ist pro Bildschirmgröße abgestimmt. Wenn deine schlecht oder gar nicht gelesen wird, sind diese drei Screenshots genau das, was fehlt: jede Ziffer 0-9, eingetippt und markiert, in deiner Auflösung.",
   "ui.settings.reprice.shots_sub": "drei Aufnahmen bringen dem Leser eine neue Bildschirmgröße bei",

@@ -1052,6 +1052,8 @@ window.I18N_CATALOGS.pt = {
   "ui.settings.reprice.then_lead": "então",
   "ui.settings.reprice.else_lead": "senão",
   "ui.settings.reprice.example_line": "{base} vira {result}",
+  "ui.settings.reprice.shots_offer": "O Reprice não funciona no tamanho da sua tela?",
+  "ui.settings.reprice.shots_open": "Enviar capturas",
   "ui.settings.reprice.shots_label": "Envie o tamanho da sua tela",
   "ui.settings.reprice.shots_tooltip": "A leitura é ajustada por tamanho de tela. Se a sua lê mal ou não lê, estas três capturas são exatamente o que falta para adicioná-la: cada dígito 0-9, digitado e destacado, na sua resolução.",
   "ui.settings.reprice.shots_sub": "três capturas ensinam ao leitor um novo tamanho de tela",

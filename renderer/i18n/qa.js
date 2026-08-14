@@ -1066,6 +1066,8 @@ window.I18N_CATALOGS.qa = {
   "ui.settings.reprice.shots_label": "[[Šúbmít ýóúr šćrééñ šízé ·········]]",
   "ui.settings.reprice.shots_match_q": "[[Mátćhéš thé éxámplé? ·······]]",
   "ui.settings.reprice.shots_match_yes": "[[Yéš]]",
+  "ui.settings.reprice.shots_offer": "[[Répríćé dóéšñ't wórk át ýóúr šćrééñ šízé? ···············]]",
+  "ui.settings.reprice.shots_open": "[[Šúbmít šćrééñšhótš ·······]]",
   "ui.settings.reprice.shots_retake": "[[Rétáké ···]]",
   "ui.settings.reprice.shots_send": "[[Šéñd ··]]",
   "ui.settings.reprice.shots_sending": "[[šéñdíñg ... ····]]",

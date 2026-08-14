@@ -1813,13 +1813,17 @@ footer {
 .rp-out-table .rp-out-base { text-align: right; opacity: 0.75; }
 .rp-out-table .rp-out-same { opacity: 0.45; }
 .rp-out-try { width: 64px; }
-/* screen-size submission: example next to the user's own capture, one card per shot */
-.rp-shots { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
-.rp-shot { display: flex; gap: 12px; align-items: flex-start; }
-.rp-shot-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.rp-shot-col img { width: 210px; max-width: 100%; border-radius: 4px; display: block; }
+/* screen-size submission modal: example next to the user's own capture, one card per
+   shot. Settings itself holds only a one-line offer and the button that opens this. */
+.rp-shot-modal { width: 520px; position: relative; max-height: 86vh; overflow-y: auto; }
+.rp-shot { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.rp-shot-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.rp-shot-col img { width: 100%; max-width: 230px; border-radius: 4px; display: block; }
 .rp-shot-mine { cursor: zoom-in; }
 .rp-shot-ask { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rp-shot-close { position: absolute; top: 10px; right: 10px; background: none; border: none;
+  color: var(--tx-mid); cursor: pointer; font-size: 13px; padding: 2px 4px; }
+.rp-shot-close:hover { color: var(--tx-hi); }
 /* What the reader actually sees. Being told the region is "set" proves nothing - a
    box one row too high looks identical in settings and reads nothing forever. */
 .rp-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; }

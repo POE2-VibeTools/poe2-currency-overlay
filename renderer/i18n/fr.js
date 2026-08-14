@@ -1052,6 +1052,8 @@ window.I18N_CATALOGS.fr = {
   "ui.settings.reprice.then_lead": "alors",
   "ui.settings.reprice.else_lead": "sinon",
   "ui.settings.reprice.example_line": "{base} devient {result}",
+  "ui.settings.reprice.shots_offer": "Reprice ne fonctionne pas à votre taille d’écran ?",
+  "ui.settings.reprice.shots_open": "Envoyer des captures",
   "ui.settings.reprice.shots_label": "Soumettre votre taille d’écran",
   "ui.settings.reprice.shots_tooltip": "La lecture est réglée par taille d’écran. Si la vôtre lit mal ou pas du tout, ces trois captures sont exactement ce qu’il faut pour l’ajouter : chaque chiffre 0-9, saisi et surligné, dans votre résolution.",
   "ui.settings.reprice.shots_sub": "trois captures apprennent au lecteur une nouvelle taille d’écran",
