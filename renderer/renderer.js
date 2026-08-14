@@ -2469,6 +2469,129 @@ async function initSettings() {
     if (rpEls.sampleStatus) rpEls.sampleStatus.textContent = '';
   });
 
+  // ---------- guided screen-size submission ----------
+  //
+  // Three shots with a KNOWN number typed and highlighted - 12345, 6789, 0 - are what
+  // baking a digit set for a new screen size needs: every digit exactly once. Each slot
+  // shows an example to copy; the user captures, compares against the example
+  // themselves, and nothing is sent until all three are confirmed.
+  const RP_SHOT_SLOTS = ['12345', '6789', '0'];
+  const rpShots = {};   // slot -> { dataUrl, confirmed }
+  const rpShotsHost = $('reprice-shots');
+  const rpShotsSend = $('reprice-shots-send');
+  const rpShotsStatus = $('reprice-shots-status');
+
+  function rpShotsSay(kind, key, vars) {
+    if (!rpShotsStatus) return;
+    rpShotsStatus.className = 'set-sub' + (kind ? ' ' + kind : '');
+    rpShotsStatus.textContent = key ? t(key, vars) : '';
+  }
+
+  function rpRenderShots() {
+    if (!rpShotsHost) return;
+    rpShotsHost.innerHTML = '';
+    for (const slot of RP_SHOT_SLOTS) {
+      const st = rpShots[slot];
+      const card = document.createElement('div');
+      card.className = 'rp-shot';
+
+      const exCol = document.createElement('div');
+      exCol.className = 'rp-shot-col';
+      const ex = document.createElement('img');
+      ex.src = 'reprice-examples/' + slot + '.png';
+      ex.alt = '';
+      exCol.appendChild(ex);
+      exCol.appendChild(Object.assign(document.createElement('div'), {
+        className: 'set-sub', textContent: t('ui.settings.reprice.shots_type_lab', { n: slot }),
+      }));
+      card.appendChild(exCol);
+
+      const mine = document.createElement('div');
+      mine.className = 'rp-shot-col';
+      if (st && st.dataUrl) {
+        const im = document.createElement('img');
+        im.src = st.dataUrl;
+        im.alt = '';
+        im.title = t('ui.settings.reprice.shots_enlarge');
+        im.className = 'rp-shot-mine';
+        im.onclick = () => { window.api.repriceShotPreview(slot); };
+        mine.appendChild(im);
+        const row = document.createElement('div');
+        row.className = 'rp-shot-ask';
+        if (st.confirmed) {
+          row.appendChild(Object.assign(document.createElement('span'), {
+            className: 'set-sub good', textContent: t('ui.settings.reprice.shots_confirmed'),
+          }));
+        } else {
+          row.appendChild(Object.assign(document.createElement('span'), {
+            className: 'set-sub', textContent: t('ui.settings.reprice.shots_match_q'),
+          }));
+          const yes = document.createElement('button');
+          yes.className = 'set-login-btn';
+          yes.textContent = t('ui.settings.reprice.shots_match_yes');
+          yes.onclick = () => { st.confirmed = true; rpRenderShots(); };
+          row.appendChild(yes);
+        }
+        const re = document.createElement('button');
+        re.className = 'set-login-btn';
+        re.textContent = t('ui.settings.reprice.shots_retake');
+        re.onclick = async () => {
+          delete rpShots[slot];
+          try { await window.api.repriceShotDrop(slot); } catch { }
+          rpRenderShots();
+        };
+        row.appendChild(re);
+        mine.appendChild(row);
+      } else {
+        const cap = document.createElement('button');
+        cap.className = 'set-login-btn';
+        cap.textContent = t('ui.settings.reprice.shots_capture');
+        cap.onclick = async () => {
+          cap.disabled = true;
+          rpShotsSay('', 'ui.settings.reprice.shots_capturing');
+          try {
+            const r = await window.api.repriceShotCapture(slot);
+            if (r && r.ok) {
+              rpShots[slot] = { dataUrl: r.dataUrl, confirmed: false };
+              rpShotsSay('', null);
+            } else {
+              const err = r && r.error;
+              rpShotsSay('bad', err === 'game-window-not-found' ? 'ui.settings.reprice.shots_err_nowin'
+                : err === 'game-window-black' ? 'ui.settings.reprice.shots_err_black'
+                  : 'ui.settings.reprice.shots_failed');
+            }
+          } catch { rpShotsSay('bad', 'ui.settings.reprice.shots_failed'); }
+          rpRenderShots();
+        };
+        mine.appendChild(cap);
+      }
+      card.appendChild(mine);
+      rpShotsHost.appendChild(card);
+    }
+    if (rpShotsSend) rpShotsSend.disabled = !RP_SHOT_SLOTS.every((s) => rpShots[s] && rpShots[s].confirmed);
+  }
+
+  if (rpShotsSend) rpShotsSend.addEventListener('click', async () => {
+    rpShotsSend.disabled = true;
+    rpShotsSay('', 'ui.settings.reprice.shots_sending');
+    try {
+      const r = await window.api.repriceShotSend({ slots: RP_SHOT_SLOTS.slice() });
+      if (r && r.ok) {
+        for (const s of RP_SHOT_SLOTS) delete rpShots[s];
+        rpRenderShots();
+        rpShotsSay('good', 'ui.settings.reprice.shots_thanks');
+      } else {
+        rpShotsSay('bad', 'ui.settings.reprice.shots_failed');
+        rpShotsSend.disabled = false;
+      }
+    } catch {
+      rpShotsSay('bad', 'ui.settings.reprice.shots_failed');
+      rpShotsSend.disabled = false;
+    }
+  });
+
+  rpRenderShots();
+
   rpInit();
   rpLoadSamples();
 

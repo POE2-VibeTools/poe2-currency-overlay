@@ -63,6 +63,10 @@ contextBridge.exposeInMainWorld('api', {
   repriceCurrencies: () => ipcRenderer.invoke('reprice-currencies'),
   // crops taken at a screen size we have no digit templates for, offered for submission
   // so the corpus can cover it - see REPRICE-SAMPLES in main
+  repriceShotCapture: (slot) => ipcRenderer.invoke('reprice-shot-capture', slot),
+  repriceShotDrop: (slot) => ipcRenderer.invoke('reprice-shot-drop', slot),
+  repriceShotPreview: (slot) => ipcRenderer.invoke('reprice-shot-preview', slot),
+  repriceShotSend: (payload) => ipcRenderer.invoke('reprice-shot-send', payload),
   repriceSamples: () => ipcRenderer.invoke('reprice-samples'),
   repriceSamplesSend: (payload) => ipcRenderer.invoke('reprice-samples-send', payload),
   repriceSamplesClear: () => ipcRenderer.invoke('reprice-samples-clear'),

@@ -1926,6 +1926,176 @@ ipcMain.handle('reprice-samples-send', async (_e, payload) => {
 });
 // ===== REPRICE-SAMPLES-END ======================================================
 
+// ===== REPRICE-SHOTS ============================================================
+// The guided submission: three shots of the Set Item Price dialog with a KNOWN number
+// typed and highlighted - 12345, 6789 and 0, which together show every digit exactly
+// once. That is precisely what baking a digit set for an uncovered screen size needs,
+// and the off-scale crops above cannot provide it: they carry whatever price happened
+// to be on screen, not all ten digits.
+//
+// The user follows an example image per shot and confirms the match themselves; the
+// upload is a centre crop of the game window - the dialog and its surroundings, not
+// chat, not the stash.
+const REPRICE_SHOT_SLOTS = ['12345', '6789', '0'];
+let repriceShots = {};   // slot -> { png:Buffer, meta:Object }
+
+ipcMain.handle('reprice-shot-capture', async (_e, slot) => {
+  slot = String(slot);
+  if (!REPRICE_SHOT_SLOTS.includes(slot)) return { ok: false, error: 'bad-slot' };
+  const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
+  try {
+    await primeCapture();
+    const disp = repriceDisplay();
+    const capW = Math.round(disp.size.width * disp.scaleFactor);
+    const capH = Math.round(disp.size.height * disp.scaleFactor);
+    if (wasVisible) { win.setOpacity(0); if (process.platform !== 'win32') win.hide(); await new Promise((r) => setTimeout(r, 70)); }
+    const shot = await grabGameWindow(capW, capH);
+    syncOverlayState();
+    if (!shot) return { ok: false, error: 'game-window-not-found' };
+    if (frameLooksBlank(shot.bitmap)) return { ok: false, error: 'game-window-black' };
+
+    // What the current build makes of the frame, so the sample arrives pre-triaged:
+    // the finder's block height is the scale bucket, and the read (right or wrong) says
+    // whether this size was needed at all.
+    let finder = null, read = null;
+    try {
+      const rgba = new Uint8ClampedArray(shot.bitmap.length);
+      for (let i = 0; i < shot.bitmap.length; i += 4) {
+        rgba[i] = shot.bitmap[i + 2]; rgba[i + 1] = shot.bitmap[i + 1];
+        rgba[i + 2] = shot.bitmap[i]; rgba[i + 3] = 255;
+      }
+      const F = require('./renderer/stash/price-dialog-finder.js');
+      const hit = F.find(rgba, shot.W, shot.H);
+      if (hit) {
+        finder = { blockH: hit.block.h, block: hit.block };
+        const pad = 3;
+        const bx = Math.max(0, hit.block.x - pad), by = Math.max(0, hit.block.y - pad);
+        const bw = Math.min(shot.W - bx, hit.block.w + pad * 2);
+        const bh = Math.min(shot.H - by, hit.block.h + pad * 2);
+        const cut = new Uint8ClampedArray(bw * bh * 4);
+        for (let y = 0; y < bh; y++) {
+          for (let x = 0; x < bw; x++) {
+            const p = ((by + y) * shot.W + (bx + x)) * 4, q = (y * bw + x) * 4;
+            cut[q] = rgba[p]; cut[q + 1] = rgba[p + 1]; cut[q + 2] = rgba[p + 2]; cut[q + 3] = 255;
+          }
+        }
+        const r = repriceReadDigits({ w: bw, h: bh, data: cut }, 0.55, hit.block.h);
+        read = { value: r.value, set: r.set };
+      }
+    } catch { /* triage is a bonus; the image is the point */ }
+
+    // Centre crop: the dialog is centred on the game window and never reaches these
+    // margins; chat and the stash panels live outside them.
+    const full = nativeImage.createFromBitmap(Buffer.from(shot.bitmap), { width: shot.W, height: shot.H });
+    const cx = Math.round(shot.W * 0.25), cy = Math.round(shot.H * 0.30);
+    const crop = full.crop({
+      x: cx, y: cy,
+      width: Math.min(Math.round(shot.W * 0.50), shot.W - cx),
+      height: Math.min(Math.round(shot.H * 0.55), shot.H - cy),
+    });
+
+    const meta = {
+      kind: 'reprice-shot', slot,
+      appVersion: app.getVersion(), platform: process.platform,
+      screen: { w: capW, h: capH, scaleFactor: disp.scaleFactor },
+      window: { w: shot.W, h: shot.H, name: shot.name },
+      crop: { x: cx, y: cy },
+      knownScales: (repriceTemplates() || []).map((t) => t.blockH),
+      finder, read,
+    };
+    repriceShots[slot] = { png: crop.toPNG(), meta };
+    const prev = crop.resize({ width: Math.min(420, crop.getSize().width), quality: 'good' }).toDataURL();
+    return { ok: true, slot, dataUrl: prev, meta };
+  } catch (e) {
+    syncOverlayState();
+    return { ok: false, error: String((e && e.message) || e) };
+  }
+});
+
+ipcMain.handle('reprice-shot-drop', (_e, slot) => {
+  delete repriceShots[String(slot)];
+  return { ok: true };
+});
+
+// full-size look at what would be uploaded, same viewer rules as the stash samples
+ipcMain.handle('reprice-shot-preview', (_e, slot) => {
+  const s = repriceShots[String(slot)];
+  if (!s) return { ok: false, error: 'no such shot' };
+  return openPngViewer(s.png, 'reprice-' + slot + '.png');
+});
+
+// Sends the slots the user confirmed. All three or nothing: a set with a digit missing
+// cannot be baked, so a partial upload would only look like a contribution.
+ipcMain.handle('reprice-shot-send', async (_e, payload) => {
+  const slots = Array.isArray(payload && payload.slots) ? payload.slots.map(String) : [];
+  if (REPRICE_SHOT_SLOTS.some((s) => !slots.includes(s) || !repriceShots[s])) {
+    return { ok: false, error: 'need-all' };
+  }
+  const note = String((payload && payload.note) || '').slice(0, 300);
+  let sent = 0;
+  for (const slot of REPRICE_SHOT_SLOTS) {
+    const s = repriceShots[slot];
+    try {
+      const fd = new FormData();
+      fd.append('kind', 'reprice');
+      fd.append('image', new Blob([s.png], { type: 'image/png' }), 'dialog-' + slot + '.png');
+      fd.append('meta', JSON.stringify(Object.assign({}, s.meta, { note, of: REPRICE_SHOT_SLOTS.length })));
+      const r = await fetch(SAMPLE_ENDPOINT, { method: 'POST', body: fd });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return { ok: false, error: j.error || `upload failed (${r.status})`, sent };
+      sent++;
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e), sent };
+    }
+  }
+  repriceShots = {};
+  return { ok: true, sent };
+});
+
+// One PNG in its own always-on-top window, closing on blur or Esc - the same rules the
+// stash-sample viewer follows, in a form the reprice shots can share.
+const shotViewerDirs = new Set();
+function openPngViewer(png, title) {
+  try {
+    const dir = fs.mkdtempSync(path.join(app.getPath('temp'), 'poe2-overlay-view-'));
+    shotViewerDirs.add(dir);
+    const file = path.join(dir, title.replace(/[^\w.-]/g, '_'));
+    fs.writeFileSync(file, png);
+    const size = nativeImage.createFromBuffer(png).getSize();
+    const wa = screen.getPrimaryDisplay().workAreaSize;
+    const pw = new BrowserWindow({
+      width: Math.max(320, Math.min(size.width, Math.round(wa.width * 0.9))),
+      height: Math.max(240, Math.min(size.height, Math.round(wa.height * 0.9))),
+      resizable: true, autoHideMenuBar: true, backgroundColor: '#101010',
+      alwaysOnTop: true,
+    });
+    pw.setAlwaysOnTop(true, 'screen-saver');
+    const viewer = path.join(dir, 'view.html');
+    fs.writeFileSync(viewer, '<!doctype html><meta charset="utf-8"><title>' + title + '</title>'
+      + '<style>html,body{margin:0;height:100%;background:#101010;overflow:hidden}'
+      + 'img{width:100%;height:100%;object-fit:contain;-webkit-user-select:none;user-select:none;'
+      + '-webkit-user-drag:none;pointer-events:none}</style>'
+      + '<img src="' + path.basename(file).replace(/"/g, '%22') + '" alt="">');
+    pw.loadURL(require('url').pathToFileURL(viewer).href);
+    pw.once('ready-to-show', () => { pw.show(); pw.focus(); });
+    pw.on('blur', () => { try { if (!pw.isDestroyed()) pw.close(); } catch { /* gone */ } });
+    pw.webContents.on('before-input-event', (e, input) => {
+      if (input.type === 'keyDown' && input.key === 'Escape') {
+        e.preventDefault();
+        try { if (!pw.isDestroyed()) pw.close(); } catch { /* gone */ }
+      }
+    });
+    pw.on('closed', () => {
+      shotViewerDirs.delete(dir);
+      try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* temp dir */ }
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e) };
+  }
+}
+// ===== REPRICE-SHOTS-END ========================================================
+
 // ===== REPRICE-INDICATOR-START ==================================================
 // A small badge over the game while the mode is on. Click-through and never focusable,
 // so it cannot eat a click meant for the game or pull focus mid-trade.
