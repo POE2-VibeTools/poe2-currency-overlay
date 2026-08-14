@@ -1758,6 +1758,7 @@ ipcMain.handle('set-stash-dup', (_e, on) => { config.stashDupTabs = !!on; saveCo
 ipcMain.handle('set-stash-sort', (_e, on) => { config.stashSortLayout = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-missing', (_e, on) => { config.stashShowMissing = !!on; saveConfig(); return true; });
 ipcMain.handle('set-stash-show-confidence', (_e, on) => { config.stashShowConfidence = !!on; saveConfig(); return true; });
+ipcMain.handle('set-stash-banner-hidden', (_e, on) => { config.stashBannerHidden = !!on; saveConfig(); return true; });
 // Grab one frame of a region and return it as a data URL, opening the capture stream if
 // it is not already up. Used by the calibration preview and the test read.
 async function repricePreview(rect) {

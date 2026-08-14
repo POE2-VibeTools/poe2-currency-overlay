@@ -628,6 +628,7 @@ window.I18N_CATALOGS.de = {
   "networth.empty.calibrate_hint": "Nicht bei 1920×1080 Vollbild? Öffne <b>⚙ Einstellungen</b> und kalibrier einmal.",
   "networth.empty.explain": "Es erkennt den Tab, wertet ihn, und fügt hier eine Zeile plus eine laufende Gesamtsumme hinzu. Tab wechseln und erneut scannen.",
   "networth.empty.instructions": "Öffne einen Currency-Tab im Spiel, halt ihn komplett sichtbar, und drück <b>{hotkey}</b> (oder Scan).",
+  "networth.experimental.dismiss_title": "Ausblenden. Einsenden bleibt unter Einstellungen -> Net Worth verfügbar.",
   "networth.experimental.explain": "Net Worth ist EXPERIMENTELL. Wenn deine Zahlen völlig falsch sind oder gar nicht gelesen werden, schick mir deine Truhenfächer.",
   "networth.experimental.submit_button": "Meine Truhenfächer senden",
   "networth.footer.clear_tally": "Summe leeren",

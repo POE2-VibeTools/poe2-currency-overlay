@@ -628,6 +628,7 @@ window.I18N_CATALOGS.pt = {
   "networth.empty.calibrate_hint": "Não está em tela cheia 1920×1080? Abra <b>⚙ configurações</b> e calibre uma vez.",
   "networth.empty.explain": "Detecta a aba, calcula o valor e adiciona uma linha aqui, além de um total geral acumulado. Troque de aba e capture novamente.",
   "networth.empty.instructions": "Abra uma aba Currency no jogo, mantenha-a totalmente visível e pressione <b>{hotkey}</b> (ou Capturar).",
+  "networth.experimental.dismiss_title": "Ocultar. O envio continua disponível em Configurações -> Net Worth.",
   "networth.experimental.explain": "O Net Worth é EXPERIMENTAL. Se as suas contagens estão completamente erradas ou não funcionam, me mande suas abas de tesouro.",
   "networth.experimental.submit_button": "Enviar minhas abas de tesouro",
   "networth.footer.clear_tally": "Limpar tudo",

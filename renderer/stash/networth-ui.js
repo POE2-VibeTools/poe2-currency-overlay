@@ -24,7 +24,7 @@
   const TAB_LABEL = { currency: t('networth.tab.currency'), abyss: t('networth.tab.abyss'), essence: t('networth.tab.essence'), runes: t('networth.tab.runes'), 'runes-kalguuran': t('networth.tab.runes_kalguuran'), ritual: t('networth.tab.ritual'), soulcore: t('networth.tab.soulcore'), idol: t('networth.tab.idol'), 'ancient-augment': t('networth.tab.ancient_augment'), delirium: t('networth.tab.delirium'), breach: t('networth.tab.breach'), expedition: t('networth.tab.expedition') };
   const MIRROR_ICON = 'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lEdXBsaWNhdGUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/26bc31680e/CurrencyDuplicate.png';
 
-  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); state.showMissing = !!(c && c.stashShowMissing); state.showConfidence = !!(c && c.stashShowConfidence); state.calibrated = !!(c && c.stashCalibration); state.hotkey = (c && c.stashHotkey) || 'F7'; render(); }).catch(() => {});
+  if (window.api && window.api.getConfig) window.api.getConfig().then((c) => { state.dup = !!(c && c.stashDupTabs); state.sortLayout = !!(c && c.stashSortLayout); state.showMissing = !!(c && c.stashShowMissing); state.showConfidence = !!(c && c.stashShowConfidence); state.calibrated = !!(c && c.stashCalibration); state.hotkey = (c && c.stashHotkey) || 'F7'; state.bannerHidden = !!(c && c.stashBannerHidden); render(); }).catch(() => {});
 
   const rowsOfType = (tab) => state.rows.filter((r) => r.tab === tab);
   function labelFor(row) {
@@ -154,6 +154,25 @@
     }
     cal.appendChild(btns);
     root.appendChild(cal);
+
+    // The screenshot submission's PERMANENT home. The banner on the tab can be
+    // dismissed; this cannot, so the path stays reachable for whoever needs it later.
+    const sub = el('div', 'nw-set-cal quiet');
+    sub.appendChild(el('div', 'nw-set-cal-desc', t('networth.experimental.explain')));
+    const subBtns = el('div', 'nw-set-cal-btns');
+    const subBtn = el('button', 'nw-set-btn', t('networth.experimental.submit_button'));
+    subBtn.onclick = () => {
+      // the capture modal lives on the Net Worth tab, so go there
+      startSampleFlow().then(() => {
+        const settings = document.getElementById('settings');
+        if (settings) settings.classList.add('hidden');
+        const tab = document.getElementById('tab-networth');
+        if (tab && !tab.classList.contains('active')) tab.click();
+      });
+    };
+    subBtns.appendChild(subBtn);
+    sub.appendChild(subBtns);
+    root.appendChild(sub);
   }
 
   function rowCard(row) {
@@ -482,16 +501,31 @@
     return wrap;
   }
 
+  function startSampleFlow() {
+    return window.api.stashSampleReset().then(() => {
+      state.sample = { shots: [], error: null, sending: false, done: 0 };
+      render();
+    });
+  }
+
+  // Dismissable: for someone whose counts are right, a permanent "send screenshots if
+  // it's broken" is noise. The same flow lives permanently in Settings -> Net Worth, so
+  // dismissing here abandons nothing.
   function experimentalBanner() {
+    if (state.bannerHidden) return null;
     const b = el('div', 'nw-exp');
     b.appendChild(el('div', 'nw-exp-body', t('networth.experimental.explain')));
     const btn = el('button', 'nw-exp-btn', t('networth.experimental.submit_button'));
-    btn.onclick = async () => {
-      await window.api.stashSampleReset();
-      state.sample = { shots: [], error: null, sending: false, done: 0 };
+    btn.onclick = () => { startSampleFlow(); };
+    b.appendChild(btn);
+    const x = el('button', 'nw-exp-x', '✕');
+    x.title = t('networth.experimental.dismiss_title');
+    x.onclick = () => {
+      state.bannerHidden = true;
+      try { window.api.setStashBannerHidden(true); } catch { /* keeps for this session */ }
       render();
     };
-    b.appendChild(btn);
+    b.appendChild(x);
     return b;
   }
 
@@ -524,7 +558,7 @@
     controls.appendChild(gear);
     header.appendChild(controls);
     wrap.appendChild(header);
-    wrap.appendChild(experimentalBanner());
+    { const xb = experimentalBanner(); if (xb) wrap.appendChild(xb); }
     { const lg = reliabilityLegend(); if (lg) wrap.appendChild(lg); }
 
     if (state.notice) wrap.appendChild(el('div', 'nw-notice nw-' + state.notice.kind, esc(state.notice.msg)));

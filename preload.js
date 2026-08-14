@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld('api', {
   setActiveTab: (which) => ipcRenderer.send('active-tab', which),
   stashCaptureStart: () => ipcRenderer.send('stash-capture-start'),
   setStashDupTabs: (on) => ipcRenderer.invoke('set-stash-dup', on),
+  setStashBannerHidden: (on) => ipcRenderer.invoke('set-stash-banner-hidden', on),
   setStashSortLayout: (on) => ipcRenderer.invoke('set-stash-sort', on),
   setStashShowMissing: (on) => ipcRenderer.invoke('set-stash-show-missing', on),
   setStashShowConfidence: (on) => ipcRenderer.invoke('set-stash-show-confidence', on),

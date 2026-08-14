@@ -633,6 +633,7 @@ window.I18N_CATALOGS.en = {
   "networth.empty.calibrate_hint": "Not at 1920×1080 fullscreen? Open <b>⚙ settings</b> and calibrate once.",
   "networth.empty.explain": "It detects the tab, values it, and adds a row here plus a running grand total. Flip tabs and capture again.",
   "networth.empty.instructions": "Open a currency tab in game, keep it fully visible, and press <b>{hotkey}</b> (or Capture).",
+  "networth.experimental.dismiss_title": "Hide this. Submitting stays available under Settings -> Net Worth.",
   "networth.experimental.explain": "Net Worth is EXPERIMENTAL. If your counts are completely wrong / don't work, send me your stash tabs.",
   "networth.experimental.submit_button": "Send my stash tabs",
   "networth.footer.clear_tally": "Clear tally",

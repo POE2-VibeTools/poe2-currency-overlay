@@ -1681,6 +1681,9 @@ footer {
 .nw-exp-btn { flex: 0 0 auto; background: var(--s-raise, color-mix(in srgb, var(--paper) 6%, transparent)); color: var(--tx-hi);
   border: 1px solid var(--bd-16); border-radius: 6px; padding: 7px 12px; font-size: 12px; cursor: pointer; }
 .nw-exp-btn:hover { background: color-mix(in srgb, var(--am) 16%, transparent); border-color: var(--am-60); }
+.nw-exp-x { flex: 0 0 auto; background: none; border: none; color: var(--tx-mid); cursor: pointer;
+  font-size: 12px; padding: 2px 4px; align-self: flex-start; }
+.nw-exp-x:hover { color: var(--tx-hi); }
 .nw-sample-modal { width: 420px; }
 /* one row per shot: thumb on the left, the question and its answer on the right. The
    question used to live inside a 110px thumb caption and truncated to "Did we capture
