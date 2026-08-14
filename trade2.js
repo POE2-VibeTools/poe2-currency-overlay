@@ -7,7 +7,30 @@
 
 const { net } = require('electron');
 
+// GGG serves the trade API on language subdomains, and the LISTING DATA comes back in
+// that language - item names, mod text, everything. Always querying www meant a Russian
+// user saw a Russian app with English search results, which makes multi-language
+// support a lie at exactly the moment it matters.
+//
+// The split matters: SEARCH stays on www, because a localized host parses the query's
+// type/name strings in ITS language and our queries are built from English refs -
+// posting one to ru came back "Unknown item base type". Only the listing FETCH goes to
+// the language host: the query id the English search returns is server-side state the
+// subdomains share, and fetching it there localizes the listings. The session cookie is
+// scoped to .pathofexile.com, so it carries to every subdomain.
 const HOST = 'https://www.pathofexile.com';
+const LANG_HOSTS = {
+  en: HOST,
+  ru: 'https://ru.pathofexile.com',
+  de: 'https://de.pathofexile.com',
+  fr: 'https://fr.pathofexile.com',
+  es: 'https://es.pathofexile.com',
+  pt: 'https://br.pathofexile.com',   // GGG's Portuguese site is the Brazilian one
+};
+let FETCH_HOST = HOST;
+function setLang(lang) {
+  FETCH_HOST = LANG_HOSTS[String(lang || 'en').toLowerCase()] || HOST;
+}
 const UA = 'poe2-price-overlay (+https://github.com/POE2-VibeTools/poe2-currency-overlay)';
 const FETCH_CHUNK = 10; // GGG fetch endpoint accepts up to 10 ids per call
 
@@ -95,10 +118,10 @@ function ingestHeaders(fallbackPolicy, headers) {
 }
 
 // ---- raw request via Electron net -------------------------------------------
-function raw(method, path, bodyObj) {
+function raw(method, path, bodyObj, host) {
   return new Promise((resolve, reject) => {
     const body = bodyObj ? JSON.stringify(bodyObj) : null;
-    const request = net.request({ method, url: HOST + path, useSessionCookies: true });
+    const request = net.request({ method, url: (host || HOST) + path, useSessionCookies: true });
     request.setHeader('User-Agent', UA);
     request.setHeader('Accept', 'application/json');
     if (body) request.setHeader('Content-Type', 'application/json');
@@ -120,15 +143,15 @@ function raw(method, path, bodyObj) {
   });
 }
 
-async function call(method, path, bodyObj, policy) {
+async function call(method, path, bodyObj, policy, host) {
   await waitForSlot(policy);
-  let r = await raw(method, path, bodyObj);
+  let r = await raw(method, path, bodyObj, host);
   ingestHeaders(policy, r.headers);
   if (r.status === 429) {
     const retry = Number(r.headers['retry-after'] || 5);
     getLimiter(policy).bannedUntil = nowMs() + retry * 1000;
     await waitForSlot(policy);
-    r = await raw(method, path, bodyObj);
+    r = await raw(method, path, bodyObj, host);
     ingestHeaders(policy, r.headers);
   }
   let json = null;
@@ -152,7 +175,13 @@ async function fetchListings(ids, queryId) {
   const out = [];
   for (let i = 0; i < ids.length; i += FETCH_CHUNK) {
     const chunk = ids.slice(i, i + FETCH_CHUNK).join(',');
-    const r = await call('GET', `/api/trade2/fetch/${chunk}?query=${queryId}`, null, 'trade-fetch-request-limit');
+    // the language host: same ids, same query, localized listing text
+    let r = await call('GET', `/api/trade2/fetch/${chunk}?query=${queryId}`, null, 'trade-fetch-request-limit', FETCH_HOST);
+    if (r.status !== 200 && FETCH_HOST !== HOST) {
+      // If the subdomain misbehaves (Cloudflare challenge, outage), English listings
+      // beat no listings - retry once on www before giving up.
+      r = await call('GET', `/api/trade2/fetch/${chunk}?query=${queryId}`, null, 'trade-fetch-request-limit');
+    }
     if (r.status !== 200) {
       const msg = (r.json && r.json.error && r.json.error.message) || `HTTP ${r.status}`;
       throw new Error(`trade2 fetch failed (${r.status}): ${msg}`);
@@ -226,4 +255,4 @@ async function leagues() {
   return (r.json.result || []).map((l) => l.id);
 }
 
-module.exports = { search, fetchListings, searchAndFetch, exchange, leagues, authCheck, setOnWait };
+module.exports = { search, fetchListings, searchAndFetch, exchange, leagues, authCheck, setOnWait, setLang };

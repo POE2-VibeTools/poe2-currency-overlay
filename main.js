@@ -1240,6 +1240,8 @@ ipcMain.handle('set-language', (_e, code) => {
   const ok = ['auto'].concat(allowedLangs());
   config.uiLang = ok.includes(String(code)) ? String(code) : 'auto';
   saveConfig();
+  // trade results arrive in the language of the API host - keep it matched to the UI
+  try { trade2.setLang(resolvedUiLang()); } catch { }
   return config.uiLang;
 });
 
@@ -3491,6 +3493,8 @@ if (!gotLock) {
       try { if (win) win.webContents.send('trade2-wait', { policy, ms, banned: !!banned }); } catch {}
     });
     config = loadConfig();
+    // trade listings come back in the language of the API host queried
+    try { trade2.setLang(resolvedUiLang()); } catch { }
     ensureShortcuts();
     createSplash();
     createWindow();

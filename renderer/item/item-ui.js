@@ -696,7 +696,10 @@
         const link = el('div', 'res-open-link', t('item.listings.open_on_site'));
         link.title = t('item.listings.open_on_site_tooltip');
         link.onclick = () => {
-          const url = 'https://www.pathofexile.com/trade2/search/poe2/'
+          // same language site the API queried, so the opened page matches the results
+          const sub = { ru: 'ru', de: 'de', fr: 'fr', es: 'es', pt: 'br' }[
+            (window.I18N && window.I18N.lang && window.I18N.lang()) || 'en'] || 'www';
+          const url = 'https://' + sub + '.pathofexile.com/trade2/search/poe2/'
             + encodeURIComponent(state.league) + '/' + encodeURIComponent(ctx.queryId);
           if (window.api && window.api.openExternal) window.api.openExternal(url);
         };
