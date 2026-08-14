@@ -142,13 +142,28 @@
           const aspect = boxW / boxH;
           if (aspect < ASPECT_LO || aspect > ASPECT_HI) continue;
 
-          // BOTH verticals, or it is two unrelated lines rather than a rectangle
+          // BOTH verticals, or it is two unrelated lines rather than a rectangle.
+          //
+          // Tested across a pixel either side, not on one exact column. The side is a
+          // single pixel wide and does not always sit at the very column the top run
+          // starts on - at 150% scaling it lands one over, and the whole 2560x1440
+          // display failed to find a field whose borders were plainly there.
+          const col = (xx, yy) => (xx > 0 && xx < bw - 1)
+            && (M[yy * bw + xx] || M[yy * bw + xx - 1] || M[yy * bw + xx + 1]);
           let lc = 0, rc = 0;
           for (let yy = y; yy <= y + dy; yy++) {
-            if (M[yy * bw + top.x0]) lc++;
-            if (M[yy * bw + top.x1]) rc++;
+            if (col(top.x0, yy)) lc++;
+            if (col(top.x1, yy)) rc++;
           }
-          if (lc < boxH * SIDE_FRAC || rc < boxH * SIDE_FRAC) continue;
+          // ONE side is enough. At 1080p the field draws both, but at 150% scaling the
+          // left vertical is simply not painted in the border colour - top edge, bottom
+          // edge and right side, and nothing down the left. Demanding both found no field
+          // at all on that display.
+          //
+          // Two horizontal runs of identical extent plus one vertical, over a dark
+          // interior, on the dialog's flat panel, at the right aspect, is still not
+          // something scenery produces.
+          if (Math.max(lc, rc) < boxH * SIDE_FRAC) continue;
 
           // and it is an input box: dark inside
           let s = 0, n = 0;

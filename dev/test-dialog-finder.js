@@ -59,6 +59,14 @@ const EXPECT = {
   'digits-1600-12345.png': { value: 12345, currency: 'divine' },
   'digits-1600-6789.png': { value: 6789, currency: 'divine' },
   'digits-1600-0.png': { value: 0, currency: 'divine' },
+  // a 2560x1440 monitor running at 150% scaling. The UI is drawn half again as large
+  // here - a 27px selection block against 19-21px everywhere else - and it is also the
+  // display where the field's left border is simply not painted in the border colour.
+  'digits-2560-12345.png': { value: 12345, currency: 'divine' },
+  'digits-2560-6789.png': { value: 6789, currency: 'divine' },
+  // this one was listed in Chaos, which makes it the only capture in the set that proves
+  // the icon match is reading the icon rather than always answering "divine"
+  'digits-2560-0.png': { value: 0, currency: 'chaos' },
   'short.png': null,
 };
 
