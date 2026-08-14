@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('api', {
   onUpdateState: (cb) => ipcRenderer.on('update-state', (_e, s) => cb(s)),
   installUpdate: () => ipcRenderer.send('install-update'),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  isDevBuild: () => ipcRenderer.invoke('is-dev-build'),
   setUiScale: (v) => ipcRenderer.invoke('set-ui-scale', v),
   setBgOpacity: (v) => ipcRenderer.invoke('set-bg-opacity', v),
   setExcludeExaltedArb: (on) => ipcRenderer.invoke('set-exclude-exalted-arb', on),

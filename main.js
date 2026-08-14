@@ -1178,13 +1178,17 @@ async function onItemHotkey(mode = 'pin', acc = null) {
   }
 }
 
+// see the is-dev-build handler for why this is a display suffix and never part of the
+// version string itself
+const DEV_TAG = app.isPackaged ? '' : ' DEV';
+
 function createTray() {
   let icon = nativeImage.createFromPath(path.join(__dirname, 'app.ico'));
   if (icon.isEmpty()) {
     icon = nativeImage.createFromBuffer(Buffer.from(TRAY_ICON_B64, 'base64'));
   }
   tray = new Tray(icon);
-  tray.setToolTip(`POE2 Currency Overlay v${app.getVersion()} (${config.hotkey})`);
+  tray.setToolTip(`POE2 Currency Overlay v${app.getVersion()}${DEV_TAG} (${config.hotkey})`);
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: 'Show / Hide overlay', click: () => toggleOverlay('tray-menu') },
@@ -1291,7 +1295,7 @@ ipcMain.handle('set-hotkey', (_e, accelerator) => {
   if (ok) {
     config.hotkey = accelerator;
     saveConfig();
-    if (tray) tray.setToolTip(`POE2 Currency Overlay v${app.getVersion()} (${config.hotkey})`);
+    if (tray) tray.setToolTip(`POE2 Currency Overlay v${app.getVersion()}${DEV_TAG} (${config.hotkey})`);
   }
   return ok;
 });
@@ -1373,6 +1377,13 @@ ipcMain.handle('list-leagues', async () => {
 ipcMain.handle('get-update-state', () => updateState);
 
 ipcMain.handle('get-app-version', () => app.getVersion());
+// Running two builds at once - the packaged app and a dev checkout - looks like ONE app
+// twice, and which window is which is undiscoverable. The dev build says so: " DEV" in
+// the tray tooltip, the titlebar version, and the window title. The tag never touches
+// get-app-version itself, because that string is compared against lastSeenVersion in a
+// config file both builds SHARE - a suffixed version there would make the packaged app
+// re-show its patch notes.
+ipcMain.handle('is-dev-build', () => !app.isPackaged);
 
 ipcMain.handle('set-exclude-exalted-arb', (_e, on) => {
   config.excludeExaltedArb = !!on;

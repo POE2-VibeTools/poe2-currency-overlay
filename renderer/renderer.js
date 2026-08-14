@@ -3785,8 +3785,22 @@ async function main() {
 
   window.api.onUpdateState(showUpdateBanner);
   window.api.getUpdateState().then(showUpdateBanner).catch(() => {});
-  window.api.getAppVersion().then((v) => {
-    if (v) $('app-version').textContent = `v${v}`;
+  window.api.getAppVersion().then(async (v) => {
+    if (!v) return;
+    // The dev build names itself, so two running builds are tellable apart. The tag is
+    // display-only; the version string the notes logic compares stays clean.
+    let dev = false;
+    try { dev = window.api.isDevBuild ? await window.api.isDevBuild() : false; } catch { }
+    $('app-version').textContent = `v${v}` + (dev ? ' DEV' : '');
+    if (dev) {
+      // The <title> carries data-i18n, and the i18n pass rewrites it at
+      // DOMContentLoaded - appending before that gets overwritten. Registered here,
+      // this listener runs after i18n's (registration order), and if the DOM is
+      // already parsed the append happens now.
+      const tag = () => { if (!document.title.endsWith(' DEV')) document.title += ' DEV'; };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tag);
+      else tag();
+    }
   }).catch(() => {});
   $('btn-update').addEventListener('click', () => window.api.installUpdate());
 
