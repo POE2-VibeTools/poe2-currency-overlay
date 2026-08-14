@@ -6,6 +6,28 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.7.1',
+    date: '2026-08-14',
+    title: "New Reprice Feature, more user-submitted bug fixes.",
+    notes: [
+      "Reprice (new, experimental):",
+      "New Reprice feature (Default F9) helps reprice your merchant tab items. Can be found in Settings -> Reprice",
+      "Right click an item -> Rules applied -> new price pasted onto your clipboard -> ctrl + V.",
+      "Rules can be customized / saved in the Settings tab.",
+      "Tested at 1080p, 1440x900, 1600x1200, 2560x1440.",
+      "Submit the 3 required screenshots to get an unsupported resolution added",
+      "Price Check:",
+      "\"Open on trade site\" button.",
+      "Some currencies failed to price check (Kamasa's / Yaomac's / Vaal orbs of sacrifice). Fixed.",
+      "Net Worth:",
+      "The EXPERIMENTAL banner is now dismissible. Screenshot submission lives permanently in Settings > Net Worth.",
+      "Misc:",
+      "Screen capture (SHOULD) follow the game across monitors.",
+      "Settings sections start at the same height.",
+      "Linux: capture and Ctrl+F focus fixes (hopefully)",
+    ],
+  },
+  {
     version: '2.7.0',
     date: '2026-08-11',
     title: "New Theme, Random Fixes",

@@ -1,6 +1,6 @@
 # Privacy & data
 
-_Last updated: 2026-08-10_
+_Last updated: 2026-08-14_
 
 The POE2 Currency Overlay runs on your PC. It has **no analytics, no telemetry, no usage tracking, no background phone-home, and no machine or device IDs**. It reaches the internet only for the things below.
 
@@ -29,17 +29,22 @@ It does not include your login or session, your other stash tabs, anything outsi
 
 Submissions are stored in a private Cloudflare R2 bucket that only the author can read. They are used solely to test and fix the stash reader, and are deleted once that work is done. There is a per-submitter limit; it is enforced using a **salted hash** of your IP address, not the address itself, so no visitor IP list is kept.
 
+## Reading the price dialog (Reprice)
+
+While **reprice mode** is switched on (its hotkey arms and disarms it), the app watches the screen the game is on so that when you right-click an item to reprice, it can read the number out of the game's own "Set Item Price" dialog. That happens **on your PC**: frames are read, searched for the price field, and discarded. Nothing is saved and nothing is sent. When reprice mode is off, nothing is captured at all.
+
 ## What we actually receive
 
-Two things, both of which you choose to send:
+These are the only things we receive, all of which you choose to send:
 
 1. **Bug and feedback reports** submitted from the in-app form. A report contains what you type (your description, and an optional contact only if you add one), the app version and a timestamp, and - for bug reports only - a short **activity log**: the last 60 or so in-app actions (buttons clicked, settings toggled, currency and item type names, and any error messages), and the **last item you pasted into the app**, so the problem can be reproduced. Only text the app already recognised as an item is kept, so nothing else you copy can end up in a report. Reports are stored in a private Google Sheet.
 
    A bug report also has an **"Include system information"** tick box, which describes your machine rather than the app: your screen resolution and scale, the overlay window's size, your operating system, the language the app is set to, and which tab you were on. The form has a link that shows you the exact text before you send, and unticking the box sends none of it.
 2. **Stash panel captures**, only if you use "Send my stash tabs", exactly as described above.
 3. **Price field crops**, only if you press Send in Settings > Reprice. If reprice meets a screen size the app has no digit templates for, it keeps the small crop of the price box - the number and the coloured block behind it, a few hundred bytes - and offers to send it so that size can be supported. Sent with it: the number you type in to say what the price really was, what the app read instead, your screen resolution and scale, the app version and your operating system. No item name, no account name, and nothing from anywhere else on your screen. The crops are shown to you before you send, nothing goes without the button press, and Discard throws them away.
+4. **Screen-size submissions for Reprice**, only if you use "Submit your screen size" in Settings > Reprice and press Send. You take three screenshots of the game's "Set Item Price" dialog with known numbers typed in, following the example images shown. Each upload is a **centre crop of the game window** around that dialog - which can include the name and icon of the item being priced and whatever scenery sits behind the dialog, but not your chat or your stash panels, which lie outside the crop. Sent with it: your screen resolution and display scale, the game window's size, what the app's reader made of the frame, the app version and your operating system. You see each capture, can open it full size, and must confirm each one against its example before Send unlocks. These go to the same private bucket as the stash captures, under the same rules.
 
-That is all. Neither includes your account, your session, or anything personal beyond what you type.
+That is all. None of it includes your account, your session, or anything personal beyond what you type.
 
 ## About the Cloudflare Worker in the repo
 
@@ -47,4 +52,4 @@ The repository includes a Cloudflare Worker (`backend/`) that acts as a currency
 
 ## In short
 
-We do not run analytics or telemetry, track usage, phone home in the background, use machine or device IDs, or read your account or session. The Net Worth tab reads your open stash tab from an on-screen screenshot processed on your PC only - that image is never sent anywhere unless you deliberately choose to submit it with the "Send my stash tabs" button, having first seen a preview of it. The only data we receive is what you choose to send us.
+We do not run analytics or telemetry, track usage, phone home in the background, use machine or device IDs, or read your account or session. The Net Worth tab reads your open stash tab, and reprice mode reads the game's price dialog, from on-screen captures processed on your PC only - those images are never sent anywhere unless you deliberately choose to submit one with the "Send my stash tabs" button or the Reprice submission in Settings, having first seen a preview of it. The only data we receive is what you choose to send us.
