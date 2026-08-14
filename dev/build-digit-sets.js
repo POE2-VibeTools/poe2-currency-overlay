@@ -26,7 +26,12 @@ const DIR = path.join(__dirname, 'dialog-captures');
 const OUT = path.join(__dirname, '..', 'renderer', 'stash', 'reprice-digit-sets.json');
 const LEGACY = path.join(__dirname, '..', 'renderer', 'stash', 'reprice-digits.json');
 
-// file -> the digits actually on screen, left to right
+// file -> the digits actually on screen, left to right. The optional third column is a
+// bucket tag: sources tagged differently are cut into SEPARATE sets even when their
+// block heights collide. The windowed-1039 submissions measure the same 19px block as
+// the 1440x900 captures but render the glyphs differently enough that "1" scored 0.67
+// against the 1440 templates and lost to "3" - the reader happily tries both sets and
+// keeps whichever scores higher, so a duplicate height costs nothing.
 const SOURCES = [
   ['digits-1440-12345.png', '12345'],
   ['digits-1440-6789.png', '6789'],
@@ -37,6 +42,10 @@ const SOURCES = [
   ['digits-2560-12345.png', '12345'],
   ['digits-2560-6789.png', '6789'],
   ['digits-2560-0.png', '0'],
+  // user-submitted via Settings -> Reprice, game windowed at 1920x1039
+  ['sub-1039w-12345.png', '12345', 'w'],
+  ['sub-1039w-6789.png', '6789', 'w'],
+  ['sub-1039w-0.png', '0', 'w'],
 ];
 
 function load(file) {
@@ -171,7 +180,7 @@ function segment(im, block, n) {
 app.whenReady().then(() => {
   const sets = new Map();   // block height -> { ch -> template }
 
-  for (const [file, label] of SOURCES) {
+  for (const [file, label, tag] of SOURCES) {
     const im = load(file);
     if (!im) { console.log('  missing ' + file); continue; }
     const hit = F.find(im.rgba, im.w, im.h);
@@ -185,15 +194,15 @@ app.whenReady().then(() => {
       console.log('          found: ' + glyphs.map((g) => g.w + 'x' + g.h + '@' + g.x).join('  '));
       continue;
     }
-    const key = hit.block.h;
-    if (!sets.has(key)) sets.set(key, {});
-    const bucket = sets.get(key);
+    const key = String(hit.block.h) + (tag || '');
+    if (!sets.has(key)) sets.set(key, { blockH: hit.block.h, glyphs: {} });
+    const bucket = sets.get(key).glyphs;
     label.split('').forEach((ch, i) => {
       const g = glyphs[i];
       // first one wins, so an earlier capture is not silently overwritten by a later one
       if (!bucket[ch]) bucket[ch] = { w: g.w, h: g.h, data: Array.from(g.data) };
     });
-    console.log('  ' + file.padEnd(28) + 'block h' + key + '  '
+    console.log('  ' + file.padEnd(28) + 'set ' + key + '  '
       + glyphs.map((g, i) => label[i] + ':' + g.w + 'x' + g.h).join(' '));
   }
 
@@ -205,15 +214,15 @@ app.whenReady().then(() => {
     if (chars.length) {
       const h = Math.round(chars.reduce((a, c) => a + legacy[c].h, 0) / chars.length);
       // the 1080p captures measured a block height of 21 around ~11-12px glyphs
-      sets.set(21, legacy);
+      sets.set('21', { blockH: 21, glyphs: legacy });
       console.log('  carried the existing set in at block h21 (mean glyph height ' + h + ')');
     }
   } catch { console.log('  no legacy reprice-digits.json to carry in'); }
 
-  const out = { sets: [...sets.entries()].map(([blockH, glyphs]) => ({ blockH, glyphs })) };
+  const out = { sets: [...sets.values()].map((s) => ({ blockH: s.blockH, glyphs: s.glyphs })) };
   out.sets.sort((a, b) => a.blockH - b.blockH);
   fs.writeFileSync(OUT, JSON.stringify(out));
-  console.log('\n' + out.sets.length + ' scale(s): '
+  console.log('\n' + out.sets.length + ' set(s): '
     + out.sets.map((s) => 'h' + s.blockH + ' (' + Object.keys(s.glyphs).length + '/10)').join(', '));
   console.log(OUT + '  (' + (fs.statSync(OUT).size / 1024).toFixed(0) + ' KB)');
   app.exit(0);

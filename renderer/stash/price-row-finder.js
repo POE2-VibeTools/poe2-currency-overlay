@@ -56,9 +56,25 @@
   const SURROUND_SD = 24;       // measured ~6; this only rejects things that are textured
 
   function isBorder(rgba, p) {
-    return Math.abs(rgba[p] - BORDER.r) <= TOL
-      && Math.abs(rgba[p + 1] - BORDER.g) <= TOL
-      && Math.abs(rgba[p + 2] - BORDER.b) <= TOL;
+    const r = rgba[p], g = rgba[p + 1], b = rgba[p + 2];
+    // The direct match, TOL-wide for video chroma smear (which shifts hue, so the
+    // ratio test below does NOT cover it).
+    if (Math.abs(r - BORDER.r) <= TOL
+      && Math.abs(g - BORDER.g) <= TOL
+      && Math.abs(b - BORDER.b) <= TOL) return true;
+    // The scaled match. A windowed game (1920x1039 under a taskbar, say) renders its UI
+    // slightly shrunk, and the 1px border resamples across two rows at reduced
+    // intensity - measured rgb(96,87,71) and rgb(114,105,85) for the same border that
+    // reads 182,169,138 at native size. Brightness is lost but the HUE survives, so
+    // accept any pixel that is the border colour times a constant: per-channel ratios
+    // to the reference must agree. The selection orange (147,99,56 -> ratios .81/.59/.41)
+    // and the digits' near-white fail the agreement; some terrain browns pass, exactly
+    // as they passed the wide tolerance before, and the rectangle, dark-interior and
+    // flat-panel gates remain what actually rejects scenery.
+    const kr = r / BORDER.r, kg = g / BORDER.g, kb = b / BORDER.b;
+    const k = (kr + kg + kb) / 3;
+    if (k < 0.42 || k > 1.15) return false;
+    return Math.abs(kr - kg) <= 0.07 && Math.abs(kr - kb) <= 0.11 && Math.abs(kg - kb) <= 0.09;
   }
 
   // Is the box sitting on the dialog's panel? Sampled as a ring a few pixels outside it,

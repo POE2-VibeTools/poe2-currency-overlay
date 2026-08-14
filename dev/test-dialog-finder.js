@@ -67,6 +67,13 @@ const EXPECT = {
   // this one was listed in Chaos, which makes it the only capture in the set that proves
   // the icon match is reading the icon rather than always answering "divine"
   'digits-2560-0.png': { value: 0, currency: 'chaos' },
+  // The first REAL user-style submission, through the Settings flow itself: game
+  // windowed at 1920x1039 (a taskbar's worth short of fullscreen), which shrinks the
+  // UI enough that the field border resamples to ~55% brightness across two rows. The
+  // finder's scaled-hue path and the 'w' template set both exist because of these.
+  'sub-1039w-12345.png': { value: 12345, currency: 'chaos' },
+  'sub-1039w-6789.png': { value: 6789, currency: 'chaos' },
+  'sub-1039w-0.png': { value: 0, currency: 'chaos' },
   'short.png': null,
 };
 
