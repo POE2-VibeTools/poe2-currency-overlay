@@ -50,14 +50,6 @@ function bind() {
       QueryFullProcessImageNameW: kernel32.func('int __stdcall QueryFullProcessImageNameW(void *h, uint32_t flags, _Out_ uint16_t *buf, _Inout_ uint32_t *size)'),
       CloseHandle: kernel32.func('int __stdcall CloseHandle(void *h)'),
       GetWindowRect: user32.func('int __stdcall GetWindowRect(void *hwnd, _Out_ int *rect)'),
-      ReleaseCapture: user32.func('int __stdcall ReleaseCapture()'),
-      // hwnd declared as intptr_t, not void*: the caller holds the handle VALUE (read
-      // out of Electron's getNativeWindowHandle Buffer), and passing the Buffer itself
-      // would pass a pointer to the buffer's contents instead of the handle.
-      // PostMessageW, not SendMessageW: WM_NCLBUTTONDOWN starts a MODAL resize loop,
-      // and Send would run that whole loop inside the IPC handler - blocking main (and
-      // the ipc reply) until the mouse is released. Post queues it and returns.
-      PostMessageW: user32.func('int __stdcall PostMessageW(intptr_t hwnd, uint32_t msg, uintptr_t wparam, intptr_t lparam)'),
     };
   } catch (err) {
     api = false;
@@ -221,27 +213,4 @@ function gameRect() {
   } catch { return null; }
 }
 
-// Start Windows' OWN resize loop on a window, as if the user had grabbed its
-// bottom-right corner. This is the classic Win32 custom-grip pattern:
-// ReleaseCapture, then WM_NCLBUTTONDOWN with HTBOTTOMRIGHT, and the OS runs the
-// whole drag natively - the same code path as the frameless window's other corners,
-// which is exactly the resize that provably works. The renderer's own
-// pointer-capture reimplementation of this was dead on Windows: the grip saw
-// pointerdown and then never a single move.
-//
-// hwndBuf is Electron's win.getNativeWindowHandle() Buffer.
-function beginNativeResize(hwndBuf) {
-  if (process.platform !== 'win32') return false;
-  const a = bind();
-  if (!a || !hwndBuf || hwndBuf.length < 8) return false;
-  try {
-    const WM_NCLBUTTONDOWN = 0x00A1;
-    const HTBOTTOMRIGHT = 17;
-    const hwnd = hwndBuf.length >= 8 ? hwndBuf.readBigInt64LE(0) : BigInt(hwndBuf.readInt32LE(0));
-    a.ReleaseCapture();
-    a.PostMessageW(hwnd, WM_NCLBUTTONDOWN, HTBOTTOMRIGHT, 0);
-    return true;
-  } catch { return false; }
-}
-
-module.exports = { warm, focus, findGame, listWindows, foregroundIsGame, gameRect, beginNativeResize };
+module.exports = { warm, focus, findGame, listWindows, foregroundIsGame, gameRect };

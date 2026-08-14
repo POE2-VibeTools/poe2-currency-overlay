@@ -2782,19 +2782,6 @@ ipcMain.handle('stash-sample-send', async (_e, payload) => {
 // a frameless always-on-top window. So: ask, then CHECK, and fall back to setSize, which
 // several WMs honour when setBounds is refused. If neither moves the window, say so once
 // - a silent no-op is what made this hard to report in the first place.
-// The grip hands the drag to Windows' own resize loop (WM_NCLBUTTONDOWN +
-// HTBOTTOMRIGHT) - the same native path as the window's other corners, which is the
-// resize that demonstrably works there. The renderer's pointer-capture loop was dead on
-// Windows: pointerdown arrived, moves never did. Returns false off-Windows (or if the
-// native call fails), and the renderer falls back to the delta path below, which is the
-// one that works on Linux.
-ipcMain.handle('resize-native-begin', () => {
-  if (process.platform !== 'win32' || !win || win.isDestroyed()) return false;
-  try {
-    return require('./focus-native.js').beginNativeResize(win.getNativeWindowHandle());
-  } catch { return false; }
-});
-
 let resizeComplained = false;
 ipcMain.on('resize-window-by', (_e, d) => {
   if (!win || win.isDestroyed() || !d) return;

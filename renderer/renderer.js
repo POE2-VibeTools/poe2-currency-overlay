@@ -3828,19 +3828,27 @@ main();
 // how far the corner moved. Pointer capture keeps the drag alive if the cursor outruns
 // the window, which it will, because the window is the thing being resized.
 (function initResizeGrip() {
+  // The script tag sits ABOVE the grip div in index.html, so at parse time the element
+  // does not exist yet - the old early-return on !grip meant these handlers were never
+  // attached at all, on any platform. The grip rendered, showed a resize cursor, and did
+  // nothing: the Windows corner-covering bug AND the original Linux "grip doesn't
+  // resize" report were both this line running too early.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initResizeGrip);
+    return;
+  }
   const grip = document.getElementById('resize-grip');
   if (!grip || !window.api || !window.api.resizeWindowBy) return;
+  // The grip exists for LINUX, where some window managers give a frameless window no
+  // native resize border at all. Windows always had native corner resize - and the grip
+  // sitting on the bottom-right corner was COVERING it: the one corner with a visible
+  // resize affordance was the one corner that could not resize. So on Windows there is
+  // no grip, and the native corner underneath just works.
+  if (window.api.platform === 'win32') { grip.remove(); return; }
   let last = null;
-  grip.addEventListener('pointerdown', async (e) => {
+  grip.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    // Windows first: hand the drag to the OS's own resize loop (the same native path
-    // as the window's other corners, which is the resize that actually works there).
-    // The pointer-capture loop below was dead on Windows - pointerdown arrived, moves
-    // never did - and it stays only as the Linux path.
-    if (window.api.resizeNativeBegin) {
-      try { if (await window.api.resizeNativeBegin()) return; } catch { }
-    }
     last = { x: e.screenX, y: e.screenY };
     try { grip.setPointerCapture(e.pointerId); } catch {}
   });
