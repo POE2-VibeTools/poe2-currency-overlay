@@ -3831,9 +3831,16 @@ main();
   const grip = document.getElementById('resize-grip');
   if (!grip || !window.api || !window.api.resizeWindowBy) return;
   let last = null;
-  grip.addEventListener('pointerdown', (e) => {
+  grip.addEventListener('pointerdown', async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Windows first: hand the drag to the OS's own resize loop (the same native path
+    // as the window's other corners, which is the resize that actually works there).
+    // The pointer-capture loop below was dead on Windows - pointerdown arrived, moves
+    // never did - and it stays only as the Linux path.
+    if (window.api.resizeNativeBegin) {
+      try { if (await window.api.resizeNativeBegin()) return; } catch { }
+    }
     last = { x: e.screenX, y: e.screenY };
     try { grip.setPointerCapture(e.pointerId); } catch {}
   });
