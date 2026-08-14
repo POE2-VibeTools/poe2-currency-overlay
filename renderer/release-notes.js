@@ -6,6 +6,15 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.7.4',
+    date: '2026-08-14',
+    notes: [
+      "\"Open on trade site\" button was dead on arrival. Fixed. Thanks for the report.",
+      "Search results now come back in your language",
+      "Translated a bunch of stuff that was stuck in English (tabs, filters, Net Worth tab names)",
+    ],
+  },
+  {
     version: '2.7.3',
     date: '2026-08-14',
     notes: [
