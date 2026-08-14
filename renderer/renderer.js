@@ -2569,7 +2569,17 @@ async function initSettings() {
         cap.className = 'set-login-btn';
         cap.textContent = t('ui.settings.reprice.shots_capture');
         cap.onclick = async () => {
+          // Clicking here steals focus from the game, which DESELECTS the number. The
+          // countdown exists so the user can go back and highlight it again before the
+          // shot fires - without it every capture arrives unhighlighted and useless.
           cap.disabled = true;
+          for (let s = 3; s > 0; s--) {
+            cap.textContent = s + '...';
+            say('', 'ui.settings.reprice.shots_countdown', { s });
+            await new Promise((r) => setTimeout(r, 1000));
+            if (!rpShotsBack) return;   // modal was closed mid-count
+          }
+          cap.textContent = t('ui.settings.reprice.shots_capture');
           say('', 'ui.settings.reprice.shots_capturing');
           try {
             const r = await window.api.repriceShotCapture(slot);
