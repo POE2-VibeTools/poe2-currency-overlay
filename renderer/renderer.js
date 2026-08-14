@@ -2161,16 +2161,100 @@ async function initSettings() {
     if (rpEls.currencyWarn) rpEls.currencyWarn.classList.toggle('hidden', !(usesCurrency && noBox));
   }
 
+  // The outcome table. The old two-line preview ran the rules with NO currency, which
+  // exercised only the else branch - the one branch a real read, which always carries a
+  // currency, never takes. It truthfully said "5 becomes 5" about a path nobody was on.
+  // Now: one column per currency the list branches on plus Other, sample prices down the
+  // side, and a row to try any number.
+  let rpTryPrice = null;
   function rpRenderExample() {
     if (!rpEls.example || !window.RepriceRules) return;
-    const ex = window.RepriceRules.examples({ branches: rpBranches() });
-    rpEls.example.innerHTML = '';
-    for (const e of ex) {
-      const line = document.createElement('div');
-      line.className = 'set-sub';
-      line.textContent = t('ui.settings.reprice.example_line', { base: e.base, result: e.result });
-      rpEls.example.appendChild(line);
+    const cfg = { branches: rpBranches() };
+    const fams = [];
+    for (const b of cfg.branches) {
+      if (b && b.when && b.when.type === 'currency' && b.when.is && !fams.includes(b.when.is)) fams.push(b.when.is);
     }
+    const cols = fams.map((f) => {
+      const c = rpCurrencyList.find((x) => x.family === f);
+      const name = c ? (window.gameName ? window.gameName(c.name) : c.name) : f;
+      return { ctx: { currency: f }, label: name };
+    });
+    // the else column - with no currency conditions it is the only one and needs no name
+    cols.push({ ctx: {}, label: t('ui.settings.reprice.col_other') });
+
+    const cell = (base, ctx) => {
+      const out = window.RepriceRules.apply(base, cfg, ctx);
+      return {
+        text: out == null ? '' : '→ ' + out,
+        same: out == null || out === base,
+      };
+    };
+
+    const tbl = document.createElement('table');
+    tbl.className = 'rp-out-table';
+    if (cols.length > 1) {
+      const tr = document.createElement('tr');
+      tr.appendChild(document.createElement('th'));
+      for (const c of cols) {
+        const th = document.createElement('th');
+        th.textContent = c.label;
+        tr.appendChild(th);
+      }
+      tbl.appendChild(tr);
+    }
+    for (const base of [100, 20, 5]) {
+      const tr = document.createElement('tr');
+      const td0 = document.createElement('td');
+      td0.className = 'rp-out-base';
+      td0.textContent = base;
+      tr.appendChild(td0);
+      for (const c of cols) {
+        const r = cell(base, c.ctx);
+        const td = document.createElement('td');
+        td.textContent = r.text;
+        td.className = r.same ? 'rp-out-same' : '';
+        tr.appendChild(td);
+      }
+      tbl.appendChild(tr);
+    }
+
+    // Try-any-price row. Its cells update in place - rebuilding the table on every
+    // keystroke would throw the input's focus away mid-number.
+    const tryTr = document.createElement('tr');
+    const tryTd = document.createElement('td');
+    tryTd.className = 'rp-out-base';
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '1';
+    inp.step = '1';
+    inp.className = 'rp-out-try';
+    inp.placeholder = t('ui.settings.reprice.try_ph');
+    if (rpTryPrice != null) inp.value = rpTryPrice;
+    tryTd.appendChild(inp);
+    tryTr.appendChild(tryTd);
+    const tryCells = cols.map((c) => {
+      const td = document.createElement('td');
+      tryTr.appendChild(td);
+      return { td, ctx: c.ctx };
+    });
+    const fillTry = () => {
+      for (const tc of tryCells) {
+        if (rpTryPrice == null) { tc.td.textContent = ''; continue; }
+        const r = cell(rpTryPrice, tc.ctx);
+        tc.td.textContent = r.text;
+        tc.td.className = r.same ? 'rp-out-same' : '';
+      }
+    };
+    inp.addEventListener('input', () => {
+      const v = Math.floor(Number(inp.value));
+      rpTryPrice = Number.isFinite(v) && v > 0 ? v : null;
+      fillTry();
+    });
+    fillTry();
+    tbl.appendChild(tryTr);
+
+    rpEls.example.innerHTML = '';
+    rpEls.example.appendChild(tbl);
   }
 
   // Set the key as well as the text. The i18n pass re-translates every [data-i18n]
@@ -2292,7 +2376,8 @@ async function initSettings() {
   async function rpFillCurrencies() {
     if (!window.api.repriceCurrencies) return;
     try { rpCurrencyList = await window.api.repriceCurrencies(); } catch { return; }
-    if (rpCurrencyList.length) rpRenderBranches();
+    // the outcome table names its columns from this list, so it re-renders too
+    if (rpCurrencyList.length) { rpRenderBranches(); rpRenderExample(); }
   }
 
   // ---------- samples from an untested screen size ----------

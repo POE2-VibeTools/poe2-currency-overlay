@@ -1803,6 +1803,13 @@ footer {
 .rp-sample-truth { width: 92px; flex: 0 0 auto; text-align: right; }
 .rp-examples { margin-top: 6px; }
 .rp-examples .set-sub { display: block; }
+/* rules outcome table: sample prices down the side, one column per currency branch */
+.rp-out-table { border-collapse: collapse; font-size: 12px; }
+.rp-out-table th { text-align: left; font-weight: 500; opacity: 0.6; padding: 1px 14px 1px 0; }
+.rp-out-table td { padding: 1px 14px 1px 0; }
+.rp-out-table .rp-out-base { text-align: right; opacity: 0.75; }
+.rp-out-table .rp-out-same { opacity: 0.45; }
+.rp-out-try { width: 64px; }
 /* What the reader actually sees. Being told the region is "set" proves nothing - a
    box one row too high looks identical in settings and reads nothing forever. */
 .rp-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
