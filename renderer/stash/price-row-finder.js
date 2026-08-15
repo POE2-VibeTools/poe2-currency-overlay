@@ -16,15 +16,38 @@
   else root.PriceRowFinder = api;
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  // The exact border colour. Tolerance is for capture noise and the compositor, not for
-  // variation - every sample of it reads the same.
-  const BORDER = { r: 182, g: 169, b: 138 };
-  // Tight-ish. The border is drawn flat - every sample of it reads 182,169,138 exactly -
-  // but the LIVE frames arrive through a getDisplayMedia video stream, whose chroma
-  // subsampling washes the colour: measured along a real border in a live frame, blue
-  // drifts up to 18. At 46 the old finder accepted most of a dirt floor; 20 covers the
-  // measured video drift and nothing else, and the rectangle gates carry the rest.
-  const TOL = 20;
+  // The dialog's colours come in (at least) two BRIGHTNESS PROFILES, and it is not a
+  // single gain: at 2560x1440 with 100% display scaling (first real user submission)
+  // the border renders 255,255,212 against the usual 182,169,138 (x1.4, clipped) while
+  // the panel behind it doubles (85,75,60 vs 44,38,30). Every colour gate is therefore
+  // parameterised and the finder tries each profile in turn - the structural gates
+  // (rectangle, dark interior, flat surround) are what actually reject scenery, and
+  // they are shared.
+  const PROFILES = [
+    {
+      // the reference profile: every capture from the dev machines
+      border: { r: 182, g: 169, b: 138 },
+      // Tight-ish: the border is drawn flat, but LIVE frames arrive through a
+      // getDisplayMedia video stream whose chroma subsampling washes the colour -
+      // measured drift up to 18 on blue. The rectangle gates carry the rest.
+      tol: 20,
+      // the scaled-hue path (windowed games render the border dimmer, hue intact)
+      hueRatio: true,
+      surround: { r: 44, g: 38, b: 30 },
+      surroundTol: 26,
+      surroundSd: 24,
+    },
+    {
+      // the bright profile, measured off the 2560x1440@100% submission. No hue-ratio
+      // path: the border clips at 255, so ratios are meaningless here.
+      border: { r: 255, g: 255, b: 212 },
+      tol: 25,
+      hueRatio: false,
+      surround: { r: 85, g: 75, b: 60 },
+      surroundTol: 30,
+      surroundSd: 28,
+    },
+  ];
 
   // Where the row lives, as a fraction of the game window: measured at x 0.28-0.41 and
   // y 0.57-0.80, then widened, because a long currency name pushes the field left and a
@@ -44,34 +67,26 @@
   // panel that happens to have a border-coloured outline.
   const DARK_INSIDE = 165;
 
-  // What sits BEHIND the box. The dialog is a flat panel, and the ring just outside the
-  // field measures rgb(44,38,30) with a standard deviation of about 6 on every capture at
-  // every resolution - the same brown, barely textured.
-  //
-  // This is the other half of the fingerprint: a bright rectangle is one thing, a bright
-  // rectangle sitting on a specific flat brown is another. Terrain has the colour
-  // sometimes; it does not have the flatness, because terrain is texture.
-  const SURROUND = { r: 44, g: 38, b: 30 };
-  const SURROUND_TOL = 26;      // how far the mean may drift
-  const SURROUND_SD = 24;       // measured ~6; this only rejects things that are textured
-
-  function isBorder(rgba, p) {
+  // The surround (what sits BEHIND the box) is part of each profile: the dialog is a
+  // flat panel, and terrain has the colour sometimes but never the flatness.
+  function isBorder(rgba, p, prof) {
     const r = rgba[p], g = rgba[p + 1], b = rgba[p + 2];
-    // The direct match, TOL-wide for video chroma smear (which shifts hue, so the
+    const B = prof.border;
+    // The direct match, tol-wide for video chroma smear (which shifts hue, so the
     // ratio test below does NOT cover it).
-    if (Math.abs(r - BORDER.r) <= TOL
-      && Math.abs(g - BORDER.g) <= TOL
-      && Math.abs(b - BORDER.b) <= TOL) return true;
+    if (Math.abs(r - B.r) <= prof.tol
+      && Math.abs(g - B.g) <= prof.tol
+      && Math.abs(b - B.b) <= prof.tol) return true;
+    if (!prof.hueRatio) return false;
     // The scaled match. A windowed game (1920x1039 under a taskbar, say) renders its UI
     // slightly shrunk, and the 1px border resamples across two rows at reduced
     // intensity - measured rgb(96,87,71) and rgb(114,105,85) for the same border that
     // reads 182,169,138 at native size. Brightness is lost but the HUE survives, so
     // accept any pixel that is the border colour times a constant: per-channel ratios
-    // to the reference must agree. The selection orange (147,99,56 -> ratios .81/.59/.41)
-    // and the digits' near-white fail the agreement; some terrain browns pass, exactly
-    // as they passed the wide tolerance before, and the rectangle, dark-interior and
+    // to the reference must agree. The selection orange and the digits' near-white fail
+    // the agreement; some terrain browns pass, and the rectangle, dark-interior and
     // flat-panel gates remain what actually rejects scenery.
-    const kr = r / BORDER.r, kg = g / BORDER.g, kb = b / BORDER.b;
+    const kr = r / B.r, kg = g / B.g, kb = b / B.b;
     const k = (kr + kg + kb) / 3;
     if (k < 0.42 || k > 1.15) return false;
     return Math.abs(kr - kg) <= 0.07 && Math.abs(kr - kb) <= 0.11 && Math.abs(kg - kb) <= 0.09;
@@ -79,7 +94,7 @@
 
   // Is the box sitting on the dialog's panel? Sampled as a ring a few pixels outside it,
   // which is panel on all four sides for a real field.
-  function onPanel(rgba, w, h, b) {
+  function onPanel(rgba, w, h, b, prof) {
     let n = 0;
     let sr = 0, sg = 0, sb = 0, qr = 0, qg = 0, qb = 0;
     const take = (x, y) => {
@@ -95,11 +110,11 @@
     }
     if (n < 40) return false;
     const mr = sr / n, mg = sg / n, mb = sb / n;
-    if (Math.abs(mr - SURROUND.r) > SURROUND_TOL
-      || Math.abs(mg - SURROUND.g) > SURROUND_TOL
-      || Math.abs(mb - SURROUND.b) > SURROUND_TOL) return false;
+    if (Math.abs(mr - prof.surround.r) > prof.surroundTol
+      || Math.abs(mg - prof.surround.g) > prof.surroundTol
+      || Math.abs(mb - prof.surround.b) > prof.surroundTol) return false;
     const sd = (q, m) => Math.sqrt(Math.max(0, q / n - m * m));
-    return sd(qr, mr) <= SURROUND_SD && sd(qg, mg) <= SURROUND_SD && sd(qb, mb) <= SURROUND_SD;
+    return sd(qr, mr) <= prof.surroundSd && sd(qg, mg) <= prof.surroundSd && sd(qb, mb) <= prof.surroundSd;
   }
 
   /**
@@ -108,7 +123,7 @@
    * @param {{x,y,w,h}} win  the game window inside that frame
    * @returns {{quantity, row, boxes}|null}
    */
-  function find(rgba, w, h, win) {
+  function findWithProfile(rgba, w, h, win, prof) {
     const g = win && win.w > 0 ? win : { x: 0, y: 0, w, h };
     const bx0 = Math.max(1, Math.round(g.x + g.w * BAND.x0));
     const bx1 = Math.min(w - 2, Math.round(g.x + g.w * BAND.x1));
@@ -123,7 +138,7 @@
     for (let y = 0; y < bh; y++) {
       for (let x = 0; x < bw; x++) {
         const p = ((y + by0) * w + (x + bx0)) * 4;
-        M[y * bw + x] = isBorder(rgba, p) ? 1 : 0;
+        M[y * bw + x] = isBorder(rgba, p, prof) ? 1 : 0;
         L[y * bw + x] = 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2];
       }
     }
@@ -218,7 +233,7 @@
           if (!n || s / n > DARK_INSIDE) continue;
 
           // ...and it is sitting on the dialog's flat brown panel, not on scenery
-          if (!onPanel(rgba, w, h, { x: top.x0 + bx0, y: ty + by0, w: boxW, h: boxH })) continue;
+          if (!onPanel(rgba, w, h, { x: top.x0 + bx0, y: ty + by0, w: boxW, h: boxH }, prof)) continue;
 
           // Nearest to where the dialog puts it wins - never biggest. Size ranking is what
           // made every previous version pick the merchant panel.
@@ -233,5 +248,15 @@
     return { quantity: best.box, row: best.box, boxes: [best.box] };
   }
 
-  return { find, BAND, BORDER };
+  // reference profile first: it covers every known setup but one, and a hit ends the
+  // search - the bright profile only ever runs on frames the reference cannot read
+  function find(rgba, w, h, win) {
+    for (const prof of PROFILES) {
+      const hit = findWithProfile(rgba, w, h, win, prof);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  return { find, BAND, PROFILES };
 });

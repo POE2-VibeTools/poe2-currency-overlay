@@ -25,7 +25,10 @@
   else root.PriceDialogFinder = api;
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const HL = { r: 149, g: 100, b: 57 };
+  // Selection-highlight colours, one per brightness profile (see price-row-finder's
+  // PROFILES): the reference orange, and the brighter orange the 2560x1440@100%
+  // submission renders (228,155,91).
+  const HLS = [{ r: 149, g: 100, b: 57 }, { r: 228, g: 155, b: 91 }];
   const TOL = 30;                 // capture noise, not variation - the value is exact
   const REF_H = 1080;             // the resolution the constants below were measured at
   const BLOCK_H = 25;             // selection block height at REF_H
@@ -51,9 +54,9 @@
   function mask(rgba, w, h) {
     const on = new Uint8Array(w * h);
     for (let p = 0, i = 0; p < w * h; p++, i += 4) {
-      if (Math.abs(rgba[i] - HL.r) <= TOL
+      if (HLS.some((HL) => Math.abs(rgba[i] - HL.r) <= TOL
         && Math.abs(rgba[i + 1] - HL.g) <= TOL
-        && Math.abs(rgba[i + 2] - HL.b) <= TOL) on[p] = 1;
+        && Math.abs(rgba[i + 2] - HL.b) <= TOL)) on[p] = 1;
     }
     return on;
   }
@@ -306,8 +309,8 @@
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         const p = (y * w + x) * 4;
-        if (Math.abs(rgba[p] - HL.r) <= TOL && Math.abs(rgba[p + 1] - HL.g) <= TOL
-          && Math.abs(rgba[p + 2] - HL.b) <= TOL) {
+        if (HLS.some((HL) => Math.abs(rgba[p] - HL.r) <= TOL && Math.abs(rgba[p + 1] - HL.g) <= TOL
+          && Math.abs(rgba[p + 2] - HL.b) <= TOL)) {
           n++;
           if (x < bx0) bx0 = x; if (x > bx1) bx1 = x;
           if (y < by0) by0 = y; if (y > by1) by1 = y;
@@ -337,5 +340,5 @@
     };
   }
 
-  return { find, HL, BLOCK_H, REF_H, ICON };
+  return { find, HLS, BLOCK_H, REF_H, ICON };
 });

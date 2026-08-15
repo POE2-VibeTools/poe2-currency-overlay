@@ -51,6 +51,11 @@ const SOURCES = [
   ['reprice-2560fs-12345.png', '12345'],
   ['reprice-2560fs-6789.png', '6789'],
   ['reprice-2560fs-0.png', '0'],
+  // user-submitted via Settings -> Reprice: 2560x1440 at 100% display scaling, the
+  // bright-profile rendering (block h30)
+  ['sub-2560n-12345.png', '12345'],
+  ['sub-2560n-6789.png', '6789'],
+  ['sub-2560n-0.png', '0'],
   // user-submitted via Settings -> Reprice, game windowed at 1920x1039
   ['sub-1039w-12345.png', '12345', 'w'],
   ['sub-1039w-6789.png', '6789', 'w'],

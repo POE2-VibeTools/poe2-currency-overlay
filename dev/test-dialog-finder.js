@@ -83,6 +83,12 @@ const EXPECT = {
   'reprice-2560fs-12345.png': { value: 12345, currency: 'chaos' },
   'reprice-2560fs-6789.png': { value: 6789, currency: 'chaos' },
   'reprice-2560fs-0.png': { value: 0, currency: 'chaos' },
+  // The second real user submission: 2560x1440 at 100% display scaling, which renders
+  // the WHOLE dialog brighter (border 255,255,212, panel 85,75,60, highlight
+  // 228,155,91). The finder's brightness profiles exist because of these three.
+  'sub-2560n-12345.png': { value: 12345, currency: 'divine' },
+  'sub-2560n-6789.png': { value: 6789, currency: 'divine' },
+  'sub-2560n-0.png': { value: 0, currency: 'divine' },
   'short.png': null,
 };
 
