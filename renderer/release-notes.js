@@ -10,6 +10,7 @@ window.RELEASE_NOTES = [
     date: '2026-08-15',
     notes: [
       "Net Worth fixes",
+      "Reprice now works in Windowed Fullscreen too, not just Windowed. Tested at 1920x1080, 1440x900, 1600x1200, 2560x1440.",
       "League Names now use GGG's direct translation library. If it reads in English that's becuase GGG themselves don't bother to translate some strings in some languages, randomly, if they feel like it, or not. It's on them now. It's ACTAULLY NOT MY FAULT.",
     ],
   },
