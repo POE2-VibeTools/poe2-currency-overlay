@@ -1777,9 +1777,11 @@ footer {
 /* Reprice settings. The adjustment reads as one sentence left to right - verb, number,
    unit - so the three controls sit on one row and size to their content rather than
    stretching to the card. */
-.rp-adjust { display: flex; align-items: center; gap: 8px; }
-.rp-adjust select { width: auto; flex: 0 0 auto; }
-.rp-adjust input { width: 84px; flex: 0 0 auto; text-align: right; }
+/* Rule rows wrap and their selects shrink. Fixed-width never-shrink selects pushed
+   the "round price up" dropdown out of the frame - in English, and worse translated. */
+.rp-adjust { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rp-adjust select { width: auto; flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.rp-adjust input { width: 84px; flex: 0 1 auto; text-align: right; }
 .rp-adjust + .rp-adjust { margin-top: 6px; }
 .rp-lead { color: var(--tx-dim); font-size: 11px; flex: 0 0 auto; }
 /* One branch of the rule list. Rules are indented under their condition so the shape of

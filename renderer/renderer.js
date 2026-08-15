@@ -1686,7 +1686,8 @@ function renderDefaults() {
       chip.appendChild(img);
     }
     const nm = document.createElement('span');
-    nm.textContent = shortName(d.text || d.apiId);
+    // the game's own name for the currency - stored text is the feed's English
+    nm.textContent = shortName(window.gameName && d.text ? window.gameName(d.text) : (d.text || d.apiId));
     chip.appendChild(nm);
     const del = document.createElement('button');
     del.textContent = '✕';
