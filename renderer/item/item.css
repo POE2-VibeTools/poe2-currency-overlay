@@ -236,7 +236,7 @@
 /* Static label, NOT a control: flat fill and no outline. An outlined pill in this app
    means "you can click this" (.des-corner, .gtoggle, .scope-chip, .chip-add), and this
    one sat right beside the redesecrate button wearing the identical costume. */
-.item-tab .item-meta { margin-left: auto; font-size: 10px; color: var(--item-meta-tx); background: color-mix(in srgb, var(--tx-gold2) 14%, transparent); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.item-tab .item-meta { font-size: 10px; color: var(--item-meta-tx); background: color-mix(in srgb, var(--tx-gold2) 14%, transparent); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
 /* header controls strip: the item-level search ranges (ilvl / quality /
    sockets), each min defaulting to the item's own value */
 .item-tab .hdr-ctrls { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 8px; }
