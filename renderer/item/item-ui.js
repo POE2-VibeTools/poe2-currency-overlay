@@ -807,6 +807,9 @@
   let peekShowTimer = null, peekHideTimer = null;
   // click-pinned listing: while set, hover neither re-points nor hides the card
   let peekPinned = null;
+  // which listing the card currently shows: pinning it again must NOT resend the same
+  // content - the re-render is a visible blink right as the user clicks to pin
+  let peekShownFor = null;
   function listingRow(l, h, idx) {
     const row = el('div', 'listing' + (l.whisper ? ' has-whisper' : ''));
     row.dataset.li = idx;
@@ -859,6 +862,7 @@
       clearTimeout(peekShowTimer);
       peekShowTimer = setTimeout(() => {
         const r = row.getBoundingClientRect();
+        peekShownFor = l;
         window.api.itemPeekShow({ html: peekCardHtml(l), frac: r.top / window.innerHeight });
       }, 110);
     });
@@ -866,7 +870,7 @@
       if (peekPinned) return;
       clearTimeout(peekShowTimer);
       clearTimeout(peekHideTimer);
-      peekHideTimer = setTimeout(() => { window.api.itemPeekHide(); }, 150);
+      peekHideTimer = setTimeout(() => { peekShownFor = null; window.api.itemPeekHide(); }, 150);
     });
     // click PINS the detail card to this row (click again to release; clicking
     // another row moves the pin). The ✉ button owns the whisper copy.
@@ -874,6 +878,7 @@
     row.addEventListener('click', () => {
       if (peekPinned === l) {
         peekPinned = null;
+        peekShownFor = null;
         row.classList.remove('li-pinned');
         window.api.itemPeekHide();
         return;
@@ -883,7 +888,11 @@
       row.classList.add('li-pinned');
       clearTimeout(peekShowTimer);
       clearTimeout(peekHideTimer);
+      // the hover already put THIS listing's card up - pinning it again must not
+      // resend the content, which repaints the card as a visible blink
+      if (peekShownFor === l) return;
       const r = row.getBoundingClientRect();
+      peekShownFor = l;
       window.api.itemPeekShow({ html: peekCardHtml(l), frac: r.top / window.innerHeight });
     });
     if (l.whisper && h.onWhisper) {
@@ -1058,6 +1067,7 @@
     const rows = [];
     let liIdx = 0;
     peekPinned = null; // fresh results release any pinned card
+    peekShownFor = null;
     const anchorL = res.suggested && res.suggested.why && res.suggested.why.anchorL;
     // Re-surface the profiler's buckets as quiet dividers - Highly similar
     // first, then Similar (the grouping always ran; the redesign had only
@@ -1314,6 +1324,7 @@
   // set) took two clicks to release after coming back.
   function unpinPeek() {
     peekPinned = null;
+    peekShownFor = null;
     clearTimeout(peekShowTimer);
     clearTimeout(peekHideTimer);
     document.querySelectorAll('.listing.li-pinned').forEach((n) => n.classList.remove('li-pinned'));
