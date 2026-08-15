@@ -656,7 +656,7 @@
         sel.title = t('desecrate.outcomes.tier_select_tooltip');
         for (const tier of e.tiers) { // NOT `t`: a local named t shadows the translator
           const o = el('option', null, `${t('desecrate.outcomes.tier_option_label', { tier: tier.ti + 1 })}${tier.lo != null ? ` (${tier.lo}-${tier.hi})` : ''}`);
-          o.value = String(t.ti);
+          o.value = String(tier.ti);
           sel.appendChild(o);
         }
         sel.value = String(state.hits.get(e.fi));
