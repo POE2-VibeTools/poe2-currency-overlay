@@ -6,6 +6,15 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '2.7.6',
+    date: '2026-08-14',
+    notes: [
+      "Pinned search results now unpin when you leave the tab.",
+      "Pinning no longer always flickers the detail card",
+      "Price Check history now shows up on launch instead of after a tab switch.",
+    ],
+  },
+  {
     version: '2.7.5',
     date: '2026-08-14',
     notes: [
