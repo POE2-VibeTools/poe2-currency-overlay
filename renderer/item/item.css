@@ -56,6 +56,10 @@
 .des-imod.aux { color: var(--des-aux); }
 .des-imod.cur { color: var(--des-tx); background: color-mix(in srgb, var(--desec) 9%, transparent); box-shadow: inset 2px 0 0 var(--desec); border-radius: 4px; padding: 1px 6px; margin-left: -6px; }
 .des-imod-tag { font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--desec); margin-left: 6px; white-space: nowrap; }
+/* full-item fresh desecration: the mod lines ARE the picker for "which mod did the
+   bone consume" - clickable, with a hover that promises the .cur treatment */
+.des-imod-pick { cursor: pointer; }
+.des-imod-pick:hover { color: var(--des-tx); background: color-mix(in srgb, var(--desec) 6%, transparent); border-radius: 4px; padding: 1px 6px; margin-left: -6px; }
 /* rerolled-mod strip: green tint + inset bar, no glow */
 .des-cur { margin: 10px 0 0; padding: 8px 11px; background: color-mix(in srgb, var(--desec) 8%, transparent); box-shadow: inset 2px 0 0 var(--desec); border-radius: 4px; font-size: 11.5px; color: var(--des-tx); }
 .des-cur b { color: var(--desec); }

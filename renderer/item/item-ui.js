@@ -341,15 +341,18 @@
     const rar = rk ? esc(t(rk)) : esc(item.rarity || '');
     if (rar) head.appendChild(el('span', 'item-meta', rar));
     if (h.onDesecrate) {
-      // quiet corner link to the Desecrate tab - green, because desecration is
-      // Rerolling means stripping the mod that is already there, so the link is
-      // dead without one. Same predicate desecrate.js uses to pick that mod. An item
-      // with nothing to reroll gets NO chip at all - a greyed-out button that can
-      // never do anything is noise, not affordance.
-      const hasDes = (item.mods || []).some((m) => m.kind === 'desecrated' && !m.prop);
-      if (hasDes) {
-        const d = el('span', 'des-corner', t('item.header.redesecrate_label'));
-        d.title = t('item.header.redesecrate_tooltip_active');
+      // Two doors into the Desecrate tab, one chip's worth of space (3.0 design):
+      //   has a desecrated mod  -> "redesecrate?" (target already known)
+      //   no desecrated mod     -> "desecrate?"  (price landing one fresh)
+      // NO chip at all when the item is locked - corrupted, twice-corrupted,
+      // sanctified, or mirrored items cannot be altered, so either door would lie.
+      // Gated to rare equipment/jewels: the categories a bone actually works on.
+      const locked = item.isCorrupted || item.isMirrored || item.isSanctified || item.isUnmodifiable;
+      const boneable = /^(weapon\.|armour\.|accessory\.|jewel)/.test(String(item.category || ''));
+      if (!locked && boneable && item.rarity === 'Rare') {
+        const hasDes = (item.mods || []).some((m) => m.kind === 'desecrated' && !m.prop);
+        const d = el('span', 'des-corner', t(hasDes ? 'item.header.redesecrate_label' : 'item.header.desecrate_label'));
+        d.title = t(hasDes ? 'item.header.redesecrate_tooltip_active' : 'item.header.desecrate_tooltip');
         d.onclick = () => h.onDesecrate();
         head.appendChild(d);
       }

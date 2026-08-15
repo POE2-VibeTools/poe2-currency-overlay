@@ -994,6 +994,13 @@
       unidentifiedTier: parsed.unidentifiedTier != null ? Number(parsed.unidentifiedTier) : null,
       rarity: parsed.rarity || null,
       itemLevel: parsed.itemLevel || null,
+      // Locked-item flags, straight off the parser. Corrupted / twice-corrupted /
+      // sanctified / mirrored items cannot be altered, so the Desecrate doors in the
+      // header key off these - offering a bone to a corrupted item would be a lie.
+      isCorrupted: !!parsed.isCorrupted,
+      isMirrored: !!parsed.isMirrored,
+      isSanctified: !!parsed.isSanctified,
+      isUnmodifiable: !!parsed.isUnmodifiable,
       // gem facts: level drives misc_filters.gem_level, and isGem switches the
       // header to a gem-level range instead of an item-level one
       isGem,

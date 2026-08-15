@@ -40,8 +40,33 @@
   // a desecrated suffix (accuracy is "Precise" the prefix AND a desecrated
   // suffix), and matching the regular family flips the side and hides the
   // entire real pool.
+  // The mod leaving the item: the existing desecrated mod (re-desecrate door), or the
+  // one the user says the bone consumed (fresh door on a full item). Same role in the
+  // hit-value search and the display; only the COST model tells them apart, because a
+  // fresh first roll needs no Omen of Light.
+  const strippedMod = () => state.curDesMod || state.consumedMod;
+
+  // A full item has no open affix for the desecrated mod to slide into. Counted over
+  // affix mods only: props, runes, enchants, implicits and the synthesized pseudo rows
+  // are not affixes, and a scope-split head is the same mod as its sub-row.
+  function affixCount() {
+    let n = 0;
+    for (const m of (state.model && state.model.mods) || []) {
+      if (m.prop || !m.text) continue;
+      if (['rune', 'added-rune', 'enchant', 'implicit', 'pseudo'].includes(m.kind)) continue;
+      if (m.foldHead && String(m.foldGroup || '').startsWith('scope-')) continue;
+      n++;
+    }
+    return n;
+  }
+  const itemIsFull = () => affixCount() >= 6;
+  // what the bone may consume: a non-fractured real affix
+  const consumable = (m) => !m.prop && m.text
+    && !['rune', 'added-rune', 'enchant', 'implicit', 'pseudo', 'fractured', 'desecrated'].includes(m.kind)
+    && !(m.foldHead && String(m.foldGroup || '').startsWith('scope-'));
+
   function inferSide() {
-    const m = state.curDesMod;
+    const m = strippedMod();
     if (!m) return;
     if (m.gen === 'prefix' || m.gen === 'suffix') { state.side = m.gen; return; }
     if (!pool) return;
@@ -100,6 +125,8 @@
     ilvl: 82,
     tags: [],
     curDesMod: null,      // the item's current desecrated-scope mod (if any)
+    consumedMod: null,    // fresh desecration on a FULL item: which mod the bone ate
+                          // (the choice happens in game at bone-click; the user tells us)
     hits: new Map(),      // family index -> min acceptable GLOBAL tier index (0 = T1)
     hitFilter: '',        // subset-word filter over the pick-your-hits list
     prices: {},           // key -> exalts internally (user-editable; null = unknown)
@@ -133,6 +160,7 @@
       ilvl: state.ilvl,
       model: state.model,
       curDesText: state.curDesMod ? state.curDesMod.text : null,
+      consumedText: state.consumedMod ? state.consumedMod.text : null,
       hits: [...state.hits].map(([fi, ti]) => [fi, ti]),
       prices: { ...state.prices },
       units: { ...state.units },
@@ -150,6 +178,7 @@
     state.side = rec.side || 'suffix';
     state.ilvl = rec.ilvl || 82;
     state.curDesMod = (rec.model.mods || []).find((m) => m.text === rec.curDesText) || null;
+    state.consumedMod = (rec.model.mods || []).find((m) => m.text === rec.consumedText) || null;
     state.hits = new Map(rec.hits || []);
     state.prices = { ...(rec.prices || {}) };
     state.units = { ...(rec.units || {}) };
@@ -414,8 +443,9 @@
       // accepted-tier-or-better floor (count 1, either scope). The desecrated mod
       // may be split into an explicit head + own row - drop the whole scope group
       // so the stripped stat isn't left behind as an explicit filter.
-      const curGroup = state.curDesMod && String(state.curDesMod.foldGroup || '').startsWith('scope-') ? state.curDesMod.foldGroup : null;
-      const mods = (state.model.mods || []).filter((m) => m !== state.curDesMod && !(curGroup && m.foldGroup === curGroup));
+      const gone = strippedMod();
+      const curGroup = gone && String(gone.foldGroup || '').startsWith('scope-') ? gone.foldGroup : null;
+      const mods = (state.model.mods || []).filter((m) => m !== gone && !(curGroup && m.foldGroup === curGroup));
       const filters = [];
       for (const [fi, minTi] of state.hits) {
         const fam = pool.families[fi];
@@ -523,9 +553,16 @@
     const head01 = el('div', 'des-item-head');
     head01.innerHTML = `<span class="des-num">01</span> ${t('desecrate.section.item_title')}`;
     const h01r = el('span', 'des-right');
+    // fresh desecration on a full item: the bone will consume an affix, and only the
+    // user knows which one they gave it (the choice happens in game at bone-click)
+    const needsPick = !state.curDesMod && itemIsFull();
     if (state.curDesMod) {
       h01r.innerHTML = t('desecrate.item.rerolling_slot', { side: esc(state.side) });
       h01r.title = t('desecrate.item.reroll_tooltip', { side: state.side });
+    } else if (needsPick) {
+      h01r.innerHTML = t(state.consumedMod
+        ? 'desecrate.item.consumed_slot' : 'desecrate.item.pick_consumed_prompt');
+      h01r.title = t('desecrate.item.pick_consumed_tooltip');
     } else {
       h01r.innerHTML = t('desecrate.item.open_slot', { side: esc(state.side) });
       h01r.title = t('desecrate.item.open_slot_tooltip');
@@ -547,14 +584,36 @@
       // "head" row + its own sub-row (same stat, two scopes). That's one mod - skip
       // the head so the card shows it once, as its true desecrated/fractured self.
       if (m.foldHead && String(m.foldGroup || '').startsWith('scope-')) continue;
-      const line = el('div', 'des-imod' + (m === state.curDesMod ? ' cur' : '') + (m.kind === 'rune' || m.kind === 'added-rune' || m.kind === 'enchant' ? ' aux' : ''));
-      line.innerHTML = esc(m.text) + (m === state.curDesMod ? ` <span class="des-imod-tag">${t('desecrate.item.annulled_badge')}</span>` : '');
+      const gone = strippedMod();
+      const line = el('div', 'des-imod' + (m === gone ? ' cur' : '') + (m.kind === 'rune' || m.kind === 'added-rune' || m.kind === 'enchant' ? ' aux' : ''));
+      line.innerHTML = esc(m.text) + (m === gone ? ` <span class="des-imod-tag">${t('desecrate.item.annulled_badge')}</span>` : '');
+      // full item, fresh desecration: the eligible mod lines are the picker - click
+      // the one the bone consumed (non-fractured affixes only; click again to unpick)
+      if (needsPick && consumable(m)) {
+        line.classList.add('des-imod-pick');
+        line.title = t('desecrate.item.pick_line_tooltip');
+        line.onclick = () => {
+          state.consumedMod = state.consumedMod === m ? null : m;
+          state.hits.clear();
+          state.hitValue = null;
+          inferSide();
+          render();
+        };
+      }
       imods.appendChild(line);
     }
     if (imods.childNodes.length) card.appendChild(imods);
     wrap.appendChild(card);
 
     if (state.notice) wrap.appendChild(el('div', 'notice', esc(state.notice)));
+
+    // Step 1 blocks the rest (Drew's 3.0 spec): on a full item the outcomes and costs
+    // depend on which mod left, and only the user knows. Everything below waits.
+    if (needsPick && !state.consumedMod) {
+      wrap.appendChild(el('div', 'notice', t('desecrate.item.pick_first_notice')));
+      root.appendChild(wrap);
+      return;
+    }
 
     // ----- hit set picker -----
     // built from the ALTERED superset so otherworldly outcomes are tickable too
@@ -784,6 +843,7 @@
       state.model = model;
       state.ilvl = model.itemLevel || 82;
       state.curDesMod = (model.mods || []).find((m) => m.kind === 'desecrated' && !m.prop) || null;
+      state.consumedMod = null;
       // side: the stripped slot's side. Desecrated mods don't carry generation in
       // our model - infer from the pool (which side offers this stat line).
       state.side = 'suffix';
