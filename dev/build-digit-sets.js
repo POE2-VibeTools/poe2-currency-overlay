@@ -42,6 +42,11 @@ const SOURCES = [
   ['digits-2560-12345.png', '12345'],
   ['digits-2560-6789.png', '6789'],
   ['digits-2560-0.png', '0'],
+  // true windowed-fullscreen 1920x1080 - every prior capture was WINDOWED, which
+  // renders the dialog slightly smaller; fullscreen is its own scale (block h23)
+  ['reprice-fullscreen-12345.png', '12345'],
+  ['reprice-fullscreen-6789.png', '6789'],
+  ['reprice-fullscreen-0.png', '0'],
   // user-submitted via Settings -> Reprice, game windowed at 1920x1039
   ['sub-1039w-12345.png', '12345', 'w'],
   ['sub-1039w-6789.png', '6789', 'w'],

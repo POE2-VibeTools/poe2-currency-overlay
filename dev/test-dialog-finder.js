@@ -74,6 +74,11 @@ const EXPECT = {
   'sub-1039w-12345.png': { value: 12345, currency: 'chaos' },
   'sub-1039w-6789.png': { value: 6789, currency: 'chaos' },
   'sub-1039w-0.png': { value: 0, currency: 'chaos' },
+  // true windowed-fullscreen 1920x1080 - all earlier captures were WINDOWED, which
+  // renders the dialog smaller. Fullscreen is its own scale: block h23.
+  'reprice-fullscreen-12345.png': { value: 12345, currency: 'chaos' },
+  'reprice-fullscreen-6789.png': { value: 6789, currency: 'chaos' },
+  'reprice-fullscreen-0.png': { value: 0, currency: 'chaos' },
   'short.png': null,
 };
 
