@@ -6,6 +6,15 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '3.0.0',
+    date: '2026-08-14',
+    title: "The roadmap is clear and I have no new ideas for features. Other than bug fixes and adding support for new leagues, and pending any cool ideas from the community, this app is done. Thanks to everyone for submitting bug reports. Please keep reporting things as you find them. I'll keep this app running into the new leagues so enjoy!",
+    notes: [
+      "Desecrate now works on any rare item, not just ones that already have a desecrated mod.",
+      "Bunch of UX and translation fixes.",
+    ],
+  },
+  {
     version: '2.7.6',
     date: '2026-08-14',
     notes: [
