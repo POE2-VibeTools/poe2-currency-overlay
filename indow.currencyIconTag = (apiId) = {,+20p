@@ -1797,14 +1797,6 @@ window.currencyIconTag = (apiId) => {
   const name = esc(nameOf(id));
   return `<img class="cur-icon-inline" src="${esc(url)}" title="${name}" alt="${name}">`;
 };
-// Unit text for a price ("1 exalted"). English keeps the terse trade shorthand the
-// panel has always used; every other language gets the game's own currency name, the
-// same way the Currency tab does - a Russian UI printing "exalted" was the oversight.
-window.currencyDisplayName = (apiId) => {
-  if (!window.I18N || window.I18N.lang() === 'en') return apiId;
-  const id = apiId === 'ex' ? 'exalted' : apiId === 'div' ? 'divine' : String(apiId || '');
-  return nameOf(id);
-};
 
 // ---------- shared money readability ----------
 // Thousands of exalts stop meaning anything - anything worth a divine or more

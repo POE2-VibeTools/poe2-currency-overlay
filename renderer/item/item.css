@@ -196,7 +196,10 @@
 .item-name { color: var(--tx-gold2); font-size: 15px; font-weight: 700; }
 .item-name.rare { color: var(--tx-gold2); }
 .item-base { color: var(--tx-dim2); font-size: 12px; }
-.item-meta { margin-left: auto; color: var(--tx-hint); font-size: 11px; }
+/* rarity badge flows LEFT, right after the name/base - it describes the item, so it
+   sits with the item. Only the redesecrate chip (an action, not a fact) pushes right. */
+.item-meta { color: var(--tx-hint); font-size: 11px; }
+.item-head .des-corner { margin-left: auto; }
 
 /* Refined Ember: the price-check header is one line ending in a "Rare · ilvl 82"
    chip + the redesecrate? chip. Scoped to .item-tab so the Desecrate tab's shared

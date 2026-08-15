@@ -28,7 +28,10 @@
   const curUnitHtml = (currency, cls) => {
     const tag = window.currencyIconTag && window.currencyIconTag(currency);
     if (tag) return tag;
-    const text = esc(currency || '');
+    // localized unit name off the shared bridge (English keeps the terse shorthand);
+    // a Russian UI printing "exalted" was the report that added this
+    const shown = (window.currencyDisplayName && window.currencyDisplayName(currency)) || currency || '';
+    const text = esc(shown);
     return cls ? `<span class="${cls}">${text}</span>` : text;
   };
 
@@ -325,21 +328,31 @@
     head.appendChild(nameEl);
     if (item.title) head.appendChild(el('span', 'item-base', esc(item.base)));
     // meta chip: rarity only - the searchable ranges (ilvl/quality/sockets) get
-    // their own strip under the header, the pill was outgrown at two
-    const rar = esc(item.rarity || '');
+    // their own strip under the header, the pill was outgrown at two.
+    // The words are GGG's own RARITY_* client strings per language, via the catalog.
+    // full keys, not a concatenated prefix - the i18n verifier scans for literal keys
+    const RARITY_KEYS = {
+      Normal: 'item.header.rarity_normal', Magic: 'item.header.rarity_magic',
+      Rare: 'item.header.rarity_rare', Unique: 'item.header.rarity_unique',
+      Gem: 'item.header.rarity_gem', Currency: 'item.header.rarity_currency',
+      'Divination Card': 'item.header.rarity_divcard', Quest: 'item.header.rarity_quest',
+    };
+    const rk = RARITY_KEYS[item.rarity];
+    const rar = rk ? esc(t(rk)) : esc(item.rarity || '');
     if (rar) head.appendChild(el('span', 'item-meta', rar));
     if (h.onDesecrate) {
       // quiet corner link to the Desecrate tab - green, because desecration is
       // Rerolling means stripping the mod that is already there, so the link is
-      // dead without one. Same predicate desecrate.js uses to pick that mod, so
-      // the button can never offer a tab that finds nothing to reroll.
+      // dead without one. Same predicate desecrate.js uses to pick that mod. An item
+      // with nothing to reroll gets NO chip at all - a greyed-out button that can
+      // never do anything is noise, not affordance.
       const hasDes = (item.mods || []).some((m) => m.kind === 'desecrated' && !m.prop);
-      const d = el('span', 'des-corner' + (hasDes ? '' : ' off'), t('item.header.redesecrate_label'));
-      d.title = hasDes
-        ? t('item.header.redesecrate_tooltip_active')
-        : t('item.header.redesecrate_tooltip_inactive');
-      if (hasDes) d.onclick = () => h.onDesecrate();
-      head.appendChild(d);
+      if (hasDes) {
+        const d = el('span', 'des-corner', t('item.header.redesecrate_label'));
+        d.title = t('item.header.redesecrate_tooltip_active');
+        d.onclick = () => h.onDesecrate();
+        head.appendChild(d);
+      }
     }
     // controls strip: the three item-level search ranges. Each minimum defaults
     // to the item's OWN value (level / quality / socket count), blank max = no
