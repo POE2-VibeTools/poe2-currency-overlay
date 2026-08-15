@@ -85,7 +85,19 @@
   // shown, so a catalyst-scaled line still brackets its own displayed average.
   // Flat damage only (mod.form === 'flat'); nothing else has a two-number roll.
   function withAvg(mod) {
-    const t = mod.text || mod.id || '';
+    // The synthesized pseudo rows translate at RENDER time, not from the text baked in
+    // at parse: baked text is stored into history and survives language switches, which
+    // is how a Russian UI ended up showing "+63% total Resistance" on a restored item.
+    if (mod.pseudoAuto && mod.id === 'pseudo.pseudo_total_resistance') {
+      return t('itemtab.property.pseudo_total_resistance', { total: mod.value });
+    }
+    if (mod.pseudoAuto && mod.id === 'pseudo.pseudo_total_chaos_resistance') {
+      return t('itemtab.property.pseudo_chaos_resistance');
+    }
+    const t2 = mod.text || mod.id || '';
+    return withAvgTail(mod, t2);
+  }
+  function withAvgTail(mod, t) {
     if (mod.form !== 'flat') return t;
     const m = /Adds (\d+(?:\.\d+)?) to (\d+(?:\.\d+)?)/.exec(t);
     if (!m) return t;
@@ -163,8 +175,11 @@
           + (fullRange ? t('item.mods.tier_range_full', { sliderMin: mod.sliderMin, sliderMax: mod.sliderMax }) : '')
         )}">(${bracketInner})</span> `
       : '';
-    const textSpan = el('span', 'mod-text', rangeHtml + hlNums(withAvg(mod)));
-    textSpan.title = mod.text || ''; // every row can ellipsize now - keep the full name on hover
+    const shownText = withAvg(mod);
+    const textSpan = el('span', 'mod-text', rangeHtml + hlNums(shownText));
+    // every row can ellipsize now - keep the full name on hover (pseudo rows use the
+    // render-time translation, not the parse-time text)
+    textSpan.title = mod.pseudoAuto ? shownText : (mod.text || '');
 
     // the number shown IS the minimum the search will use
     const effMin = window.ItemQuery && window.ItemQuery.effectiveMin
