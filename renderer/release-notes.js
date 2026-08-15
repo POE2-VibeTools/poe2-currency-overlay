@@ -6,6 +6,14 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '3.0.1',
+    date: '2026-08-15',
+    notes: [
+      "Net Worth fixes",
+      "League Names now use GGG's direct translation library. If it reads in English that's becuase GGG themselves don't bother to translate some strings in some languages, randomly, if they feel like it, or not. It's on them now. It's ACTAULLY NOT MY FAULT.",
+    ],
+  },
+  {
     version: '3.0.0',
     date: '2026-08-14',
     title: "The roadmap is clear and I have no new ideas for features. Other than bug fixes and adding support for new leagues, and pending any cool ideas from the community, this app is done. Thanks to everyone for submitting bug reports. Please keep reporting things as you find them. I'll keep this app running into the new leagues so enjoy!",

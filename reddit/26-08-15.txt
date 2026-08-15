@@ -1,0 +1,66 @@
+Website / download the exe: Here (EXPERIMENTAL: Applemage for linux users on site as well.)
+Source code github repo: Here
+Over 1100 downloads, and users have been submitting LOTS of bug reports & Feature Requests, helping me improve, catching small things I missed, and overall being very supportive. 
+To all active users/supporters: Thanks! 
+
+Reprice is likely the last major new feature I will be adding. These things (read: this app) take a lot of time.
+This means any new versions (>3.0.0) will be mostly UX / bugfixes / updating to keep pace with GGG patches and support any new league mechanics/items. Maybe more themes.
+I have no new features planned unless GGG introduces new API calls (like stash API), or new in-game features that would make sense to add some support for.
+
+What's New in 2.6.x -> 3.0.0
+
+
+1. Reprice - New Feature (currently tested on 2440x, 1900x, 1600x, 1200x)
+In settings, you can set your reprice rules.
+F9 is default key to turn it on/off (you can rebind it)
+F9 (turns it on) -> Right click an item -> app applies your rules -> overwrites your clipboard with the new number. -> Paste into price window -> right click next item
+When done, f9 again turns it off
+Its pretty fast, so you can get through your merch tabs fairly quickly. I'll see about improving the overall speed but I felt it worked well for me.
+Default reprice rules are the ones I use. Feel free to change them as you see fit.
+
+
+2. Industrial Theme - Rounded corners, highlights, badges, BEGONE! AMBER COLOURS THEMED FROM THE GAME - BEGONE!
+The Pointing Soyjacks™ have won. If you soyjacked in one of my previous threads, this Theme is for you
+As such I request all pointing soyjack posting be done ironically from this point forward. No unironic soyjack posting allowed going forward, thank you.
+
+3. Multi-language Support Fixes
+This wasn't working properly. The item parser was dropping other language items. Should be fixed now 
+If you're a native speaker to one of these languages and have some translation suggestions, I am totally open to making this better. I just cannot read anything except English, so I don't know how well translated these things are (or if the static english is sufficient)
+
+General Fixes:
+Settings pages got tidied up, copy got fixed
+POE2 Currency Overlay V3.0.0 Shipped today. - 'Industry' Theme, New Reprice Feature, Multi-Language fixes, & user-submitted bug reports / feature requests [DONE]. Full feature list below.
+
+Reviewed multi-language translated copy and found a few static English lines that should have been translating but were not.
+Unified visual elements to template colors. New theme should be much easier to publish
+More Price Check support. Some items were missed - users are submitting them as they find them and I'm adding support as i see the reports come in.
+
+If you want the full list of fixes/changes you can check the changelog or read the in-app patch notes.
+
+Final Overlay Feature List:
+1. Currency Tab (show / manage trading pairs based on GGG's CDN aggregate data and identifies arbitrage routes)
+ 1.1 In-line edit trading pairs with ingame values for accurate arbs. Edit core pair values in Settings.
+
+2. Price Check Tab - EE2's price checker on steroids, with a UX that sucks less 
+ 2.1 Price Check History - ALL your previous searches, cached locally, so you can easily re-search.
+
+3. Desecrate Tab - Is it worth to omen or nah?
+ 3.1 Desecration Tab History - Same as PC history
+
+4. Grand Expedition Tab - Worth the aldurs or nah?
+
+5. Regex Tab - Create and save regex's
+
+6. Net Worth Tab - Capture and sum up your in-game currency tabs. Show off how cool and rich you are.
+
+7. Reprice - 1-click auto recalculate the price of an item in any Merchant Tab.
+
+8. 2 Themes - The POE2 amber-styled theme, and the "Industry" Chrome Blue theme.
+
+9. Multi-language  - Should actually work now. Yeah I've said this like 10x in the patch notes. BUT I MEAN IT THIS TIME, DAMNIT!
+
+If you have ideas/feedback, the most reliable way to get it to me is VIA the in-app feedback / bug report tools.  The website also has a "submit idea" form on the roadmap page. 
+If you experience issues with Reprice / Net Worth, please use the in-app screenshot submission tools. I need particular screenshots to make it work for a new resolution, so follow the in-app guide please. Anything else just wastes both of our time.
+Cheers, and happy hunting Exiles!
+
+PS: Many of my screenshots were taken during 2.7.1->3.0 dev and the in-app display may be VERY SLIGHTLY DIFFERENT for multi-language users than as-displayed in the Russian screenshot.
