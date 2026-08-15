@@ -79,6 +79,10 @@ const EXPECT = {
   'reprice-fullscreen-12345.png': { value: 12345, currency: 'chaos' },
   'reprice-fullscreen-6789.png': { value: 6789, currency: 'chaos' },
   'reprice-fullscreen-0.png': { value: 0, currency: 'chaos' },
+  // the 2560x1440 monitor in windowed fullscreen: block h29 against windowed h27
+  'reprice-2560fs-12345.png': { value: 12345, currency: 'chaos' },
+  'reprice-2560fs-6789.png': { value: 6789, currency: 'chaos' },
+  'reprice-2560fs-0.png': { value: 0, currency: 'chaos' },
   'short.png': null,
 };
 

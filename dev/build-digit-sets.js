@@ -47,6 +47,10 @@ const SOURCES = [
   ['reprice-fullscreen-12345.png', '12345'],
   ['reprice-fullscreen-6789.png', '6789'],
   ['reprice-fullscreen-0.png', '0'],
+  // 2560x1440 monitor in windowed fullscreen - block h29 (windowed was h27)
+  ['reprice-2560fs-12345.png', '12345'],
+  ['reprice-2560fs-6789.png', '6789'],
+  ['reprice-2560fs-0.png', '0'],
   // user-submitted via Settings -> Reprice, game windowed at 1920x1039
   ['sub-1039w-12345.png', '12345', 'w'],
   ['sub-1039w-6789.png', '6789', 'w'],
