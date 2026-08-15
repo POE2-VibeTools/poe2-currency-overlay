@@ -295,12 +295,22 @@
       const cur = state.curDesMod && String(state.curDesMod.id || '').split('.').pop();
       const isCurFam = cur && fam.hashes.includes(cur);
       if (!isCurFam && fam.hashes.some((h) => h && onItem.has(h))) return;
+      // Tier NUMBERING is by rank among the tiers this item's class can roll at all,
+      // independent of ilvl/bone filters. Some families hold per-class VARIANTS at one
+      // level (of Amanamu's Spirit line: 4-8 / 6-12 / 5-10 for different slots) - only
+      // one is ever eligible, and numbering by raw index called it T2 with no T1 in
+      // sight. Rank-among-class-tiers makes a lone variant T1, and keeps a real tier
+      // ladder's numbers stable when the Ancient bone hides its low tiers.
+      const classTiers = [];
+      fam.tiers.forEach((t, ti) => { if (weightFor(t.sw, tagSet) > 0) classTiers.push(ti); });
       const tiers = [];
       fam.tiers.forEach((t, ti) => {
+        const rank = classTiers.indexOf(ti);
+        if (rank < 0) return;
         if (t.lvl > state.ilvl) return;
         if (bone === 'ancient' && t.lvl < 40) return;
         const w = weightFor(t.sw, tagSet);
-        if (w > 0) { tiers.push({ ti, w, lvl: t.lvl, lo: t.lo, hi: t.hi }); total += w; }
+        tiers.push({ ti, tn: rank + 1, w, lvl: t.lvl, lo: t.lo, hi: t.hi }); total += w;
       });
       if (tiers.length) entries.push({ fi, fam, tiers });
     });
@@ -657,7 +667,7 @@
         const sel = el('select', 'des-tier');
         sel.title = t('desecrate.outcomes.tier_select_tooltip');
         for (const tier of e.tiers) { // NOT `t`: a local named t shadows the translator
-          const o = el('option', null, `${t('desecrate.outcomes.tier_option_label', { tier: tier.ti + 1 })}${tier.lo != null ? ` (${tier.lo}-${tier.hi})` : ''}`);
+          const o = el('option', null, `${t('desecrate.outcomes.tier_option_label', { tier: tier.tn })}${tier.lo != null ? ` (${tier.lo}-${tier.hi})` : ''}`);
           o.value = String(tier.ti);
           sel.appendChild(o);
         }
@@ -666,7 +676,7 @@
         row.appendChild(sel);
       }
       const txt = el('span', 'des-text', esc(genericText(e.fam.text)));
-      txt.title = e.tiers.map((tr) => t('desecrate.outcomes.tier_detail_tooltip', { tier: tr.ti + 1, level: tr.lvl, range: tr.lo != null ? ` (${tr.lo}-${tr.hi})` : '', weight: tr.w })).join('\n');
+      txt.title = e.tiers.map((tr) => t('desecrate.outcomes.tier_detail_tooltip', { tier: tr.tn, level: tr.lvl, range: tr.lo != null ? ` (${tr.lo}-${tr.hi})` : '', weight: tr.w })).join('\n');
       row.appendChild(txt);
       row.dataset.f = `${genericText(e.fam.text)} ${e.fam.name || ''}`.toLowerCase(); // filter key
       return row;
