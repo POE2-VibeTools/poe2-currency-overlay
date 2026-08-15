@@ -6,6 +6,16 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '3.0.3',
+    date: '2026-08-15',
+    notes: [
+      "Desecration tab fixes:",
+      "Tier dropdown selections weren't sticking, should be fixed now.",
+      "Ticking/unticking outcomes no longer wipes the \"item with a hit\" price.",
+      "Single-tier mods were labelled T2 when they were actually T1.",
+    ],
+  },
+  {
     version: '3.0.2',
     date: '2026-08-15',
     notes: [
