@@ -6,6 +6,14 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '3.0.2',
+    date: '2026-08-15',
+    notes: [
+      "Reprice 2560x baked, should work at that resolution now.",
+      "If reprice is breaking in a supported resolution, try manually calibrating first before submitting screenshots. User-adjusted settings like brightness/vibrance/gamma filters (NVIDIA overlays etc) mess with the auto-detection and are accountable for most misses.",
+    ],
+  },
+  {
     version: '3.0.1',
     date: '2026-08-15',
     notes: [
