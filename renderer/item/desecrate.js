@@ -639,7 +639,9 @@
       cb.onchange = () => {
         if (cb.checked) state.hits.set(e.fi, e.tiers[0].ti); // defaults to the best tier
         else state.hits.delete(e.fi);
-        state.hitValue = null;
+        // hitValue survives on purpose: it may be the user's own number, and wiping
+        // typed input because a tick changed is worse than letting it go briefly
+        // stale - re-pricing is one "price it" click, un-typing is not recoverable.
         saveHistory();
         render();
       };
@@ -660,7 +662,7 @@
           sel.appendChild(o);
         }
         sel.value = String(state.hits.get(e.fi));
-        sel.onchange = () => { state.hits.set(e.fi, Number(sel.value)); state.hitValue = null; saveHistory(); render(); };
+        sel.onchange = () => { state.hits.set(e.fi, Number(sel.value)); saveHistory(); render(); };
         row.appendChild(sel);
       }
       const txt = el('span', 'des-text', esc(genericText(e.fam.text)));
