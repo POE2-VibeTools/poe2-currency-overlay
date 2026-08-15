@@ -806,7 +806,13 @@
           weight: null, group: null, garbage: false,
         });
       }
-      mods.splice(mods.indexOf(resRows[0]), 0, ...pseudoRows);
+      // The pseudo row and everything folded under it go to the BOTTOM of the list,
+      // not where the first res line happened to sit: a fold parked mid-list pushes
+      // the item's real mods apart, and the render places the accordion box at the
+      // first MEMBER's array position, so head and members must move together.
+      const folded = mods.filter((m) => m.foldGroup === 'res');
+      for (const m of folded) mods.splice(mods.indexOf(m), 1);
+      mods.push(...pseudoRows, ...folded);
     }
 
     // lines the parser couldn't identify (e.g. an unrevealed desecrated modifier
