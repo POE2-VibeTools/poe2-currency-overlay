@@ -38,14 +38,23 @@
       surroundSd: 24,
     },
     {
-      // the bright profile, measured off the 2560x1440@100% submission. No hue-ratio
-      // path: the border clips at 255, so ratios are meaningless here.
-      border: { r: 255, g: 255, b: 212 },
-      tol: 25,
-      hueRatio: false,
-      surround: { r: 85, g: 75, b: 60 },
-      surroundTol: 30,
-      surroundSd: 28,
+      // The brightness-boosted profile. Users run gamma/vibrance/contrast filters
+      // (NVIDIA overlays and the like), so this one matches by CHROMA - the colour
+      // proportions, which those filters preserve - rather than by absolutes, which
+      // would bake one submitter's video settings. Grounded on the first community
+      // submission (border 255,255,212, panel 85,75,60: within 2% of the reference
+      // proportions at ~1.4-2x the brightness). Runs ONLY when the reference profile
+      // finds nothing, so it cannot disturb any known-good setup.
+      chroma: true,
+      // border: reference proportions of 182,169,138; only ABOVE reference brightness
+      // (boosted setups) - the dim regime belongs to profile 1's hue-ratio path
+      borderChroma: { r: 0.3724, g: 0.3456, b: 0.2823 },
+      borderChromaTol: { r: 0.035, g: 0.020, b: 0.030 },
+      borderSumMin: 420,
+      // panel: reference proportions of 44,38,30, flat relative to its own brightness
+      surroundChroma: { r: 0.3929, g: 0.3393, b: 0.2679 },
+      surroundChromaTol: 0.03,
+      surroundLumaLo: 30, surroundLumaHi: 150,
     },
   ];
 
@@ -71,6 +80,14 @@
   // flat panel, and terrain has the colour sometimes but never the flatness.
   function isBorder(rgba, p, prof) {
     const r = rgba[p], g = rgba[p + 1], b = rgba[p + 2];
+    if (prof.chroma) {
+      const sum = r + g + b;
+      if (sum < prof.borderSumMin) return false;
+      const nr = r / sum, ng = g / sum, nb = b / sum;
+      return Math.abs(nr - prof.borderChroma.r) <= prof.borderChromaTol.r
+        && Math.abs(ng - prof.borderChroma.g) <= prof.borderChromaTol.g
+        && Math.abs(nb - prof.borderChroma.b) <= prof.borderChromaTol.b;
+    }
     const B = prof.border;
     // The direct match, tol-wide for video chroma smear (which shifts hue, so the
     // ratio test below does NOT cover it).
@@ -110,6 +127,20 @@
     }
     if (n < 40) return false;
     const mr = sr / n, mg = sg / n, mb = sb / n;
+    if (prof.chroma) {
+      // same proportions as the reference panel, any boosted brightness, still FLAT
+      // relative to how bright it renders
+      const meanL = 0.299 * mr + 0.587 * mg + 0.114 * mb;
+      if (meanL < prof.surroundLumaLo || meanL > prof.surroundLumaHi) return false;
+      const sum = mr + mg + mb;
+      if (!(sum > 0)) return false;
+      if (Math.abs(mr / sum - prof.surroundChroma.r) > prof.surroundChromaTol
+        || Math.abs(mg / sum - prof.surroundChroma.g) > prof.surroundChromaTol
+        || Math.abs(mb / sum - prof.surroundChroma.b) > prof.surroundChromaTol) return false;
+      const sdc = (q, m) => Math.sqrt(Math.max(0, q / n - m * m));
+      const lim = Math.max(24, 0.35 * meanL);
+      return sdc(qr, mr) <= lim && sdc(qg, mg) <= lim && sdc(qb, mb) <= lim;
+    }
     if (Math.abs(mr - prof.surround.r) > prof.surroundTol
       || Math.abs(mg - prof.surround.g) > prof.surroundTol
       || Math.abs(mb - prof.surround.b) > prof.surroundTol) return false;
