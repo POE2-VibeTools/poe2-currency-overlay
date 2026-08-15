@@ -2974,6 +2974,11 @@
       state.showSliders = cfg.itemSliders !== false;
       state.opts.defaultLowerPct = typeof cfg.itemStatRange === 'number' ? cfg.itemStatRange : 15;
       state.opts.indexed = cfg.itemIndexed || null;
+      // The tab-restore path has its own getConfig and may already have rendered the
+      // items tab BEFORE this load resolved - with an empty history. Re-render now
+      // that the history exists, or the list sits empty until the user tabs away and
+      // back (the "history is empty on launch" report).
+      if (state.active) render();
     } catch {}
   });
 })();
