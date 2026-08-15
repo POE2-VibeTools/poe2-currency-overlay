@@ -487,7 +487,12 @@
 
   // Default winning params (currency tab: 48/49).
   const DEFAULTS = {
-    floor: 122, up: 12, dn: 12, stripWidth: 15,
+    // stripWidth 17 (was 15): a 4-digit count built from WIDE digits (1084, 1608)
+    // overflowed the 30px strip, the edge filter executed the protruding last digit as
+    // presumed art, and the read came back confidently short - divine 1084 read 108 at
+    // 0.99. Swept 15/17/18/20 over five ground-truthed captures: 17 fixes those and an
+    // ultrawide slot (137 -> 143 correct), wider adds nothing.
+    floor: 122, up: 12, dn: 12, stripWidth: 17,
     iouThresh: 0.76, dyLo: -2, dyHi: 3, minInkFrac: 0.45,
   };
 

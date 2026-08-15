@@ -99,7 +99,16 @@ parentPort.on('message', (msg) => {
     const scale = box.h / refBox.h;
     const M = 24; // reference-px margin, so a slot's read strip never sits on the edge
     let V, W2, H2, originX, originY;
-    if (Math.abs(scale - 1) > 0.005) {
+    // Threshold 0.15, not 0.005: measured on ground-truthed captures, the COUNT FONT
+    // does not scale with the panel in the near-1 regime - a 1.07x panel (windowed
+    // fullscreen, ultrawide, slightly-short game windows: the mass of real setups)
+    // carries reference-size digits, and resampling the panel down "back to reference"
+    // shrank those digits and cost trailing glyphs (556 read 56, 1084 read 108, at
+    // conf 0.8+). Direct reads at scaled POSITIONS score 33/33 and 18/25 where the
+    // normalize path scored garbage and 15/25. Beyond 1.15 nothing is measured, so the
+    // normalize path stays for that regime rather than trading a known behaviour for
+    // an unknown one.
+    if (Math.abs(scale - 1) > 0.15) {
       const kx = box.w / refBox.w, ky = box.h / refBox.h;
       W2 = Math.round(refBox.w + 2 * M); H2 = Math.round(refBox.h + 2 * M);
       const norm = DR.resampleRGBA(buf, W, H, box.x - M * kx, box.y - M * ky, (refBox.w + 2 * M) * kx, (refBox.h + 2 * M) * ky, W2, H2);
