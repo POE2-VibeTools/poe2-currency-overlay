@@ -816,9 +816,15 @@ function showStatus(msg) {
 }
 
 // ---------- rendering ----------
+// id -> GGG's localized league name, loaded once per session. Display only: config,
+// queries and the feed all keep the English id. Mirrors GGG's own translations,
+// including their gaps - when they fix one, ours follows with no release.
+let leagueNames = {};
+function leagueDisplay(id) { return (id && leagueNames[id]) || id; }
+
 function updateMeta() {
   // league is a pill chip now - just the name, no leading dot (empty => hidden via :empty)
-  $('league-label').textContent = league || '';
+  $('league-label').textContent = leagueDisplay(league) || '';
   // visible freshness text left of the icon buttons, plus the refresh tooltip
   const fresh = fetchedAt ? timeAgo(fetchedAt) : '';
   const fl = $('fresh-label');
@@ -2912,8 +2918,9 @@ async function initSettings() {
   if (Array.isArray(leagues)) {
     for (const l of leagues) {
       const opt = document.createElement('option');
-      opt.value = l.value;
-      opt.textContent = l.isCurrent ? t('currency.settings.league_current', { league: l.value }) : l.value;
+      opt.value = l.value; // the English id - queries and config always use it
+      const disp = leagueDisplay(l.value);
+      opt.textContent = l.isCurrent ? t('currency.settings.league_current', { league: disp }) : disp;
       sel.appendChild(opt);
     }
     sel.value = config.league || 'auto';
@@ -3552,6 +3559,9 @@ async function sendFeedback() {
 // ---------- wiring ----------
 async function main() {
   config = await window.api.getConfig();
+  // localized league names, before the first titlebar paint and the settings dropdown;
+  // {} on failure means everything simply shows the English id
+  try { leagueNames = (await window.api.leagueNames()) || {}; } catch { }
   // apply saved background opacity before first paint (no flash at the default)
   document.documentElement.style.setProperty('--bg-alpha', String((config.bgOpacity != null ? config.bgOpacity : 100) / 100));
   // dyslexia-friendly font (OpenDyslexic) - applied app-wide via a root class

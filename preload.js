@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('api', {
   getCxCatalog: () => ipcRenderer.invoke('get-cx-catalog'),
   cxItemPrice: (args) => ipcRenderer.invoke('cx-item-price', args),
   listLeagues: () => ipcRenderer.invoke('list-leagues'),
+  leagueNames: () => ipcRenderer.invoke('league-names'),
   hide: (toGame) => ipcRenderer.send('hide-overlay', !!toGame),
   focusOverlay: () => ipcRenderer.send('focus-overlay'),
   quit: () => ipcRenderer.send('quit-app'),

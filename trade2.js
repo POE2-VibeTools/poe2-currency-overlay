@@ -255,4 +255,17 @@ async function leagues() {
   return (r.json.result || []).map((l) => l.id);
 }
 
-module.exports = { search, fetchListings, searchAndFetch, exchange, leagues, authCheck, setOnWait, setLang };
+// id -> localized display name, from the language host's own league list. Mirrors GGG
+// exactly: where they translate ("Руны Альдура", "Одна жизнь") we show it, where they
+// left English (German, "HC Runes of Aldur" even in Russian) we show English - and when
+// they fix a translation, ours updates with no release. IDs stay English everywhere
+// queries are made.
+async function leagueNames() {
+  const r = await call('GET', '/api/trade2/data/leagues', null, 'trade-data-request-limit', FETCH_HOST);
+  if (r.status !== 200 || !r.json) throw new Error(`trade2 league names failed (${r.status})`);
+  const out = {};
+  for (const l of r.json.result || []) if (l && l.id) out[l.id] = l.text || l.id;
+  return out;
+}
+
+module.exports = { search, fetchListings, searchAndFetch, exchange, leagues, leagueNames, authCheck, setOnWait, setLang };

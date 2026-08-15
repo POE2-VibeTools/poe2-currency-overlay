@@ -1242,6 +1242,7 @@ ipcMain.handle('set-language', (_e, code) => {
   saveConfig();
   // trade results arrive in the language of the API host - keep it matched to the UI
   try { trade2.setLang(resolvedUiLang()); } catch { }
+  leagueNamesCache = null; // display names follow the language host too
   return config.uiLang;
 });
 
@@ -3198,6 +3199,15 @@ ipcMain.handle('set-item-ranges', (_e, ranges) => {
   return true;
 });
 let tradeLeaguesCache = { ts: 0, list: [] };
+// Localized league display names, cached per run - leagues change twice a year and the
+// data endpoint shares the tiny trade-data budget. Language switches invalidate it.
+let leagueNamesCache = null;
+ipcMain.handle('league-names', async () => {
+  if (leagueNamesCache) return leagueNamesCache;
+  try { leagueNamesCache = await trade2.leagueNames(); } catch { leagueNamesCache = {}; }
+  return leagueNamesCache;
+});
+
 ipcMain.handle('trade2-leagues', async () => {
   if (Date.now() - tradeLeaguesCache.ts < 15 * 60 * 1000 && tradeLeaguesCache.list.length) {
     return tradeLeaguesCache.list;
