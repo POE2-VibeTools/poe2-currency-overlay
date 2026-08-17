@@ -126,6 +126,9 @@
       t('networth.settings.toggle_confidence_sub'),
       (v) => { state.showConfidence = v; try { window.api.setStashShowConfidence(v); } catch {} }));
     root.appendChild(toggles);
+    // Settings above, recovery tools below - the divider keeps users from reading
+    // calibration/submission as steps they are meant to take.
+    root.appendChild(el('div', 'set-divider', t('ui.settings.troubleshoot_heading')));
     // Resolution calibration is a FALLBACK, not a step - but it is always REACHABLE.
     // It used to hide unless the panel finder returned nothing, and "found something" is
     // not the same as "found it well": a capture came in with the border only 17% matched,

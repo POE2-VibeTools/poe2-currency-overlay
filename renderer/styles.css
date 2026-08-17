@@ -254,6 +254,10 @@ html, body {
 .set-inline > label { font-size: 12px; color: var(--tx-body); }
 .set-sub { font-size: 9.5px; color: var(--tx-faint); }
 
+/* section break inside a settings card: settings above, troubleshooting below */
+.set-divider { display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--tx-faint); }
+.set-divider::before, .set-divider::after { content: ""; flex: 1; height: 1px; background: var(--bd-09); }
+
 .set-chips-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
 .chip-add { font-size: 10.5px; color: var(--tx-dim); background: none; border: 1px dashed var(--bd-16); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
 .chip-add:hover { color: var(--am-hi); border-color: color-mix(in srgb, var(--am) 40%, transparent); }

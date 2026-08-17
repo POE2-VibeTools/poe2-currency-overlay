@@ -214,6 +214,25 @@ const DEFAULT_CONFIG = {
   repriceThreshold: 20,
   repriceOp: 'subtract', repriceValue: 10, repriceMode: 'percent',
   repriceOp2: 'subtract', repriceValue2: 1, repriceMode2: 'flat',
+  // A ready-made ruleset shipped as a saved option named "Default" - load it, ignore it,
+  // or delete it. Seeded through the DEFAULT_CONFIG merge, so it only appears while the
+  // repriceRulesets key has never been written; deleting it persists [] and it stays gone.
+  repriceRulesets: [{
+    name: 'Default',
+    branches: [
+      { when: { type: 'currency', is: 'divine' }, action: { combine: 'smaller', rules: [
+        { op: 'subtract', value: 10, mode: 'percent', round: 'up' },
+        { op: 'subtract', value: 10, mode: 'flat', round: 'down' },
+      ], least: 1 } },
+      { when: { type: 'currency', is: 'chaos' }, action: { combine: 'bigger', rules: [
+        { op: 'subtract', value: 10, mode: 'percent', round: 'up' },
+        { op: 'subtract', value: 1, mode: 'flat', round: 'down' },
+      ], least: 0 } },
+      { when: { type: 'always' }, action: { combine: 'single', rules: [
+        { op: 'subtract', value: 10, mode: 'percent', round: 'up' },
+      ], least: 1 } },
+    ],
+  }],
   // Live currency-rate polling, two independent rates. Each: 'quiet' (no auto poll) |
   // 'low' | 'medium' | 'high'. Tab = while the Currency tab is the visible view;
   // Bg = while the overlay is up but you're on another tab.

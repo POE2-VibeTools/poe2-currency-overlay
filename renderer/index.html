@@ -208,6 +208,26 @@
               <div id="reprice-currency-warn" class="set-sub bad hidden" data-i18n="ui.settings.reprice.currency_needs_box">Currency is detected automatically. If reprices keep falling through to the Else rule, calibrate the currency icon box below.</div>
               <div id="reprice-example" class="rp-examples"></div>
             </div>
+            <div class="set-field">
+              <label data-i18n="ui.settings.reprice.ruleset_label" data-i18n-title="ui.settings.reprice.ruleset_tooltip" title="Keep more than one set of rules and switch between them. Saving stores the lines above under a name; picking a saved name loads it.">Saved rulesets</label>
+              <div class="rp-cal-row">
+                <select id="reprice-ruleset"></select>
+                <input id="reprice-ruleset-name" type="text" maxlength="40" data-i18n-ph="ui.settings.reprice.ruleset_name_ph" placeholder="name" />
+                <button id="reprice-ruleset-save" class="set-login-btn" data-i18n="ui.settings.reprice.ruleset_save">Save</button>
+                <button id="reprice-ruleset-delete" class="set-login-btn hidden" data-i18n="ui.settings.reprice.ruleset_delete">Delete</button>
+              </div>
+            </div>
+            <div class="set-divider" data-i18n="ui.settings.troubleshoot_heading">Troubleshoot</div>
+            <div class="set-field">
+              <label data-i18n="ui.settings.reprice.supported_res_label">Supported resolutions</label>
+              <span class="set-sub">1920&times;1080, 2560&times;1440, 1600&times;1200, 1440&times;900, 1920&times;1039</span>
+            </div>
+            <div class="set-field" id="reprice-shots-field">
+              <div class="set-inline">
+                <span class="set-sub" data-i18n="ui.settings.reprice.shots_offer">Resolution not on the list? Calibration won't help; screenshots will.</span>
+                <button id="reprice-shots-open" class="set-login-btn" data-i18n="ui.settings.reprice.shots_open" data-i18n-title="ui.settings.reprice.shots_tooltip" title="Reads are tuned per screen size. If yours reads badly or not at all, these three screenshots are exactly what is needed to add it: every digit 0-9, typed and highlighted, at your resolution.">Submit screenshots</button>
+              </div>
+            </div>
             <div class="set-field hidden" id="reprice-sample-field">
               <div class="set-inline">
                 <label data-i18n="ui.settings.reprice.sample_label">Help reads at your screen size</label>
@@ -220,23 +240,14 @@
                 <span id="reprice-sample-status" class="set-sub"></span>
               </div>
             </div>
-            <div class="set-field" id="reprice-shots-field">
+            <div class="set-field">
               <div class="set-inline">
-                <span class="set-sub" data-i18n="ui.settings.reprice.shots_offer">Reprice doesn't work at your screen size?</span>
-                <button id="reprice-shots-open" class="set-login-btn" data-i18n="ui.settings.reprice.shots_open" data-i18n-title="ui.settings.reprice.shots_tooltip" title="Reads are tuned per screen size. If yours reads badly or not at all, these three screenshots are exactly what is needed to add it: every digit 0-9, typed and highlighted, at your resolution.">Submit screenshots</button>
+                <label data-i18n="ui.settings.reprice.cal_group_label">Reprice calibration</label>
+                <span class="set-sub" data-i18n="ui.settings.reprice.cal_group_sub">Calibration is automatic. If you are on a supported resolution and results are wrong, calibrate manually below.</span>
               </div>
             </div>
             <div class="set-field">
-              <label data-i18n="ui.settings.reprice.ruleset_label" data-i18n-title="ui.settings.reprice.ruleset_tooltip" title="Keep more than one set of rules and switch between them. Saving stores the lines above under a name; picking a saved name loads it.">Saved rulesets</label>
-              <div class="rp-cal-row">
-                <select id="reprice-ruleset"></select>
-                <input id="reprice-ruleset-name" type="text" maxlength="40" data-i18n-ph="ui.settings.reprice.ruleset_name_ph" placeholder="name" />
-                <button id="reprice-ruleset-save" class="set-login-btn" data-i18n="ui.settings.reprice.ruleset_save">Save</button>
-                <button id="reprice-ruleset-delete" class="set-login-btn hidden" data-i18n="ui.settings.reprice.ruleset_delete">Delete</button>
-              </div>
-            </div>
-            <div class="set-field">
-              <div class="set-inline"><label data-i18n="ui.settings.reprice.calibrate_label" data-i18n-title="ui.settings.reprice.calibrate_tooltip" title="Show the app where the price box sits on your screen. Open the reprice window in game first, then drag a box around the number.">Price box</label><span class="set-sub" data-i18n="ui.settings.reprice.cal_fallback_sub">found automatically - calibrate only if reads fail</span></div>
+              <div class="set-inline"><label data-i18n="ui.settings.reprice.calibrate_label" data-i18n-title="ui.settings.reprice.calibrate_tooltip" title="Show the app where the price box sits on your screen. Open the reprice window in game first, then drag a box around the number.">Price box</label></div>
               <div class="rp-cal-row">
                 <button id="reprice-calibrate" class="set-login-btn" data-i18n="ui.settings.reprice.calibrate_button">Calibrate</button>
                 <span id="reprice-cal-status" class="set-sub" data-i18n="ui.settings.reprice.calibrate_none">automatic</span>
@@ -248,7 +259,7 @@
               </div>
             </div>
             <div class="set-field">
-              <div class="set-inline"><label data-i18n="ui.settings.reprice.icon_label" data-i18n-title="ui.settings.reprice.icon_tooltip" title="Optional. Drag a box around the currency icon next to the price, so rules can tell one currency from another. Leave it unset if your rule treats every currency the same.">Currency icon</label><span class="set-sub" data-i18n="ui.settings.reprice.cal_fallback_sub">found automatically - calibrate only if reads fail</span></div>
+              <div class="set-inline"><label data-i18n="ui.settings.reprice.icon_label" data-i18n-title="ui.settings.reprice.icon_tooltip" title="Optional. Drag a box around the currency icon next to the price, so rules can tell one currency from another. Leave it unset if your rule treats every currency the same.">Currency icon</label></div>
               <div class="rp-cal-row">
                 <button id="reprice-icon-calibrate" class="set-login-btn" data-i18n="ui.settings.reprice.calibrate_button">Calibrate</button>
                 <span id="reprice-icon-cal-status" class="set-sub" data-i18n="ui.settings.reprice.calibrate_none">automatic</span>
