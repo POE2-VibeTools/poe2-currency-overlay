@@ -110,6 +110,87 @@
     setTimeout(() => { try { revert(); } catch {} }, 1200);
   }
 
+  // ---- search on trade ------------------------------------------------------
+  // The same picks, as a live trade-site search: includes -> stat filters (mins
+  // carried), OR groups -> count>=1 groups, excludes -> a NOT group, tooltip
+  // props (tier, rarity, pack size...) -> map_filters ranges. The mapping table
+  // is baked from GGG's own /data/stats (renderer/regex/trade-map.js); picks GGG
+  // does not index are surfaced on the button rather than silently dropped.
+  function tradeQuery() {
+    const TM = window.RegexTradeMap || {};
+    const pool = poolFor(state.cls);
+    const and = [], not = [], groups = new Map(), mapFilters = {}, dropped = [];
+    for (const [text, s] of state.sel) {
+      if (!pool.find((m) => m.text === text)) continue;
+      const tm = TM[text];
+      if (!tm) { dropped.push(text); continue; }
+      if (tm.filter) {
+        // a range can only ask for MORE of a property - excluding one is not a
+        // thing the trade site can express
+        if (s.mode === 'exc') { dropped.push(text); continue; }
+        if (s.min != null) mapFilters[tm.filter] = { min: s.min };
+        // no min = "has this line", true of every waystone - nothing to filter
+        continue;
+      }
+      const f = { id: tm.id };
+      if (s.mode === 'inc' && s.min != null) f.value = tm.invert ? { max: -s.min } : { min: s.min };
+      if (s.mode === 'exc') not.push(f);
+      else if (s.group != null) { if (!groups.has(s.group)) groups.set(s.group, []); groups.get(s.group).push(f); }
+      else and.push(f);
+    }
+    const stats = [];
+    // a one-member OR group is just a required mod
+    for (const fs of groups.values()) { if (fs.length === 1) and.push(fs[0]); }
+    if (and.length) stats.push({ type: 'and', filters: and });
+    for (const fs of groups.values()) {
+      if (fs.length > 1) stats.push({ type: 'count', value: { min: 1 }, filters: fs });
+    }
+    if (not.length) stats.push({ type: 'not', filters: not });
+    const query = {
+      query: {
+        status: { option: 'online' },
+        stats,
+        filters: { type_filters: { filters: { category: { option: state.cls === 'waystone' ? 'map.waystone' : 'map.tablet' } } } },
+      },
+      sort: { price: 'asc' },
+    };
+    if (Object.keys(mapFilters).length) query.query.filters.map_filters = { filters: mapFilters };
+    const any = stats.length > 0 || Object.keys(mapFilters).length > 0;
+    return { query, dropped, any };
+  }
+
+  let tradeBusy = false;
+  async function openOnTrade(btn) {
+    if (tradeBusy) return;
+    tradeBusy = true;
+    const was = btn.textContent;
+    btn.textContent = t('regex.bar.trade_busy');
+    try {
+      const cfg = await window.api.getConfig();
+      let league = cfg && cfg.league && cfg.league !== 'auto' ? cfg.league : null;
+      if (!league) {
+        const leagues = await window.api.trade2Leagues();
+        league = (leagues && leagues[0]) || 'Standard';
+      }
+      const { query } = tradeQuery();
+      const res = await window.api.trade2Search(league, query);
+      if (!res || !res.id) throw new Error('no search id');
+      // same language site the API queried, so the opened page matches
+      const sub = { ru: 'ru', de: 'de', fr: 'fr', es: 'es', pt: 'br' }[
+        (window.I18N && window.I18N.lang && window.I18N.lang()) || 'en'] || 'www';
+      const url = 'https://' + sub + '.pathofexile.com/trade2/search/poe2/'
+        + encodeURIComponent(league) + '/' + encodeURIComponent(res.id);
+      if (window.logAction) window.logAction('regex open on trade: ' + url);
+      window.api.openExternal(url);
+    } catch (e) {
+      state.notice = { kind: 'err', msg: t('regex.notice.trade_failed', { error: (e && e.message) || 'error' }) };
+      render();
+    } finally {
+      tradeBusy = false;
+      btn.textContent = was;
+    }
+  }
+
   // ---- save into a bucket ---------------------------------------------------
   function saveEntry(label, pattern) {
     if (!pattern) return;
@@ -486,6 +567,22 @@
     box.onclick = () => { box.select(); flashBtn(); };
     cpy.onclick = flashBtn;
     row.appendChild(cpy);
+    // the same picks as a live trade search (builder classes only - a custom
+    // regex is text, there is nothing to translate into filters)
+    if (state.cls !== 'custom') {
+      const tq = tradeQuery();
+      const tr = el('button', 'rx-btn rx-btn-quiet', t('regex.bar.trade_button'));
+      if (!tq.any) {
+        tr.disabled = true;
+        tr.title = tq.dropped.length ? t('regex.bar.trade_none_tooltip') : t('regex.bar.trade_tooltip');
+      } else {
+        tr.title = tq.dropped.length
+          ? t('regex.bar.trade_dropped_tooltip', { mods: tq.dropped.join(', ') })
+          : t('regex.bar.trade_tooltip');
+        tr.onclick = () => openOnTrade(tr);
+      }
+      row.appendChild(tr);
+    }
     bar.appendChild(row);
     const saveRow = el('div', 'rx-bar-row');
     const lab = el('input', 'rx-in rx-save-label'); lab.placeholder = t('regex.bar.save_label_placeholder'); lab.value = state.saveLabel;
