@@ -1820,7 +1820,7 @@ footer {
 .rp-out-table td { padding: 1px 14px 1px 0; }
 .rp-out-table .rp-out-base { text-align: right; opacity: 0.75; }
 .rp-out-table .rp-out-same { opacity: 0.45; }
-.rp-out-try { width: 64px; }
+.rp-out-try { width: 112px; } /* wide enough for the longest translated placeholder */
 /* screen-size submission modal: example next to the user's own capture, one card per
    shot. Settings itself holds only a one-line offer and the button that opens this. */
 .rp-shot-modal { width: 520px; position: relative; max-height: 86vh; overflow-y: auto; }
