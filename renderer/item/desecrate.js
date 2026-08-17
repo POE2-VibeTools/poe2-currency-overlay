@@ -631,7 +631,7 @@
     // routes - only the Altered route gives them a real hit chance).
     const { entries } = eligiblePool('altered');
     const sec = el('div', 'des-sec');
-    sec.appendChild(el('div', 'des-sec-head', `<span class="des-num">02</span> ${t('desecrate.section.hits_title')} <span class="des-dim">${t('desecrate.section.hits_hint')}</span> <span class="des-right">${t('desecrate.section.hits_counter', { ticked: state.hits.size, total: entries.length })}</span>`));
+    sec.appendChild(el('div', 'des-sec-head', `<span class="des-num">02</span> ${t('desecrate.section.hits_title')} <span class="des-right">${t('desecrate.section.hits_counter', { ticked: state.hits.size, total: entries.length })}</span>`));
     // a filter bar to jump to the outcomes you want (only worth showing on long lists)
     if (entries.length > 10) {
       const fin = el('input', 'des-hit-filter');
@@ -743,7 +743,7 @@
 
     // ----- 03: values & costs (one card) -----
     const vc = el('div', 'des-sec');
-    vc.appendChild(el('div', 'des-sec-head', `<span class="des-num">03</span> ${t('desecrate.section.values_title')} <span class="des-dim">${t('desecrate.section.values_hint', { bone: esc(boneKind()) })}</span>`));
+    vc.appendChild(el('div', 'des-sec-head', `<span class="des-num">03</span> ${t('desecrate.section.values_title')}`));
     // outcomes: the two values the whole EV hinges on - given prominence
     const outc = el('div', 'des-outcomes');
     outc.appendChild(moneyField(t('desecrate.values.item_now_label'), 'cur',

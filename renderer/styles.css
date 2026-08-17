@@ -1274,8 +1274,10 @@ footer {
 .nw-set-cal.quiet .nw-set-cal-title { color: var(--tx-dim); font-size: 11.5px; font-weight: 500; }
 .nw-set-cal.quiet .nw-set-cal-badge { display: none; }
 .nw-set-cal.quiet .nw-set-cal-desc { font-size: 11px; color: var(--tx-faint); margin-bottom: 7px; }
-.nw-set-cal.quiet .nw-set-btn { background: none; border-color: var(--bd-12); color: var(--tx-dim); }
-.nw-set-cal.quiet .nw-set-btn:hover { color: var(--tx-body); border-color: var(--bd-16); }
+/* quiet = muted, still visibly a BUTTON. The old rule set border-color on a border
+   that the base style declares none, so quiet buttons rendered as bare text. */
+.nw-set-cal.quiet .nw-set-btn { background: none; border: 1px solid var(--bd-16); color: var(--tx-dim); }
+.nw-set-cal.quiet .nw-set-btn:hover { color: var(--tx-body); border-color: color-mix(in srgb, var(--am) 45%, transparent); }
 .nw-set-btn { background: linear-gradient(180deg, var(--am-grad-a), var(--am-grad-b)); color: var(--am-on); border: none; border-radius: 6px; padding: 7px 15px; font-size: 12px; font-weight: 700; cursor: pointer; }
 .nw-set-btn:hover { filter: brightness(1.08); }
 .nw-set-btn-ghost { background: transparent; color: var(--tx-dim); border: 1px solid var(--bd-12); }

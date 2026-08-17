@@ -821,7 +821,7 @@
     const SEC_LABEL = { rune: t('item.listings.section_runes_implicits'), 'added-rune': t('item.listings.section_runes'), enchant: t('item.listings.section_enchants'), implicit: t('item.listings.section_implicits'), pseudo: t('item.listings.section_pseudo'), explicit: t('item.listings.section_explicits') };
     for (const sec of sections) {
       const lab = SEC_LABEL[sec.key] || sec.key;
-      const hint = sec.key === 'explicit' ? ` <span class="pk-key">${t('item.listings.explicit_hint')}</span>` : '';
+      const hint = '';
       s += `<div class="pk-seclab">${esc(lab)}${hint}</div>`;
       s += `<div class="pk-mods pk-sec-${esc(sec.key)}">${sec.lines.map(line).join('')}</div>`;
     }

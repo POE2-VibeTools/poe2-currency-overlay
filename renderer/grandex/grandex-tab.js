@@ -326,9 +326,6 @@
       }
       wrap.appendChild(g);
     }
-    const tip = el('div', 'gx-rotate-tip', t('grandex.grid.rotate_tip'));
-    tip.title = D().rotation || '';
-    wrap.appendChild(tip);
     return wrap;
   }
 

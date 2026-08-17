@@ -1,15 +1,16 @@
-Website / download the exe: Here (EXPERIMENTAL: Applemage for linux users on site as well.)
-Source code github repo: Here
-Over 1100 downloads, and users have been submitting LOTS of bug reports & Feature Requests, helping me improve, catching small things I missed, and overall being very supportive. 
-To all active users/supporters: Thanks! 
+POE2 Prices Overlay V3.0.0 - New 'Industry' Theme, New Reprice Feature, Multi-Language fixes, & user-submitted bug reports / feature requests. Full feature list below. Roadmap = Clear. Thanks for the support / bug reports! <3
 
-Reprice is likely the last major new feature I will be adding. These things (read: this app) take a lot of time.
-This means any new versions (>3.0.0) will be mostly UX / bugfixes / updating to keep pace with GGG patches and support any new league mechanics/items. Maybe more themes.
-I have no new features planned unless GGG introduces new API calls (like stash API), or new in-game features that would make sense to add some support for.
+TD;DR - This is the last 'new feature' patch. Everything after this is support/UX/bugfixes, unless users submit a genius idea I just can't ignore.
+Website / download the exe: Here 
+(Applemage for linux users on site as well. EXPERIMENTAL)
+Source code github repo: Here
+Over 1100 downloads! And although my versioning is silly, 3.0 really is the first true 'release' I'm confident in. And you guys have been submitting a lot of bug reports, feedback, & Feature Requests, catching the things I missed and have been overall very supportive.  
+So to all my active users/supporters: Thanks! 
+
+Reprice is likely the last major new feature I will be adding. These things (read: new features) take a lot of time. I have no new features planned unless GGG introduces new API calls (like stash API), or new in-game features that would make sense to add some support for.
+This means any new versions (>3.0.0) will be mostly UX / bugfixes / adding resolution support / updating to keep pace with GGG patches and support any new league mechanics/items. And maybe a few more themes.
 
 What's New in 2.6.x -> 3.0.0
-
-
 1. Reprice - New Feature (currently tested on 2440x, 1900x, 1600x, 1200x)
 In settings, you can set your reprice rules.
 F9 is default key to turn it on/off (you can rebind it)
@@ -18,49 +19,61 @@ When done, f9 again turns it off
 Its pretty fast, so you can get through your merch tabs fairly quickly. I'll see about improving the overall speed but I felt it worked well for me.
 Default reprice rules are the ones I use. Feel free to change them as you see fit.
 
+IMPORTANT: If reprice is breaking in a supported resolution, try manually calibrating first before submitting screenshots. User-adjusted settings like brightness/vibrance/gamma filters (NVIDIA overlays etc) mess with the auto-detection and are accountable for a lot of misses.
 
-2. Industrial Theme - Rounded corners, highlights, badges, BEGONE! AMBER COLOURS THEMED FROM THE GAME - BEGONE!
+
+2. Industrial Blue Theme - (Featured in the Gallery) Rounded corners, highlights, badges, amber colors = AI-SLOP! BEGONE!
 The Pointing Soyjacks™ have won. If you soyjacked in one of my previous threads, this Theme is for you
-As such I request all pointing soyjack posting be done ironically from this point forward. No unironic soyjack posting allowed going forward, thank you.
+As such I request all pointing soyjack posting be done ironically only from this point forward. No unironic soyjack posting allowed thank you.
+Admittedly I like the new theme more than the original and use it myself. A begrudging confession.
+
 
 3. Multi-language Support Fixes
-This wasn't working properly. The item parser was dropping other language items. Should be fixed now 
-If you're a native speaker to one of these languages and have some translation suggestions, I am totally open to making this better. I just cannot read anything except English, so I don't know how well translated these things are (or if the static english is sufficient)
+Hopefully I caught the last few lines of missed translations.
+Fixed a bug where the item parser was serving English results for multi-language searches.
+If you're a native speaker to one of the supported languages and something reads off, please let me know!
+Note: GGG themselves do not translate some things. Randomly. I'm basically using their API to pull the names of things. So for example, randomly, Leagues are sometimes English sometimes translated. That's not on me. Email GGG about it. 
 
-General Fixes:
-Settings pages got tidied up, copy got fixed
-POE2 Currency Overlay V3.0.0 Shipped today. - 'Industry' Theme, New Reprice Feature, Multi-Language fixes, & user-submitted bug reports / feature requests [DONE]. Full feature list below.
+4. Desecrate Tab
+It now just works as expected. If you want to desecrate an item you can Ctrl+f it and click desecrate and run through the EV on landing the mod you want. At the very least this feature is now a quick-guide reference for the EV of desecration and not strictly a "redesecrate" feature, which admittedly was limiting.
 
+
+5. General Fixes:
+Settings pages got tidied up a bit, and some copy got fixed
 Reviewed multi-language translated copy and found a few static English lines that should have been translating but were not.
 Unified visual elements to template colors. New theme should be much easier to publish
-More Price Check support. Some items were missed - users are submitting them as they find them and I'm adding support as i see the reports come in.
+More Price Check support. Some items were missed - users are submitting them as they find them and I'm adding support as I see the reports come in.
+Draggable elements should behave better now
 
-If you want the full list of fixes/changes you can check the changelog or read the in-app patch notes.
+If you want the full list of fixes/changes you can read the changelog or read the in-app patch notes.
 
-Final Overlay Feature List:
-1. Currency Tab (show / manage trading pairs based on GGG's CDN aggregate data and identifies arbitrage routes)
- 1.1 In-line edit trading pairs with ingame values for accurate arbs. Edit core pair values in Settings.
+
+Final Overlay Feature List (not in order with the gallery imgs)
+
+1. Currency Tab - show / manage trading pairs based on GGG's CDN aggregate data and identifies arbitrage routes
+ 1.1 In-line edit trading pair values for accurate arb calculations. Edit core pair values in Settings.
 
 2. Price Check Tab - EE2's price checker on steroids, with a UX that sucks less 
  2.1 Price Check History - ALL your previous searches, cached locally, so you can easily re-search.
 
-3. Desecrate Tab - Is it worth to omen or nah?
+3. Desecrate Tab - Plan your Desecration & calculate EV
  3.1 Desecration Tab History - Same as PC history
 
-4. Grand Expedition Tab - Worth the aldurs or nah?
+4. Grand Expedition Tab - All secrets mapped to an easy planner that helps you decide on Aldurs usage or not.
 
-5. Regex Tab - Create and save regex's
+5. Regex Tab - Easily create and save / manage stash regex's
 
 6. Net Worth Tab - Capture and sum up your in-game currency tabs. Show off how cool and rich you are.
 
-7. Reprice - 1-click auto recalculate the price of an item in any Merchant Tab.
+7. Reprice - Auto recalculate the price of an item in any Merchant Tab and Ctrl+v to paste new price, based on simple logical repricing rules you write and save.
 
 8. 2 Themes - The POE2 amber-styled theme, and the "Industry" Chrome Blue theme.
 
-9. Multi-language  - Should actually work now. Yeah I've said this like 10x in the patch notes. BUT I MEAN IT THIS TIME, DAMNIT!
+9. Multi-language  - Should actually work now. Yeah I've said this like 10x in the patch notes. BUT I MEAN IT THIS TIME!
 
-If you have ideas/feedback, the most reliable way to get it to me is VIA the in-app feedback / bug report tools.  The website also has a "submit idea" form on the roadmap page. 
-If you experience issues with Reprice / Net Worth, please use the in-app screenshot submission tools. I need particular screenshots to make it work for a new resolution, so follow the in-app guide please. Anything else just wastes both of our time.
-Cheers, and happy hunting Exiles!
 
-PS: Many of my screenshots were taken during 2.7.1->3.0 dev and the in-app display may be VERY SLIGHTLY DIFFERENT for multi-language users than as-displayed in the Russian screenshot.
+Ok that's it, thanks for reading. Cheers, and happy hunting Exiles!
+
+
+PS: If you have ideas/feedback, the most reliable way to get it to me is VIA the in-app feedback / bug report tools.  The website also has a "submit idea" form on the roadmap page. 
+PPS: If you experience issues with Reprice / Net Worth, please use the in-app screenshot submission tools. I need particular screenshots to make it work for a new resolution, so follow the in-app guide. Anything else just wastes both our time.
