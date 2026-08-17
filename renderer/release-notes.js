@@ -6,6 +6,14 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '3.0.4',
+    date: '2026-08-16',
+    notes: [
+      "Cleaned up some unnecessary text throughout the app",
+      "Improved clarity of troubleshooting for Reprice and Net Worth features",
+    ],
+  },
+  {
     version: '3.0.3',
     date: '2026-08-15',
     notes: [
