@@ -645,7 +645,7 @@ window.I18N_CATALOGS.qa = {
   "networth.empty.explain": "[[Ít détéćtš thé táb, válúéš ít, áñd áddš á rów héré plúš á rúññíñg gráñd tótál. Flíp tábš áñd ćáptúré ágáíñ. ······································]]",
   "networth.empty.instructions": "[[Ópéñ á ćúrréñćý táb íñ gámé, kéép ít fúllý víšíblé, áñd préšš <b>{hotkey}</b> (ór Ćáptúré). ···························]]",
   "networth.experimental.dismiss_title": "[[Hídé thíš. Šúbmíttíñg štáýš áváíláblé úñdér Šéttíñgš -> Ñét Wórth. ························]]",
-  "networth.experimental.explain": "[[Ñét Wórth íš ÉXPÉRÍMÉÑTÁL. Íf ýóúr ćóúñtš áré ćómplétélý wróñg / dóñ't wórk, šéñd mé ýóúr štášh tábš. ····································]]",
+  "networth.experimental.explain": "[[Ñét Wórth íš ÉXPÉRÍMÉÑTÁL. Íf ýóúr ćóúñtš áré ćómplétélý wróñg óñ á šúppórtéd réšólútíóñ, šéñd mé ýóúr štášh tábš. ········································]]",
   "networth.experimental.submit_button": "[[Šéñd mý štášh tábš ·······]]",
   "networth.footer.clear_tally": "[[Ćléár tállý ····]]",
   "networth.footer.reset_edits": "[[Réšét áll édítš ······]]",

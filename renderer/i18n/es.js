@@ -640,7 +640,7 @@ window.I18N_CATALOGS.es = {
   "networth.empty.explain": "Detecta la pestaña, la valora, y añade una fila aquí más un gran total acumulado. Cambia de pestaña y captura de nuevo.",
   "networth.empty.instructions": "Abre una pestaña de divisas en el juego, mantenla totalmente visible, y pulsa <b>{hotkey}</b> (o Capturar).",
   "networth.experimental.dismiss_title": "Ocultar. El envío sigue disponible en Ajustes -> Net Worth.",
-  "networth.experimental.explain": "Net Worth es EXPERIMENTAL. Si tus cantidades están completamente mal o no funcionan, mándame tus pestañas de alijo.",
+  "networth.experimental.explain": "Net Worth es EXPERIMENTAL. Si tus cantidades están completamente mal en una resolución compatible, mándame tus pestañas de alijo.",
   "networth.experimental.submit_button": "Enviar mis pestañas de alijo",
   "networth.footer.clear_tally": "Borrar recuento",
   "networth.footer.reset_edits": "Restablecer todas las ediciones",

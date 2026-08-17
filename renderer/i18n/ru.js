@@ -652,7 +652,7 @@ window.I18N_CATALOGS.ru = {
   "networth.empty.explain": "Приложение определяет вкладку, оценивает её и добавляет сюда строку плюс общий итог. Переключайте вкладки и захватывайте снова.",
   "networth.empty.instructions": "Откройте вкладку валюты в игре, держите её полностью на виду и нажмите <b>{hotkey}</b> (или Захват).",
   "networth.experimental.dismiss_title": "Скрыть. Отправка остаётся доступной в «Настройки -> Net Worth».",
-  "networth.experimental.explain": "Net Worth — ЭКСПЕРИМЕНТАЛЬНАЯ функция. Если ваши количества совсем неверны или не читаются, пришлите мне свои вкладки тайника.",
+  "networth.experimental.explain": "Net Worth — ЭКСПЕРИМЕНТАЛЬНАЯ функция. Если ваши количества совсем неверны на поддерживаемом разрешении, пришлите мне свои вкладки тайника.",
   "networth.experimental.submit_button": "Отправить мои вкладки тайника",
   "networth.footer.clear_tally": "Очистить подсчёт",
   "networth.footer.reset_edits": "Сбросить все правки",

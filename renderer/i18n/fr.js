@@ -640,7 +640,7 @@ window.I18N_CATALOGS.fr = {
   "networth.empty.explain": "Ça détecte l'onglet, le chiffre, et ajoute une ligne ici plus un total général qui se met à jour. Change d'onglet et recapture.",
   "networth.empty.instructions": "Ouvre un onglet Currency en jeu, garde-le entièrement visible, et appuie sur <b>{hotkey}</b> (ou Capturer).",
   "networth.experimental.dismiss_title": "Masquer. L’envoi reste disponible dans Paramètres -> Net Worth.",
-  "networth.experimental.explain": "Net Worth est EXPÉRIMENTAL. Si vos quantités sont complètement fausses ou ne fonctionnent pas, envoyez-moi vos onglets de réserve.",
+  "networth.experimental.explain": "Net Worth est EXPÉRIMENTAL. Si vos quantités sont complètement fausses avec une résolution prise en charge, envoyez-moi vos onglets de réserve.",
   "networth.experimental.submit_button": "Envoyer mes onglets de réserve",
   "networth.footer.clear_tally": "Effacer le total",
   "networth.footer.reset_edits": "Réinitialiser toutes les modifs",
