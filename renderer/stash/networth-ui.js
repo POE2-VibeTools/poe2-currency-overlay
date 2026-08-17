@@ -127,8 +127,37 @@
       (v) => { state.showConfidence = v; try { window.api.setStashShowConfidence(v); } catch {} }));
     root.appendChild(toggles);
     // Settings above, recovery tools below - the divider keeps users from reading
-    // calibration/submission as steps they are meant to take.
+    // calibration/submission as steps they are meant to take. Same shape as the Reprice
+    // card: the supported list first, the screenshot path for sizes NOT on it, manual
+    // calibration last for sizes that ARE on it.
     root.appendChild(el('div', 'set-divider', t('ui.settings.troubleshoot_heading')));
+
+    const res = el('div', 'set-field');
+    const resIn = el('div', 'set-inline');
+    resIn.appendChild(el('label', null, t('networth.settings.supported_res_label')));
+    resIn.appendChild(el('span', 'set-sub', '1920×1080, 2560×1440'));
+    res.appendChild(resIn);
+    root.appendChild(res);
+
+    // The submission's PERMANENT home. The banner on the tab can be dismissed;
+    // this cannot, so the path stays reachable for whoever needs it later.
+    const sub = el('div', 'set-field');
+    const subIn = el('div', 'set-inline');
+    subIn.appendChild(el('span', 'set-sub', t('networth.settings.shots_offer')));
+    const subBtn = el('button', 'set-login-btn', t('networth.experimental.submit_button'));
+    subBtn.onclick = () => {
+      // the capture modal lives on the Net Worth tab, so go there
+      startSampleFlow().then(() => {
+        const settings = document.getElementById('settings');
+        if (settings) settings.classList.add('hidden');
+        const tab = document.getElementById('tab-networth');
+        if (tab && !tab.classList.contains('active')) tab.click();
+      });
+    };
+    subIn.appendChild(subBtn);
+    sub.appendChild(subIn);
+    root.appendChild(sub);
+
     // Resolution calibration is a FALLBACK, not a step - but it is always REACHABLE.
     // It used to hide unless the panel finder returned nothing, and "found something" is
     // not the same as "found it well": a capture came in with the border only 17% matched,
@@ -157,25 +186,6 @@
     }
     cal.appendChild(btns);
     root.appendChild(cal);
-
-    // The screenshot submission's PERMANENT home. The banner on the tab can be
-    // dismissed; this cannot, so the path stays reachable for whoever needs it later.
-    const sub = el('div', 'nw-set-cal quiet');
-    sub.appendChild(el('div', 'nw-set-cal-desc', t('networth.experimental.explain')));
-    const subBtns = el('div', 'nw-set-cal-btns');
-    const subBtn = el('button', 'nw-set-btn', t('networth.experimental.submit_button'));
-    subBtn.onclick = () => {
-      // the capture modal lives on the Net Worth tab, so go there
-      startSampleFlow().then(() => {
-        const settings = document.getElementById('settings');
-        if (settings) settings.classList.add('hidden');
-        const tab = document.getElementById('tab-networth');
-        if (tab && !tab.classList.contains('active')) tab.click();
-      });
-    };
-    subBtns.appendChild(subBtn);
-    sub.appendChild(subBtns);
-    root.appendChild(sub);
   }
 
   function rowCard(row) {

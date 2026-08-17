@@ -1265,6 +1265,9 @@ footer {
 .nw-line-reset-off { visibility: hidden; pointer-events: none; }
 /* Settings -> Net Worth section */
 .nw-set-toggles { margin-bottom: 18px; }
+/* nw-set-root is one level deeper than the card, so the card's own child spacing
+   rule does not reach these; mirror it */
+#nw-set-root > * + * { margin-top: 12px; }
 .nw-set-cal { border: 1px solid var(--bd-09); border-radius: 8px; padding: 12px 14px; background: color-mix(in srgb, var(--paper) 2%, transparent); }
 .nw-set-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
 .nw-set-cal-title { color: var(--tx-hi); font-size: 12.5px; font-weight: 600; }
