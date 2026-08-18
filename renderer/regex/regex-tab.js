@@ -23,7 +23,7 @@
     saveBucket: null,
     customPattern: '',
     confirmDel: null,       // bucket id in delete-confirm state
-    editEntry: null,        // entry id in inline edit
+    editing: null,          // {bucketId, entryId} - a saved entry loaded into the editor; Save updates it
     addingTo: null,         // bucket id with the inline "+ Add regex" form open
     editBucket: null,       // bucket id in rename
     notice: null,
@@ -192,13 +192,66 @@
   }
 
   // ---- save into a bucket ---------------------------------------------------
+  // Saving from the builder keeps the SELECTION alongside the pattern, so the
+  // entry can be loaded back into the GUI later and re-edited mod by mod - a
+  // pattern alone is write-only. Custom-mode saves have no selection to keep.
+  function buildSnapshot() {
+    if (state.cls === 'custom') return null;
+    return {
+      cls: state.cls,
+      tabletType: state.tabletType || null,
+      sel: [...state.sel].map(([text, s]) => [text, { mode: s.mode, min: s.min == null ? null : s.min, group: s.group == null ? null : s.group }]),
+    };
+  }
   function saveEntry(label, pattern) {
     if (!pattern) return;
+    const build = buildSnapshot();
+    // editing a loaded entry: save back INTO it, wherever it lives
+    if (state.editing) {
+      const b = state.buckets.find((x) => x.id === state.editing.bucketId);
+      const e = b && b.entries.find((x) => x.id === state.editing.entryId);
+      if (e) {
+        e.label = label || e.label || t('regex.bar.default_entry_label');
+        e.pattern = pattern;
+        e.build = build;
+        persist();
+        state.editing = null;
+        state.notice = { kind: 'ok', msg: t('regex.notice.updated_entry', { label: e.label, bucket: b.name }) };
+        render();
+        return;
+      }
+      state.editing = null; // the entry was deleted meanwhile - fall through to a fresh save
+    }
     const b = state.buckets.find((x) => x.id === state.saveBucket) || state.buckets[0];
     if (!b) return;
-    b.entries.push({ id: newId(), label: label || t('regex.bar.default_entry_label'), pattern });
+    b.entries.push({ id: newId(), label: label || t('regex.bar.default_entry_label'), pattern, build });
     persist();
     state.notice = { kind: 'ok', msg: t('regex.notice.saved_to_bucket', { bucket: b.name }) };
+    render();
+  }
+
+  // ---- load a saved entry back into the editor ------------------------------
+  // Entries saved from the builder restore their whole selection; entries with
+  // no snapshot (hand-added, or saved before snapshots existed) load into
+  // Custom mode, where the pattern itself is the editable thing.
+  function loadEntry(bucket, e) {
+    const b = e.build;
+    if (b && (b.cls === 'waystone' || b.cls === 'tablet')) {
+      state.cls = b.cls;
+      state.tabletType = b.tabletType || null;
+      state.sel = new Map((b.sel || []).map(([text, s]) => [text, { mode: s.mode === 'exc' ? 'exc' : 'inc', min: s.min == null ? null : s.min, group: s.group == null ? null : s.group }]));
+      state.groupSeq = 1 + Math.max(0, ...[...state.sel.values()].map((s) => s.group == null ? 0 : s.group));
+      state.customPattern = '';
+    } else {
+      state.cls = 'custom';
+      state.customPattern = e.pattern;
+    }
+    state.editing = { bucketId: bucket.id, entryId: e.id };
+    state.saveLabel = e.label || '';
+    state.saveBucket = bucket.id;
+    state.picker = null;
+    state.drawerOpen = false;
+    state.notice = null;
     render();
   }
 
@@ -237,6 +290,7 @@
     }
     state.cls = cls;
     state.sel = new Map();
+    state.editing = null; // a paste is a fresh draft, never a rewrite of a loaded entry
     const pool = poolFor(cls);
     // advanced copies write values as "82(70-100)%" - strip the "(a-b)" range
     // part; the game also singularizes count words at 1 ("1 additional random
@@ -584,14 +638,27 @@
       row.appendChild(tr);
     }
     bar.appendChild(row);
+    // editing a loaded entry: say so, and let the user detach back to a fresh draft
+    if (state.editing) {
+      const editRow = el('div', 'rx-bar-row rx-editing-row');
+      const eb = state.buckets.find((x) => x.id === state.editing.bucketId);
+      const ee = eb && eb.entries.find((x) => x.id === state.editing.entryId);
+      editRow.appendChild(el('span', 'rx-editing-lab', t('regex.bar.editing_label', { label: esc((ee && ee.label) || '') })));
+      const off = el('button', 'rx-mini', '✕');
+      off.title = t('regex.bar.editing_detach_tooltip');
+      off.onclick = () => { state.editing = null; render(); };
+      editRow.appendChild(off);
+      bar.appendChild(editRow);
+    }
     const saveRow = el('div', 'rx-bar-row');
     const lab = el('input', 'rx-in rx-save-label'); lab.placeholder = t('regex.bar.save_label_placeholder'); lab.value = state.saveLabel;
     lab.oninput = () => { state.saveLabel = lab.value; };
     lab.onkeydown = (e) => { if (e.key === 'Enter' && pattern) doSave(); };
     saveRow.appendChild(lab);
-    if (state.buckets.length > 1) saveRow.appendChild(bucketSelect());
-    const sv = el('button', 'rx-btn rx-btn-quiet', t('regex.bar.save'));
-    sv.title = state.buckets.length > 1 ? t('regex.bar.save_tooltip_multi') : t('regex.bar.save_tooltip_single', { bucket: state.buckets[0] ? state.buckets[0].name : 'your bucket' });
+    if (!state.editing && state.buckets.length > 1) saveRow.appendChild(bucketSelect());
+    const sv = el('button', 'rx-btn rx-btn-quiet', state.editing ? t('regex.bar.update') : t('regex.bar.save'));
+    sv.title = state.editing ? t('regex.bar.update_tooltip')
+      : state.buckets.length > 1 ? t('regex.bar.save_tooltip_multi') : t('regex.bar.save_tooltip_single', { bucket: state.buckets[0] ? state.buckets[0].name : 'your bucket' });
     sv.onclick = doSave;
     saveRow.appendChild(sv);
     bar.appendChild(saveRow);
@@ -678,11 +745,11 @@
 
     for (const e of b.entries) card.appendChild(entryRow(b, e));
 
-    if (state.addingTo === b.id) card.appendChild(entryEditor(b, null));
+    if (state.addingTo === b.id) card.appendChild(entryEditor(b));
     else {
       const add = el('button', 'rx-ghost rx-add-entry', t('regex.drawer.add_entry'));
       add.title = t('regex.drawer.add_entry_tooltip');
-      add.onclick = () => { state.addingTo = b.id; state.editEntry = null; render(); };
+      add.onclick = () => { state.addingTo = b.id; render(); };
       card.appendChild(add);
     }
     return card;
@@ -692,13 +759,16 @@
   // (tooltip + edit). The whole row is the copy button; edit/delete only
   // surface on hover so resting rows stay quiet.
   function entryRow(b, e) {
-    if (state.editEntry === e.id) return entryEditor(b, e);
     const row = el('div', 'rx-entry');
     row.title = e.pattern;
     row.appendChild(el('span', 'rx-entry-lab', esc(e.label)));
     const tools = el('span', 'rx-entry-tools');
+    // ✎ loads the entry back into the page editor - the builder with its whole
+    // selection when the entry carries one, Custom mode otherwise. Saving there
+    // writes back into this entry. (The old inline text sidecar made saved
+    // entries effectively write-only: the GUI could never touch them again.)
     const edit = el('button', 'rx-mini', '✎'); edit.title = t('regex.drawer.edit_tooltip');
-    edit.onclick = (ev) => { ev.stopPropagation(); state.editEntry = e.id; state.addingTo = null; render(); };
+    edit.onclick = (ev) => { ev.stopPropagation(); state.addingTo = null; loadEntry(b, e); };
     tools.appendChild(edit);
     const del = el('button', 'rx-mini', '✕'); del.title = t('regex.drawer.entry_delete_tooltip');
     del.onclick = (ev) => { ev.stopPropagation(); b.entries = b.entries.filter((x) => x.id !== e.id); persist(); render(); };
@@ -712,22 +782,23 @@
     return row;
   }
 
-  // shared inline editor: edit an existing entry (e) or add a new one (e=null)
-  function entryEditor(b, e) {
+  // inline "+ Add regex" form: paste-in a raw pattern under a label. Editing an
+  // EXISTING entry does not happen here anymore - the ✎ on a row loads it into
+  // the page editor instead, where it can be changed mod by mod and saved back.
+  function entryEditor(b) {
     const row = el('div', 'rx-entry-edit');
-    const lab = el('input', 'rx-in rx-edit-lab'); lab.placeholder = t('regex.drawer.edit_label_placeholder'); lab.value = e ? e.label : '';
-    const pat = el('input', 'rx-in rx-mono rx-edit-pat'); pat.placeholder = t('regex.drawer.edit_pattern_placeholder'); pat.value = e ? e.pattern : '';
-    const close = () => { state.editEntry = null; state.addingTo = null; render(); };
+    const lab = el('input', 'rx-in rx-edit-lab'); lab.placeholder = t('regex.drawer.edit_label_placeholder');
+    const pat = el('input', 'rx-in rx-mono rx-edit-pat'); pat.placeholder = t('regex.drawer.edit_pattern_placeholder');
+    const close = () => { state.addingTo = null; render(); };
     const done = () => {
       const label = lab.value.trim(), pattern = pat.value.trim();
       if (!pattern) { close(); return; }
-      if (e) { e.label = label || t('regex.bar.default_entry_label'); e.pattern = pattern; }
-      else b.entries.push({ id: newId(), label: label || t('regex.bar.default_entry_label'), pattern });
+      b.entries.push({ id: newId(), label: label || t('regex.bar.default_entry_label'), pattern });
       persist(); close();
     };
     const key = (ev) => { if (ev.key === 'Enter') done(); if (ev.key === 'Escape') close(); };
     lab.onkeydown = key; pat.onkeydown = key;
-    const ok = el('button', 'rx-btn rx-btn-sm', e ? t('regex.drawer.entry_save') : t('regex.drawer.entry_add')); ok.onclick = done;
+    const ok = el('button', 'rx-btn rx-btn-sm', t('regex.drawer.entry_add')); ok.onclick = done;
     const cancel = el('button', 'rx-mini rx-cancel', '✕'); cancel.title = t('regex.drawer.entry_cancel_tooltip'); cancel.onclick = close;
     row.appendChild(lab); row.appendChild(pat); row.appendChild(ok); row.appendChild(cancel);
     setTimeout(() => lab.focus(), 0);
@@ -772,13 +843,14 @@
   let tutBackup = null;
   function tutDemo() {
     if (!tutBackup) {
-      tutBackup = { cls: state.cls, tabletType: state.tabletType, sel: state.sel, picker: state.picker, drawerOpen: state.drawerOpen, saveLabel: state.saveLabel, customPattern: state.customPattern };
+      tutBackup = { cls: state.cls, tabletType: state.tabletType, sel: state.sel, picker: state.picker, drawerOpen: state.drawerOpen, saveLabel: state.saveLabel, customPattern: state.customPattern, editing: state.editing };
     }
     state.cls = 'waystone';
     state.tabletType = null;
     state.picker = null;
     state.drawerOpen = false;
     state.saveLabel = '';
+    state.editing = null;
     state.sel = new Map([
       ['Waystone (Tier #)', { mode: 'inc', min: 15, group: null }],
       ['Item Rarity: +#%', { mode: 'inc', min: 80, group: null }],

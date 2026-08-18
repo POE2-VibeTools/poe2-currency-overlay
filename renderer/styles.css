@@ -1580,6 +1580,9 @@ footer {
 .rx-bar { position: sticky; bottom: 0; z-index: 6; display: flex; flex-direction: column; gap: 6px; background: var(--s-root); border: 1px solid var(--bd-12); border-radius: 10px; padding: 8px 11px; margin-top: 10px; box-shadow: 0 -8px 22px color-mix(in srgb, var(--scrim) 45%, transparent); }
 .rx-bar-empty { color: var(--tx-dim); font-size: 12.5px; padding: 2px 0; }
 .rx-bar-row { display: flex; align-items: center; gap: 8px; }
+/* "Editing: <label>" strip while a saved entry is loaded; Save becomes Update */
+.rx-editing-row { justify-content: space-between; padding: 2px 2px 0; }
+.rx-editing-lab { color: var(--am-hi); font-size: 11px; }
 .rx-bar-pattern { flex: 1 1 auto; min-width: 0; cursor: pointer; background: color-mix(in srgb, var(--scrim) 35%, transparent); padding: 6px 9px; font-size: 12px; }
 .rx-bar-pattern:hover { border-color: var(--bd-16); }
 .rx-btn-quiet { background: transparent; border: 1px solid var(--bd-12); color: var(--tx-body); font-weight: 600; }
