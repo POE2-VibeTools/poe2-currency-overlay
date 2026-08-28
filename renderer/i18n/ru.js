@@ -572,6 +572,7 @@ window.I18N_CATALOGS.ru = {
   "itemtab.currency.price_lookup_failed": "Не удалось получить цену: {error}",
   "itemtab.currency.spark_label_7day": "7 дней",
   "itemtab.currency.spark_range": "{lo}–{hi} ex",
+  "itemtab.currency.stack_total": "{count} в этой стопке = {value}",
   "itemtab.currency.unit_chaos": "хаос",
   "itemtab.currency.unit_div": "div",
   "itemtab.currency.unit_ex": "ex",

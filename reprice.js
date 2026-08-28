@@ -83,14 +83,20 @@ function create(deps) {
       if (src) await js(src + '\n;0').catch(() => {});
       const r = await js(`(async () => {
         if (window.__rpStream && window.__rpStream.active && window.__rpVideo && __rpVideo.videoWidth > 0) return 'reused';
-        window.__rpStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 60 }, audio: false });
-        window.__rpVideo = document.createElement('video');
-        __rpVideo.muted = true; __rpVideo.srcObject = __rpStream; await __rpVideo.play();
-        for (let i = 0; i < 120 && !(__rpVideo.videoWidth > 0); i++) await new Promise(r => setTimeout(r, 10));
-        // a stream the user stopped from the system indicator must not be reused
-        __rpStream.getVideoTracks().forEach(t => t.addEventListener('ended', () => {
-          window.__rpStream = null; window.__rpVideo = null;
-        }));
+        // an open stream still waiting on its first frame is WAITED ON below, not
+        // reopened - reopening means a second portal consent dialog on Wayland
+        if (!(window.__rpStream && window.__rpStream.active)) {
+          window.__rpStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 60 }, audio: false });
+          window.__rpVideo = document.createElement('video');
+          __rpVideo.muted = true; __rpVideo.srcObject = __rpStream; await __rpVideo.play();
+          // a stream the user stopped from the system indicator must not be reused
+          __rpStream.getVideoTracks().forEach(t => t.addEventListener('ended', () => {
+            window.__rpStream = null; window.__rpVideo = null;
+          }));
+        }
+        // PipeWire (Linux portal capture) can take seconds to deliver the first
+        // frame; Windows lands in a few ticks and exits this loop immediately
+        for (let i = 0; i < 200 && !(__rpVideo.videoWidth > 0); i++) await new Promise(r => setTimeout(r, 25));
         // Wait for a VIDEO FRAME, not a paint. requestAnimationFrame fires when this
         // window renders, and while the game is in front this window is occluded and
         // barely renders - so every grab returned the same stale frame, for a second and

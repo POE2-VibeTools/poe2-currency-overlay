@@ -21,21 +21,30 @@
   let video = null;
 
   async function ensureStream() {
-    if (stream && stream.active && video && video.videoWidth > 0) return;
-    stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: 2 }, // a stash panel doesn't move; 2fps keeps it cheap
-      audio: false,
-    });
-    video = document.createElement('video');
-    video.muted = true;
-    video.srcObject = stream;
-    await video.play();
-    // the first frame isn't necessarily decoded when play() resolves
-    for (let i = 0; i < 40 && !(video.videoWidth > 0); i++) {
-      await new Promise((r) => setTimeout(r, 25));
+    // An OPEN stream whose first frame is still on the way must be WAITED ON, never
+    // reopened: a second getDisplayMedia is a second portal dialog, and by capture
+    // time the overlay is hidden, so nobody can answer it. That reopen is exactly the
+    // field failure on KDE Wayland - the user answered one picker, the first frame
+    // took longer than the old 1s budget, and the capture call silently re-prompted
+    // into the void ("capture failed: no screen source").
+    if (!(stream && stream.active)) {
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 2 }, // a stash panel doesn't move; 2fps keeps it cheap
+        audio: false,
+      });
+      video = document.createElement('video');
+      video.muted = true;
+      video.srcObject = stream;
+      await video.play();
+      // a stream the user stopped from the system indicator must not be reused
+      stream.getVideoTracks().forEach((t) => t.addEventListener('ended', () => { stream = null; video = null; }));
     }
-    // a stream the user stopped from the system indicator must not be reused
-    stream.getVideoTracks().forEach((t) => t.addEventListener('ended', () => { stream = null; video = null; }));
+    // PipeWire can take seconds to negotiate the first frame (KDE measured well past
+    // the old 1s cap), and a hidden window's timers tick at ~1s - budget for both
+    for (let i = 0; i < 30 && !(video && video.videoWidth > 0); i++) {
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    if (!(video && video.videoWidth > 0)) throw new Error('stream open but no frame yet');
   }
 
   // Opening the stream is the slow part (it can wait on the portal dialog), so main

@@ -1679,6 +1679,12 @@ async function grabStashFrame() {
   const wasVisible = win && win.isVisible() && win.getOpacity() > 0;
   try {
     await primeCapture(); // before the veil - see primeCapture
+    // Off Windows the capture runs IN the renderer while the window is hidden, and a
+    // hidden window's timers tick at ~1s - the first-frame wait in linux-capture.js
+    // would crawl. Full-rate timers for the duration of the grab only.
+    if (process.platform !== 'win32' && win && !win.isDestroyed()) {
+      try { win.webContents.setBackgroundThrottling(false); } catch { }
+    }
     const disp = screen.getPrimaryDisplay();
     const cw = Math.round(disp.size.width * disp.scaleFactor);
     const ch = Math.round(disp.size.height * disp.scaleFactor);
@@ -1686,6 +1692,9 @@ async function grabStashFrame() {
     const shot = await grabScreen(cw, ch, false);
     return shot || null;
   } finally {
+    if (process.platform !== 'win32' && win && !win.isDestroyed()) {
+      try { win.webContents.setBackgroundThrottling(true); } catch { }
+    }
     syncOverlayState(); // whatever happened during the grab, the window matches the flag
   }
 }

@@ -190,6 +190,27 @@ const EE2 = {
   augmentData(name: string) {
     return (AUGMENT_DATA_BY_AUGMENT && AUGMENT_DATA_BY_AUGMENT[name]) || [];
   },
+  /**
+   * Categories of the socketables that can produce a given augment trade id
+   * (e.g. 'rune.stat_3132681620' -> ['SoulCore']). Feeds the augmentable-socket
+   * correction: a soul-core-bound socket is not counted by trade's rune_sockets,
+   * so the search must not count it either.
+   */
+  augmentSourceCategories(tradeId: string): string[] {
+    const out = new Set<string>();
+    const byAug = AUGMENT_DATA_BY_AUGMENT || {};
+    for (const refName of Object.keys(byAug)) {
+      for (const d of byAug[refName]) {
+        if (d.id !== tradeId) continue;
+        const rec = (ITEM_BY_REF("ITEM", refName) || [])[0] as
+          | { craftable?: { category?: string } }
+          | undefined;
+        const cat = rec?.craftable?.category;
+        if (cat) out.add(cat);
+      }
+    }
+    return [...out];
+  },
 };
 
 declare global {

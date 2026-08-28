@@ -562,6 +562,7 @@ window.I18N_CATALOGS.de = {
   "itemtab.currency.price_lookup_failed": "Preisabfrage fehlgeschlagen: {error}",
   "itemtab.currency.spark_label_7day": "7 Tage",
   "itemtab.currency.spark_range": "{lo}–{hi} ex",
+  "itemtab.currency.stack_total": "{count} im Stapel = {value}",
   "itemtab.currency.unit_chaos": "Chaos",
   "itemtab.currency.unit_div": "div",
   "itemtab.currency.unit_ex": "ex",

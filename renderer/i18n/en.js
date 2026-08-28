@@ -567,6 +567,7 @@ window.I18N_CATALOGS.en = {
   "itemtab.currency.price_lookup_failed": "Price lookup failed: {error}",
   "itemtab.currency.spark_label_7day": "7-day",
   "itemtab.currency.spark_range": "{lo}–{hi} ex",
+  "itemtab.currency.stack_total": "{count} in this stack = {value}",
   "itemtab.currency.unit_chaos": "chaos",
   "itemtab.currency.unit_div": "div",
   "itemtab.currency.unit_ex": "ex",

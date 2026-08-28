@@ -562,6 +562,7 @@ window.I18N_CATALOGS.es = {
   "itemtab.currency.price_lookup_failed": "Falló la búsqueda de precio: {error}",
   "itemtab.currency.spark_label_7day": "7 días",
   "itemtab.currency.spark_range": "{lo}–{hi} ex",
+  "itemtab.currency.stack_total": "{count} en esta pila = {value}",
   "itemtab.currency.unit_chaos": "chaos",
   "itemtab.currency.unit_div": "div",
   "itemtab.currency.unit_ex": "ex",

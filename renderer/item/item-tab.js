@@ -287,6 +287,16 @@
       const val = cel('div', 'cur-value', primary);
       if (secondary) val.appendChild(cel('span', 'cur-value-sub', ' · ' + secondary));
       card.appendChild(val);
+      // the copied stack's whole-stack value (count x unit price), in the same
+      // denomination logic as the unit price above
+      const count = state.item.stackCount;
+      if (count && count > 1) {
+        const tot = ex * count;
+        const totStr = selfDiv && chaos ? `${fmtNum(tot / chaos)} ${unit('chaos', t('itemtab.currency.unit_chaos'))}`
+          : (div && tot >= div) ? `${(tot / div).toFixed(2)} ${unit('divine', t('itemtab.currency.unit_div'))}`
+          : `${fmtNum(tot)} ${unit('exalted', t('itemtab.currency.unit_ex'))}`;
+        card.appendChild(cel('div', 'cur-stack', t('itemtab.currency.stack_total', { count, value: totStr })));
+      }
       const spark = currencySpark(r.logs);
       if (spark) card.appendChild(spark);
       card.appendChild(cel('div', 'cur-note', r.source === 'cx'
@@ -719,12 +729,24 @@
     // one - which is what dragged this glove's floor down to a junk comp.
     const sock = parsed.augmentSockets;
     if (sock && sock.current > 0) {
+      // Trade's rune_sockets is GGG's "Augmentable Sockets": empty sockets plus ones
+      // holding a replaceable RUNE. A soul core (incl. uniques like Uhtred's Sidereus)
+      // binds its socket, and listings index with that socket EXCLUDED - so searching
+      // the visible S-count on such an item matched nothing (user report: 3 sockets
+      // with 1 soul core finds zero, 2 finds plenty). Subtract fills whose every
+      // possible source is a soul core; a stat a rune could also grant stays counted.
+      const boundFills = mods.filter((m) => {
+        if ((m.kind !== 'rune' && m.kind !== 'added-rune') || !m.id) return false;
+        const cats = (window.EE2.augmentSourceCategories && window.EE2.augmentSourceCategories(m.id)) || [];
+        return cats.length > 0 && cats.every((c) => c === 'SoulCore');
+      }).length;
+      const searchable = Math.max(0, sock.current - boundFills);
       const socketsMatter = sock.current > sock.normal || parsed.isCorrupted;
       props.push({
         id: 'prop.rune_sockets', prop: true, kind: 'property', ref: t('itemtab.property.augmentable_sockets'),
-        text: `${t('itemtab.property.augmentable_sockets')}: ${sock.current}`,
-        value: sock.current, min: null, max: null, tier: null, searchMin: null,
-        mode: socketsMatter ? 'strict' : 'off', exact: true,
+        text: `${t('itemtab.property.augmentable_sockets')}: ${searchable}`,
+        value: searchable, min: null, max: null, tier: null, searchMin: null,
+        mode: socketsMatter && searchable > 0 ? 'strict' : 'off', exact: true,
         damage: null, form: null, weight: null, group: null, altIds: [],
       });
     }
@@ -1049,6 +1071,8 @@
       })(),
       currencyName: (parsed.info && parsed.info.name) || baseType || null,
       currencyIcon: (parsed.info && parsed.info.icon) || null,
+      // the copied stack's own count ("Stack Size: 14/20" -> 14), for a whole-stack total
+      stackCount: (parsed.stackSize && parsed.stackSize.value > 1) ? parsed.stackSize.value : null,
       // whether the q20 / filled-rune assumptions even apply to this item, so the
       // live toggles only show when they can change the numbers
       // shown whenever the item CLASS can take runes - not only when sockets
