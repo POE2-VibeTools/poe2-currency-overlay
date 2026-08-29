@@ -6,6 +6,20 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '3.0.5',
+    date: '2026-08-28',
+    notes: [
+      "Regex tab:",
+      "Search on trade: one click turns your picked mods into a real trade site search and opens it in your browser",
+      "Saved regexes now load back into the builder for editing. No more saved-and-locked-forever.",
+      "Price Check:",
+      "Price checking a stack of currency now shows the whole stack's value",
+      "Items with a soul core socketed were searching the wrong socket count and finding nothing. Fixed.",
+      "Linux:",
+      "Wayland screen capture should actually work now. If you reported this, try again and tell me.",
+    ],
+  },
+  {
     version: '3.0.4',
     date: '2026-08-16',
     notes: [
