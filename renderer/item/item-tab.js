@@ -729,14 +729,19 @@
     // one - which is what dragged this glove's floor down to a junk comp.
     const sock = parsed.augmentSockets;
     if (sock && sock.current > 0) {
-      // Trade's rune_sockets is GGG's "Augmentable Sockets": empty sockets plus ones
-      // holding a replaceable RUNE. A soul core (incl. uniques like Uhtred's Sidereus)
-      // binds its socket, and listings index with that socket EXCLUDED - so searching
-      // the visible S-count on such an item matched nothing (user report: 3 sockets
-      // with 1 soul core finds zero, 2 finds plenty). Subtract fills whose every
-      // possible source is a soul core; a stat a rune could also grant stays counted.
+      // Trade's rune_sockets is GGG's "Augmentable Sockets", and what it counts was
+      // probed live, not guessed: empty sockets, RUNE fills (3-socket fully-runed
+      // boots index as 3), and BONDED league-rune fills (a 1-socket helm with a
+      // Bonded fill matches rune_sockets>=1). What it EXCLUDES is a socket bound by
+      // a soul-core-alike like Uhtred's Sidereus (3 visible sockets index as 2 -
+      // the original user report). EE2's data can't tell those two apart (it labels
+      // bonded league runes SoulCore too), so the baked bonded-rune-ids.js list -
+      // every rune stat with a "Bonded:" twin in GGG's own dict - marks the fills
+      // that stay counted. Subtracting them anyway was itself a user report.
+      const bondedOk = new Set(window.BondedRuneIds || []);
       const boundFills = mods.filter((m) => {
         if ((m.kind !== 'rune' && m.kind !== 'added-rune') || !m.id) return false;
+        if (bondedOk.has(m.id)) return false;
         const cats = (window.EE2.augmentSourceCategories && window.EE2.augmentSourceCategories(m.id)) || [];
         return cats.length > 0 && cats.every((c) => c === 'SoulCore');
       }).length;
