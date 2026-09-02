@@ -6,6 +6,13 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '3.0.6',
+    date: '2026-09-02',
+    notes: [
+      "Items with socket-bound league runes were searching the wrong socket count. Fixed for real this time.",
+    ],
+  },
+  {
     version: '3.0.5',
     date: '2026-08-28',
     notes: [
