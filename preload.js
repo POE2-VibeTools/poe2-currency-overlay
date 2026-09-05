@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('api', {
   onFeedChanged: (cb) => ipcRenderer.on('feed-changed', cb),
   getUpdateState: () => ipcRenderer.invoke('get-update-state'),
   onUpdateState: (cb) => ipcRenderer.on('update-state', (_e, s) => cb(s)),
+  onLeagueAutoChanged: (cb) => ipcRenderer.on('league-auto-changed', (_e, s) => cb(s)),
   installUpdate: () => ipcRenderer.send('install-update'),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   isDevBuild: () => ipcRenderer.invoke('is-dev-build'),

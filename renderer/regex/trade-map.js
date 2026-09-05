@@ -357,6 +357,21 @@ window.RegexTradeMap = {
  "#% increased quantity of Expedition Artifacts dropped by Monsters in Map": {
   "id": "explicit.stat_4219583418"
  },
+ "#% increased Expedition Explosive Area of Effect in Map": {
+  "id": "explicit.stat_3039133122"
+ },
+ "Expeditions contain # Additional Boss encased in ice in Map": {
+  "id": "explicit.stat_1183698646"
+ },
+ "Expeditions contain # Additional Verisium Sentry in Map": {
+  "id": "explicit.stat_1109460697"
+ },
+ "Verisium Remnants have +#% chance to add an additional Runic Modifier in Map": {
+  "id": "explicit.stat_3871299443"
+ },
+ "Monsters from Verisium Remnants drop #% increased Verisium": {
+  "id": "explicit.stat_3520418269"
+ },
  "Ritual Favours in Map have #% increased chance to be Omens": {
   "id": "explicit.stat_4219853180"
  },
@@ -441,7 +456,7 @@ window.RegexTradeMap = {
   "id": "explicit.stat_2514439422"
  },
  "#% chance to add a Vaal Beacon Unique Monster to the Map": {
-  "id": "explicit.stat_3591307827"
+  "id": "explicit.stat_3937291366"
  },
  "#% chance to gain an additional Crystal from Vaal Beacons in Map": {
   "id": "explicit.stat_1940774881"

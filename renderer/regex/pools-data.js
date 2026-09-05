@@ -116,7 +116,7 @@ window.RegexPools = {
       { text: "Rare Monsters in Map have a #% Surpassing chance to have an additional Modifier", min: 50, max: 80, bad: true },
     ],
     "Breach Tablet": [
-      { text: "Unstable Breaches in Map spawn # additional Rare Monsters when Stabilised", min: 1, max: 3 },
+      { text: "Unstable Breaches in Map spawn # additional Rare Monsters when Stabilised", min: 1, max: 2 }, // 0.5.5: was 1-3
       { text: "Unstable Breaches in Map have #% increased chance to contain Vruun,  Marshal of Xesht", min: 20, max: 50 },
       { text: "#% increased Effectiveness of Rare Breach Monsters in Map", min: 5, max: 20, bad: true },
       { text: "Breaches in Map have #% increased Pack Size", min: 5, max: 15 },
@@ -141,6 +141,13 @@ window.RegexPools = {
       { text: "Expeditions in Map have +# Remnants", min: 1, max: 2 },
       { text: "#% increased Expedition Explosive Placement Range in Map", min: 15, max: 30 },
       { text: "#% increased quantity of Expedition Artifacts dropped by Monsters in Map", min: 15, max: 30 },
+      // 0.5.5 (Expedition going core): texts from GGG's trade stats dict; roll ranges
+      // not yet published, so no min/max until poe2db lists them
+      { text: "#% increased Expedition Explosive Area of Effect in Map" },
+      { text: "Expeditions contain # Additional Boss encased in ice in Map" },
+      { text: "Expeditions contain # Additional Verisium Sentry in Map" },
+      { text: "Verisium Remnants have +#% chance to add an additional Runic Modifier in Map" },
+      { text: "Monsters from Verisium Remnants drop #% increased Verisium" },
     ],
     "Ritual Tablet": [
       { text: "Ritual Favours in Map have #% increased chance to be Omens", min: 35, max: 70 },
@@ -168,7 +175,7 @@ window.RegexPools = {
       { text: "Abysses in Map have #% increased chance to lead to an Abyssal Depths", min: 10, max: 20 },
       { text: "Abyssal Monsters have #% increased Effectiveness for each closed Pit,  up to #%", min: 8, max: 12, bad: true },
       { text: "Abyssal Monsters in Map have increased Difficulty and Reward for each closed Pit" },
-      { text: "# additional Rare Monsters are spawned from Abysses in Map", min: 1, max: 2 },
+      { text: "# additional Rare Monsters are spawned from Abysses in Map", min: 2, max: 3 }, // 0.5.5: was 1-2
       { text: "Abysses in Map spawn #% increased Monsters", min: 20, max: 30 },
       { text: "Wombgifts have #% chance to drop one Level higher in Map", min: 10, max: 30 },
       { text: "#% increased Quantity of Wombgifts found in Map", min: 30, max: 60 },

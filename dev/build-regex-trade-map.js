@@ -108,6 +108,9 @@ const OVERRIDES = {
   '#% increased Gold found in Map': { ggg: '#% increased Gold found in Map (Gold Piles)' },
   '#% reduced Pack Size in Map': { ggg: '#% increased Pack Size in Map', invert: true },
   'Monsters have +#% Critical Damage Bonus': { ggg: 'Monsters have #% Critical Damage Bonus' },
+  // 0.5.5 Expedition tablet lines: GGG stores the value-1 rendition with a literal 1
+  'Expeditions contain # Additional Boss encased in ice in Map': { ggg: 'Expeditions contain 1 Additional Boss encased in ice in Map' },
+  'Expeditions contain # Additional Verisium Sentry in Map': { ggg: 'Expeditions contain 1 Additional Verisium Sentry in Map' },
   'Monsters inflict # Grasping Vines on Hit': { ggg: 'Monsters inflict # Grasping Vine on Hit' },
   'Expeditions in Map have +# Remnants': { ggg: 'Expeditions in Area have # Remnants' },
   '# extra packs of Monsters around Vaal Beacons in Map': { ggg: '# extra pack of Monsters around Vaal Beacons in Map' },

@@ -738,13 +738,23 @@
       // bonded league runes SoulCore too), so the baked bonded-rune-ids.js list -
       // every rune stat with a "Bonded:" twin in GGG's own dict - marks the fills
       // that stay counted. Subtracting them anyway was itself a user report.
+      //
+      // Counted from the RAW "(rune)" lines rather than the parsed mods: a soul core the
+      // vendored item data has never heard of (0.5.5 added 17, incl. Atziri's explicitly
+      // "Socket-Bound" ones) produces no recognisable mod at all, and a fill the parser
+      // cannot see is exactly the one that must not be counted as augmentable. So every
+      // socketed line is a fill, and only the fills positively known to be a plain rune
+      // (a Rune among its producers) or a bonded league rune stay counted. Runes are a
+      // small, stable set; soul cores are what every patch adds.
       const bondedOk = new Set(window.BondedRuneIds || []);
-      const boundFills = mods.filter((m) => {
+      const fillLines = (String(parsed.rawText || '').match(/\((?:rune|added rune)\)\s*$/gm) || []).length;
+      const safeFills = mods.filter((m) => {
         if ((m.kind !== 'rune' && m.kind !== 'added-rune') || !m.id) return false;
-        if (bondedOk.has(m.id)) return false;
+        if (bondedOk.has(m.id)) return true;
         const cats = (window.EE2.augmentSourceCategories && window.EE2.augmentSourceCategories(m.id)) || [];
-        return cats.length > 0 && cats.every((c) => c === 'SoulCore');
+        return cats.includes('Rune');
       }).length;
+      const boundFills = Math.max(0, fillLines - safeFills);
       const searchable = Math.max(0, sock.current - boundFills);
       const socketsMatter = sock.current > sock.normal || parsed.isCorrupted;
       props.push({

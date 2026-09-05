@@ -278,6 +278,11 @@ const DEFAULT_CONFIG = {
   garbagePool: [], // user-curated worthless-mod stat ids (starts empty by design)
   tutorialDone: false,
   lastSeenVersion: null, // last app version whose "what's new" popup was shown+dismissed
+  // the league "Auto" last resolved to. When a new league/event goes live it takes
+  // the top of every league list and Auto silently follows it - players still in
+  // the old league would price against the wrong market with no hint. A change
+  // here raises a one-time banner (see league-auto-changed).
+  lastAutoLeague: null,
   lastTab: 'currency',   // tab to reopen on (remembered across restarts): 'currency' | 'items' | 'desec' | 'networth' | 'regex' | 'grandex'
   // user's tab-bar order (drag to reorder). Unknown/missing keys fall back to
   // the built-in order, so adding a tab in a future version can't break it.
@@ -480,6 +485,20 @@ async function getDefaultLeague() {
   return league;
 }
 
+// Auto just landed on a different league than last time (a new league or event went
+// live and took the top of the list). Tell the renderer ONCE, then remember the new one.
+function noteAutoLeague(name) {
+  if (!name) return;
+  const prev = config.lastAutoLeague;
+  if (prev === name) return;
+  config.lastAutoLeague = name;
+  saveConfig();
+  if (prev && win && !win.isDestroyed()) {
+    logToggle('league', 'auto league changed: ' + prev + ' -> ' + name);
+    win.webContents.send('league-auto-changed', { from: prev, to: name });
+  }
+}
+
 async function resolveLeague() {
   if (config.league && config.league !== 'auto') return config.league;
   // current softcore league first (IsCurrent, not "HC ..."), then any current, then realm default
@@ -487,11 +506,11 @@ async function resolveLeague() {
     const leagues = await getLeagues();
     const current = leagues.filter((l) => l.IsCurrent);
     const softcore = current.find((l) => !/^HC /i.test(l.Value) && !/hardcore/i.test(l.Value));
-    if (softcore) return softcore.Value;
-    if (current.length > 0) return current[0].Value;
+    if (softcore) { noteAutoLeague(softcore.Value); return softcore.Value; }
+    if (current.length > 0) { noteAutoLeague(current[0].Value); return current[0].Value; }
   } catch {}
   const def = await getDefaultLeague();
-  if (def) return def;
+  if (def) { noteAutoLeague(def); return def; }
   throw new Error('Could not determine current league');
 }
 

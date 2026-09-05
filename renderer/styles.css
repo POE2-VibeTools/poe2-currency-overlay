@@ -186,6 +186,7 @@ html, body {
 /* while settings is open it fills everything below the titlebar - its following
    siblings (tabs, views, footer, support bar) are hidden */
 #settings:not(.hidden) ~ #update-banner,
+#settings:not(.hidden) ~ #league-banner,
 #settings:not(.hidden) ~ #tabs,
 #settings:not(.hidden) ~ #status,
 #settings:not(.hidden) ~ #buckets,
@@ -599,7 +600,7 @@ body.tut-active #spark-tip { z-index: 45; } /* the user's reward tooltip must ne
 .feed-status { font-size: 11px; color: var(--tx-mid); }
 .feed-status.live { color: var(--green-mid); font-weight: 600; }
 
-#update-banner {
+#update-banner, #league-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -611,7 +612,8 @@ body.tut-active #spark-tip { z-index: 45; } /* the user's reward tooltip must ne
   color: var(--banner-tx);
   flex-shrink: 0;
 }
-#update-banner.hidden { display: none; }
+#update-banner.hidden, #league-banner.hidden { display: none; }
+.league-banner-btns { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .update-btn {
   background: linear-gradient(180deg, var(--update-btn-a), var(--update-btn-b));
   border: 1px solid color-mix(in srgb, var(--tx-gold) 35%, transparent);

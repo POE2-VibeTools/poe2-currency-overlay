@@ -3806,6 +3806,23 @@ async function main() {
 
   window.api.onUpdateState(showUpdateBanner);
   window.api.getUpdateState().then(showUpdateBanner).catch(() => {});
+  // "Auto" league silently followed a new league/event to the top of the list. Say
+  // so once, with the way out (Settings > League) one click away.
+  if (window.api.onLeagueAutoChanged) window.api.onLeagueAutoChanged((s) => {
+    if (!s || !s.to) return;
+    const banner = $('league-banner');
+    $('league-banner-text').textContent = t('ui.league_banner.text', { to: leagueDisplay(s.to) || s.to, from: leagueDisplay(s.from) || s.from });
+    banner.classList.remove('hidden');
+    if (window.logAction) window.logAction('league banner: ' + s.from + ' -> ' + s.to);
+    $('btn-league-pick').onclick = () => {
+      banner.classList.add('hidden');
+      $('settings').classList.remove('hidden');
+      const sc = document.querySelector('#settings .set-scroll'); if (sc) sc.scrollTop = 0;
+      setSettingsSection('general');
+      setTimeout(() => { const sel = $('league-select'); if (sel) sel.focus(); }, 0);
+    };
+    $('btn-league-dismiss').onclick = () => banner.classList.add('hidden');
+  });
   window.api.getAppVersion().then(async (v) => {
     if (!v) return;
     // The dev build names itself, so two running builds are tellable apart. The tag is
