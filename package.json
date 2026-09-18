@@ -87,5 +87,31 @@
     "koffi": "^3.1.2",
     "neverthrow": "^8.2.0",
     "uiohook-napi": "^1.5.5"
+  },
+  "overrides": {
+    "app-builder-lib": {
+      "js-yaml": "4.3.2"
+    },
+    "builder-util": {
+      "js-yaml": "4.3.2"
+    },
+    "dmg-builder": {
+      "js-yaml": "4.3.2"
+    },
+    "electron-builder": {
+      "js-yaml": "4.3.2"
+    },
+    "electron-builder-squirrel-windows": {
+      "js-yaml": "4.3.2"
+    },
+    "electron-publish": {
+      "js-yaml": "4.3.2"
+    },
+    "electron-updater": {
+      "js-yaml": "4.3.2"
+    },
+    "js-yaml": {
+      "js-yaml": "4.3.2"
+    }
   }
 }
