@@ -6,6 +6,17 @@
 // each cut; the popup and the history viewer both read from here automatically.
 window.RELEASE_NOTES = [
   {
+    version: '3.0.7',
+    date: '2026-09-18',
+    notes: [
+      "Forbidden Rites (0.5.5) support:",
+      "Net Worth reads the Soul Cores tab again. GGG rearranged it and added 17 new cores. New ones won't have prices until the price feed lists them.",
+      "If your league is set to Auto, you'll get a heads-up when it switches to a new league, with a button to pick yours.",
+      "Items with the new soul cores socketed search the right socket count.",
+      "Regex: new Expedition tablet mods added, Breach and Abyss tablet ranges updated.",
+    ],
+  },
+  {
     version: '3.0.6',
     date: '2026-09-02',
     notes: [
